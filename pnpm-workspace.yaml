@@ -1,0 +1,43 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Versiones compartidas por todo el monorepo. Antes de agregar algo aquí,
+# regístralo en docs/LICENCIAS.md.
+catalog:
+  '@eslint/js': ^10.0.1
+  '@fontsource/archivo': ^5.3.0
+  '@fontsource/martian-mono': ^5.3.0
+  '@playwright/test': ^1.65.1
+  '@types/node': ^22.0.0
+  '@types/react': ^19.3.0
+  '@types/react-dom': ^19.3.0
+  '@vitejs/plugin-react': ^6.3.0
+  eslint: ^10.15.0
+  eslint-plugin-react-hooks: ^7.1.1
+  globals: ^17.14.0
+  lucide-react: ^1.73.0
+  prettier: ^3.10.1
+  react: ^19.3.1
+  react-dom: ^19.3.1
+  react-router: ^8.5.1
+  turbo: ^2.11.11
+  # typescript-eslint 8.x soporta TypeScript < 6.1; no subir a 7 hasta que lo soporte.
+  typescript: ~6.0.0
+  typescript-eslint: ^8.73.0
+  vite: ^8.3.8
+  vite-plugin-pwa: ^2.0.0
+  vitest: ^5.1.0
+
+minimumReleaseAgeExclude:
+  - '@typescript-eslint/eslint-plugin@8.73.0'
+  - '@typescript-eslint/parser@8.73.0'
+  - '@typescript-eslint/project-service@8.73.0'
+  - '@typescript-eslint/scope-manager@8.73.0'
+  - '@typescript-eslint/tsconfig-utils@8.73.0'
+  - '@typescript-eslint/type-utils@8.73.0'
+  - '@typescript-eslint/types@8.73.0'
+  - '@typescript-eslint/typescript-estree@8.73.0'
+  - '@typescript-eslint/utils@8.73.0'
+  - '@typescript-eslint/visitor-keys@8.73.0'
+  - typescript-eslint@8.73.0

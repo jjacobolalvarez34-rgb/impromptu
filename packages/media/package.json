@@ -1,0 +1,16 @@
+{
+  "name": "@impromptu/media",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Cámara, importación y alineación de video y audio.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}

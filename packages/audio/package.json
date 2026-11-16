@@ -1,0 +1,16 @@
+{
+  "name": "@impromptu/audio",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sampler de piano, mezcla y render offline de audio.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}

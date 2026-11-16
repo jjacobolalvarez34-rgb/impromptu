@@ -1,0 +1,10 @@
+node_modules
+dist
+.turbo
+pnpm-lock.yaml
+graphify-out
+playwright-report
+test-results
+fixtures
+# Documentos y comandos escritos a mano: no se reformatean.
+*.md

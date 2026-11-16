@@ -1,0 +1,16 @@
+{
+  "name": "@impromptu/render",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Visualizador PixiJS: notas cayendo, teclado virtual, temas y efectos.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}

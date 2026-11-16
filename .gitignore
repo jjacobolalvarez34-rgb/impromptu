@@ -14,3 +14,7 @@ src-tauri/target/
 
 # Kit original descomprimido
 impromptu-kit.zip
+
+# Música de Jacobo: fuera del repo público hasta decidir P11
+fixtures/jacobo/
+graphify-out/cache/
