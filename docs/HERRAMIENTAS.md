@@ -1,5 +1,17 @@
 # HERRAMIENTAS — Graphify, plugins y skills
 
+## Regla del equipo de Jacobo: todo en D:
+Nada se instala, descarga ni cachea en C:. Configuración ya aplicada (2026-11-16):
+| Qué | Dónde |
+|---|---|
+| Store de pnpm | `D:\.pnpm-store` (`pnpm config set store-dir`) |
+| Caché de pnpm | `D:\.cache\pnpm` (`pnpm config set cache-dir`) |
+| Caché de npm | `D:\.cache\npm` (`npm config set cache`) |
+| Navegadores de Playwright | `D:\.cache\ms-playwright` (variable de usuario `PLAYWRIGHT_BROWSERS_PATH`) |
+| Temporales de los agentes | `D:\.cache\claude-tmp` (exporta `TEMP` y `TMP` en la terminal) |
+
+Si una herramienta nueva escribe en C: por defecto (cachés de Rust y Cargo en la fase 8, SDK de Android, modelos de IA), configúrala hacia D: antes de instalarla. Por ejemplo: `CARGO_HOME`, `RUSTUP_HOME`, `ANDROID_HOME` y `GRADLE_USER_HOME`.
+
 ## Graphify (ahorro de tokens)
 Convierte el código y los documentos del repo en un grafo de conocimiento que se puede consultar. El código lo procesa localmente (tree-sitter), sin gastar IA. Repo: https://github.com/Graphify-Labs/graphify (Apache-2.0 / MIT).
 

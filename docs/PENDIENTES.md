@@ -14,3 +14,6 @@ Claude Code: si algo de esta lista bloquea tu tarea, usa el valor provisional, m
 | P8 | Idioma de la interfaz: solo español al inicio, o español e inglés desde la v0.1 | Español con textos preparados para traducir | Abierto |
 | P9 | ¿Telemetría opcional y anónima para saber qué se usa? | No | Abierto |
 | P10 | Temas extra del visualizador que quieras para la v0.1 (nombres y colores) | Ámbar, Sala, Medianoche, Tinta | Abierto |
+| P11 | ¿Se publican en el repo (público) las grabaciones de `fixtures/jacobo/`? Hoy hay 4 piezas copiadas de `C:\Cakewalk Projects` (Consuelo, Nostalgia, Sorry I filed you, I'm still learning to be better), en MIDI y MP3 | Fuera de git (`.gitignore`); las pruebas de CI usan MIDIs sintéticos | Abierto |
+| P12 | **Celular como app instalable, no web.** Jacobo quiere 3 productos: web, app de PC y app de celular. Opciones: (a) Tauri 2 o Capacitor: APK real que reutiliza la interfaz web, con MIDI nativo por plugin. Una sola base de código. (b) App nativa aparte (Kotlin o React Native): otra base de código y el doble de trabajo | (a), pendiente de confirmar. Cambia ADR-001 y las fases 2 y 8 | Abierto |
+| P13 | Yamaha: Jacobo tiene el controlador USB-MIDI de Yamaha en Descargas. Ver en la fase 2 si Windows reconoce el PSR-E343 sin él | Probar primero sin el controlador | Abierto |

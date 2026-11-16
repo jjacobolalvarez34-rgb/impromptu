@@ -8,7 +8,16 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 ## Librerías
 | Componente | Uso | Licencia | Obligaciones / notas |
 |---|---|---|---|
-| React, Vite, Zustand | App | MIT [VERIFICAR versiones] | Aviso de copyright |
+| React 19.3, Vite 8.3 | App | MIT (verificado en npm, 2026-11-16) | Aviso de copyright |
+| Zustand | Estado de la app | MIT (verificado 5.1, aún sin instalar) | Aviso de copyright |
+| `react-router` 8.5 | Rutas (`/componentes`, luego `/en-vivo`) | MIT (verificado) | Aviso de copyright |
+| `vite-plugin-pwa` 2.0 (+ Workbox) | Versión web instalable y sin conexión | MIT (verificado) | Aviso de copyright |
+| `@vitejs/plugin-react` 6.3 | Build | MIT (verificado) | Solo desarrollo |
+| `@fontsource/martian-mono`, `@fontsource/archivo` 5.3 | Fuentes empaquetadas | OFL-1.1 (verificado) | Ver fila de tipografías |
+| Turborepo 2.11 | Monorepo | MIT (verificado) | Solo desarrollo |
+| TypeScript 6.0 | Lenguaje | Apache-2.0 (verificado) | Solo desarrollo. typescript-eslint aún no soporta TS 7 |
+| ESLint 10, `typescript-eslint` 8, `eslint-plugin-react-hooks` 7, `globals` | Lint | MIT (verificado) | Solo desarrollo |
+| Prettier 3.10 | Formato | MIT (verificado) | Solo desarrollo |
 | PixiJS | Visualizador | MIT [VERIFICAR] | |
 | Tone.js | Audio | MIT [VERIFICAR] | |
 | `@tonejs/piano` | Piano incluido con pedal | MIT | Usa muestras de Salamander (ver abajo) |
@@ -22,8 +31,8 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 | Dexie (IndexedDB) | Almacenamiento | [VERIFICAR] | |
 | Tauri 2 | Escritorio | MIT o Apache-2.0 [VERIFICAR] | |
 | `tauri-plugin-midi` | MIDI en escritorio | MIT | |
-| Lucide | Íconos | ISC [VERIFICAR] | |
-| Vitest, Playwright | Pruebas | MIT, Apache-2.0 [VERIFICAR] | Solo desarrollo |
+| Lucide (`lucide-react` 1.73) | Íconos | ISC (verificado) | Aviso de copyright |
+| Vitest 5.1, Playwright 1.65 | Pruebas | MIT, Apache-2.0 (verificado) | Solo desarrollo |
 
 ## Modelos de IA
 | Modelo | Uso | Licencia | Decisión |
@@ -39,7 +48,7 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 |---|---|---|---|
 | PianoPlayer (marcomusy) | Algoritmo de digitación (puerto a TS) | MIT | Conservar el aviso de copyright en el archivo portado |
 | Salamander Grand Piano (Alexander Holm) | Sonido de piano | Publicado como CC-BY 3.0; según la página del autor, de dominio público desde 2022 | Dar crédito igualmente en "Acerca de" |
-| Martian Mono, Archivo | Tipografías | SIL OFL 1.1 | Incluir el archivo OFL con las fuentes |
+| Martian Mono, Archivo | Tipografías | SIL OFL 1.1 | Incluir el archivo OFL con las fuentes. Hoy se empaquetan vía `@fontsource` (que trae el OFL en `node_modules`); falta mostrar el texto OFL en "Acerca de" |
 
 ## Proyectos que NO se copian
 | Proyecto | Licencia | Por qué |

@@ -46,6 +46,7 @@ Plataformas: **web primero**, luego escritorio (Tauri) y celular (Android). Una 
 
 ## Reglas de oro técnicas
 - **Todo corre en el equipo del usuario** (transcripción, render de video, audio). Sin servidores de pago: así el producto puede ser gratis.
+- **En el equipo de Jacobo, todo en D:** dependencias, cachés, navegadores, SDKs y temporales. Nada en C:. Ver `docs/HERRAMIENTAS.md`.
 - **Licencias primero**: antes de agregar una dependencia, modelo o sonido, revisa `docs/LICENCIAS.md`. Nada con licencia no comercial (por ejemplo, los pesos de MuScriptor) en el núcleo.
 - **No copies código GPL** de otros visualizadores (Neothesia, Pianorium) mientras no esté decidida la licencia del proyecto (P1).
 - **El tiempo manda**: todo evento (nota, pedal, cuadro de video, muestra de audio) vive en segundos sobre un mismo reloj. Nunca sincronices "a ojo".
@@ -55,3 +56,14 @@ Plataformas: **web primero**, luego escritorio (Tauri) y celular (Android). Una 
 
 ## Diseño
 Identidad aprobada: **C3 · Consola ámbar** (ver `docs/DESIGN.md`). Usa solo sus tokens y componentes. Para diseñar o revisar pantallas usa el plugin **UI UX Pro Max** (accesibilidad, estados y patrones). Íconos: **Lucide**. Si un plugin contradice `docs/DESIGN.md`, gana DESIGN.md.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- When graphify-out/graph.json exists, run `graphify query "<question>"` before your first grep, search or source-file read for a codebase question, and put this rule in every subagent prompt that explores code. Read raw files only for lines the graph or an earlier read already located. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- A committed graphify-out/graph.json is rewritten whole on every build, so a large diff to it in a pull request is expected. Do not flag it as churn or suggest skipping the graph rebuild or its hooks.
