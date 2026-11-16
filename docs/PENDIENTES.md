@@ -1,0 +1,16 @@
+# PENDIENTES — decisiones e insumos de Jacobo
+
+Claude Code: si algo de esta lista bloquea tu tarea, usa el valor provisional, marca el código con `// PROVISIONAL(Pn)` y sigue. Jacobo: cuando decidas, cambia el estado y anota la fecha.
+
+| # | Pendiente | Provisional | Estado |
+|---|---|---|---|
+| P1 | **Licencia del proyecto.** Opciones: GPL-3.0 (las copias deben seguir abiertas), MPL-2.0 (punto medio) o MIT (permisiva). Recomendación: **GPL-3.0**, que protege que nadie lo cierre y lo venda. Como dueño del código, igual puedes tener un plan pago tuyo. | GPL-3.0 | Abierto |
+| P2 | Nombre en GitHub (usuario u organización) y dominio (revisar disponibilidad de impromptu.app, .studio, .music) | `impromptu` | Abierto |
+| P3 | Revisión de marca "Impromptu" en Colombia (SIC) antes de lanzar la v0.1 | — | Abierto |
+| P4 | **Fixtures reales:** grabar 5 piezas en el PSR-E343 con MIDI + WAV + video desde arriba (lenta, rápida, mucho pedal, acordes, mano cruzada) y subirlas a `fixtures/` | MIDIs sintéticos | Abierto |
+| P5 | Modelo de celular Android para probar (y si tienes cable OTG) | — | Abierto |
+| P6 | Soporte para la cámara desde arriba (trípode o brazo) | — | Abierto |
+| P7 | Activar GitHub Sponsors (necesita cuenta bancaria en Colombia y datos tributarios) | — | Abierto |
+| P8 | Idioma de la interfaz: solo español al inicio, o español e inglés desde la v0.1 | Español con textos preparados para traducir | Abierto |
+| P9 | ¿Telemetría opcional y anónima para saber qué se usa? | No | Abierto |
+| P10 | Temas extra del visualizador que quieras para la v0.1 (nombres y colores) | Ámbar, Sala, Medianoche, Tinta | Abierto |

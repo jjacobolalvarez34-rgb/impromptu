@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.turbo/
+.vite/
+coverage/
+playwright-report/
+test-results/
+graphify-out/graph.html
+.DS_Store
+*.log
+.env*
+!.env.example
+src-tauri/target/
+
+# Kit original descomprimido
+impromptu-kit.zip
