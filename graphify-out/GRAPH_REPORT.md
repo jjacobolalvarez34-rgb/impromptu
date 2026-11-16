@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5435ab3a`
+- Built from commit: `0a87d9ce`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -79,13 +79,13 @@
 ## Surprising Connections (you probably didn't know these)
 - `2026-11-16 · Fase 0 · Cimientos` --references--> `Logo()`  [INFERRED]
   docs/BITACORA.md → packages/ui/src/components/Logo.tsx
+- `ADR-003 · Modelo de datos con mano, dedo, pedal e instrumento desde el inicio` --references--> `NoteEvent`  [INFERRED]
+  docs/DECISIONES.md → packages/core/src/model.ts
+- `ADR-003 · Modelo de datos con mano, dedo, pedal e instrumento desde el inicio` --references--> `Track`  [INFERRED]
+  docs/DECISIONES.md → packages/core/src/model.ts
 - `2026-11-16 · Fase 0 · Cimientos` --references--> `createNoteEvent()`  [INFERRED]
   docs/BITACORA.md → packages/core/src/factory.ts
-- `2026-11-16 · Fase 0 · Cimientos` --references--> `createTrack()`  [INFERRED]
-  docs/BITACORA.md → packages/core/src/factory.ts
 - `2026-11-16 · Fase 0 · Cimientos` --references--> `createTake()`  [INFERRED]
-  docs/BITACORA.md → packages/core/src/factory.ts
-- `2026-11-16 · Fase 0 · Cimientos` --references--> `sortNotes()`  [INFERRED]
   docs/BITACORA.md → packages/core/src/factory.ts
 
 ## Import Cycles

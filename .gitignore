@@ -18,3 +18,7 @@ impromptu-kit.zip
 # Música de Jacobo: fuera del repo público hasta decidir P11
 fixtures/jacobo/
 graphify-out/cache/
+graphify-out/.rebuild.lock
+graphify-out/.graphify_build_state.json
+graphify-out/.graphify_labels.pending.json
+graphify-out/manifest.json
