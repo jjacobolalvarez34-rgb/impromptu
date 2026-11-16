@@ -1,17 +1,17 @@
 # Graph Report - impromptu  (2026-11-16)
 
 ## Corpus Check
-- 85 files · ~17,674 words
+- 85 files · ~17,969 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 14 file(s) not represented in the graph (top: .css 11, (none) 3)
 
 ## Summary
-- 569 nodes · 684 edges · 62 communities (40 shown, 22 thin omitted)
+- 570 nodes · 685 edges · 61 communities (39 shown, 22 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 13 edges (avg confidence: 0.93)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0a87d9ce`
+- Built from commit: `76023a75`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -38,7 +38,6 @@
 - DECISIONES (ADRs)
 - DESIGN — Identidad de Impromptu
 - VERIFICACIONES — antes de decir "listo"
-- scripts
 - web/tsconfig.json
 - LICENCIAS — qué se puede usar
 - ui/tsconfig.json
@@ -69,9 +68,9 @@
 2. `compilerOptions` - 16 edges
 3. `Componentes()` - 13 edges
 4. `ROADMAP — Impromptu` - 11 edges
-5. `2026-11-16 · Fase 0 · Cimientos` - 10 edges
-6. `ARQUITECTURA — Impromptu` - 9 edges
-7. `DECISIONES (ADRs)` - 9 edges
+5. `DECISIONES (ADRs)` - 10 edges
+6. `2026-11-16 · Fase 0 · Cimientos` - 10 edges
+7. `ARQUITECTURA — Impromptu` - 9 edges
 8. `scripts` - 9 edges
 9. `CLAUDE.md — Impromptu (léelo SIEMPRE al empezar)` - 8 edges
 10. `DESIGN — Identidad de Impromptu` - 8 edges
@@ -91,7 +90,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (62 total, 22 thin omitted)
+## Communities (61 total, 22 thin omitted)
 
 ### Community 0 - "ui/src/index.ts"
 Cohesion: 0.07
@@ -106,8 +105,8 @@ Cohesion: 0.06
 Nodes (37): dependencies, @impromptu/core@workspace:*, @impromptu/ui@workspace:*, lucide-react@catalog:, react@catalog:, react-dom@catalog:, react-router@catalog:, description (+29 more)
 
 ### Community 3 - "package.json"
-Cohesion: 0.09
-Nodes (28): description, devDependencies, eslint@catalog:, @eslint/js@catalog:, eslint-plugin-react-hooks@catalog:, globals@catalog:, @playwright/test@catalog:, prettier@catalog: (+20 more)
+Cohesion: 0.06
+Nodes (37): description, devDependencies, eslint@catalog:, @eslint/js@catalog:, eslint-plugin-react-hooks@catalog:, globals@catalog:, @playwright/test@catalog:, prettier@catalog: (+29 more)
 
 ### Community 4 - "ui/package.json"
 Cohesion: 0.10
@@ -170,8 +169,8 @@ Cohesion: 0.22
 Nodes (8): CLAUDE.md — Impromptu (léelo SIEMPRE al empezar), Diseño, Dónde está cada cosa, graphify, Protocolo de cada sesión, Qué construimos, Regla de producto número 1, Reglas de oro técnicas
 
 ### Community 19 - "DECISIONES (ADRs)"
-Cohesion: 0.22
-Nodes (8): ADR-001 · Web primero, una sola base de código, ADR-002 · Todo se procesa en el equipo del usuario, ADR-004 · Exportación por render offline determinista, ADR-005 · PixiJS para el visualizador, ADR-006 · Identidad C3 · Consola ámbar, ADR-007 · Licencias no comerciales fuera del núcleo, DECISIONES (ADRs), Plantilla
+Cohesion: 0.20
+Nodes (9): ADR-001 · Web primero, una sola base de código, ADR-002 · Todo se procesa en el equipo del usuario, ADR-004 · Exportación por render offline determinista, ADR-005 · PixiJS para el visualizador, ADR-006 · Identidad C3 · Consola ámbar, ADR-007 · Licencias no comerciales fuera del núcleo, ADR-008 · Tres productos: web, PC y celular instalable, sin conexión, DECISIONES (ADRs) (+1 more)
 
 ### Community 20 - "DESIGN — Identidad de Impromptu"
 Cohesion: 0.22
@@ -180,10 +179,6 @@ Nodes (8): 1. Logo, 2. Color (tokens), 3. Tipografía, 4. Componentes, 5. Pantal
 ### Community 21 - "VERIFICACIONES — antes de decir "listo""
 Cohesion: 0.22
 Nodes (8): 1. Siempre, 2. Interfaz, 3. Modelo de datos y tiempo, 4. MIDI y teclado real, 5. Visualizador y exportación, 6. Transcripción (fase 5+), 7. Privacidad, VERIFICACIONES — antes de decir "listo"
-
-### Community 22 - "scripts"
-Cohesion: 0.22
-Nodes (9): scripts, brand:icons, build, dev, e2e, format, lint, test (+1 more)
 
 ### Community 23 - "web/tsconfig.json"
 Cohesion: 0.25
@@ -255,20 +250,20 @@ Nodes (3): printWidth, singleQuote, trailingComma
 
 ## Knowledge Gaps
 - **10 isolated node(s):** `ADR-0003`, `ADR-0003`, `../../tsconfig.base.json`, `../../tsconfig.base.json`, `../../tsconfig.base.json` (+5 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 337 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 338 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `2026-11-16 · Fase 0 · Cimientos` connect `model.test.ts` to `ui/src/index.ts`, `BITÁCORA`?**
-  _High betweenness centrality (0.067) - this node is a cross-community bridge._
+  _High betweenness centrality (0.068) - this node is a cross-community bridge._
 - **What connects `ADR-0003`, `ADR-0003`, `../../tsconfig.base.json` to the rest of the system?**
   _10 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ui/src/index.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.07320024198427103 - nodes in this community are weakly interconnected._
 - **Why does `Logo()` connect `ui/src/index.ts` to `model.test.ts`?**
-  _High betweenness centrality (0.066) - this node is a cross-community bridge._
+  _High betweenness centrality (0.067) - this node is a cross-community bridge._
 - **Should `model.test.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.10083256244218317 - nodes in this community are weakly interconnected._
 - **Why does `@playwright/test` connect `package.json` to `web/package.json`?**
