@@ -9,17 +9,17 @@ Este archivo es para cualquier agente de código (Codex, Antigravity, Cursor, Cl
 
 ## Reglas
 - Trabaja solo en la fase y el paso asignados.
-- Rama `f<fase>/<slug>`, PR, CI verde. Nunca commits directos a `main`.
+- Trabajo directo en `main`, commits pequeños con lint, typecheck y pruebas en verde, y push. El CI de GitHub debe quedar en verde después de cada push.
 - Tipos estrictos (TypeScript `strict`). Sin `any` salvo en los bordes con librerías sin tipos, documentado.
-- Pruebas: unitarias (Vitest) para la lógica; end-to-end (Playwright) para flujos de pantalla. Capturas de pantalla como evidencia en el PR.
-- Dependencias nuevas: revisa y actualiza `docs/LICENCIAS.md` en el mismo PR.
+- Pruebas: unitarias (Vitest) para la lógica; end-to-end (Playwright) para flujos de pantalla. Capturas de pantalla como evidencia en la BITÁCORA o en el artefacto del CI.
+- Dependencias nuevas: revisa y actualiza `docs/LICENCIAS.md` en el mismo commit.
 - Interfaz: solo tokens y componentes de `docs/DESIGN.md`.
 - Al terminar: entrada en `docs/BITACORA.md` (qué hiciste, qué falta, qué probó Jacobo).
 
 ## Roles sugeridos para subagentes
 | Rol | Qué revisa |
 |---|---|
-| Revisor | Que el PR cumpla `docs/VERIFICACIONES.md` y no rompa el modelo de datos |
+| Revisor | Que cada commit cumpla `docs/VERIFICACIONES.md` y no rompa el modelo de datos |
 | QA | Corre Playwright, revisa capturas, prueba atajos de teclado y celular |
 | Auditor de licencias | Cada dependencia, modelo, fuente o sonido contra `docs/LICENCIAS.md` |
 | Rendimiento | Mide fps del visualizador y tiempo de exportación contra los presupuestos de `docs/ARQUITECTURA.md` |

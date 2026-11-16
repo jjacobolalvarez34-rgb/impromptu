@@ -1,10 +1,10 @@
 # VERIFICACIONES — antes de decir "listo"
 
-Marca cada punto en el PR. Lo que no aplica se marca "N/A" con el motivo.
+Marca cada punto en la entrada de la BITÁCORA. Lo que no aplica se marca "N/A" con el motivo.
 
 ## 1. Siempre
 - [ ] `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
-- [ ] Playwright en verde, con capturas de las pantallas tocadas adjuntas al PR.
+- [ ] Playwright en verde, con capturas de las pantallas tocadas (artefacto "playwright" del CI o `test-results/capturas/`).
 - [ ] Sin `any` nuevos ni `console.log` olvidados.
 - [ ] Dependencias nuevas registradas en `LICENCIAS.md`.
 - [ ] Entrada en `BITACORA.md`, incluyendo "pedidos no atendidos".
@@ -30,7 +30,7 @@ Marca cada punto en el PR. Lo que no aplica se marca "N/A" con el motivo.
 - [ ] **Prueba con el Yamaha PSR-E343 de Jacobo** (anotar en BITÁCORA): notas, fuerza, pedal y latencia percibida.
 
 ## 5. Visualizador y exportación
-- [ ] 60 fps con 2.000 notas visibles (medido, cifra en el PR).
+- [ ] 60 fps con 2.000 notas visibles (medido, cifra en la BITÁCORA).
 - [ ] Mismo t = mismo cuadro: dos exportaciones iguales dan cuadros idénticos.
 - [ ] Audio y video sincronizados al inicio, a la mitad y al final (±1 cuadro).
 - [ ] Exporta 16:9, 9:16 y 1:1, y el MP4 abre en el reproductor del celular y sube a YouTube e Instagram.

@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `76023a75`
+- Built from commit: `72d39793`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -46,7 +46,6 @@
 - INVESTIGACIÓN — hallazgos iniciales (noviembre de 2026)
 - AGENTS.md — Impromptu
 - impromptu
-- BITÁCORA
 - BUGS — trampas conocidas y registro
 - audio/tsconfig.json
 - core/tsconfig.json
@@ -62,29 +61,30 @@
 - media/README.md
 - midi/README.md
 - render/README.md
+- scripts
 
 ## God Nodes (most connected - your core abstractions)
 1. `catalog` - 23 edges
 2. `compilerOptions` - 16 edges
 3. `Componentes()` - 13 edges
 4. `ROADMAP — Impromptu` - 11 edges
-5. `DECISIONES (ADRs)` - 10 edges
-6. `2026-11-16 · Fase 0 · Cimientos` - 10 edges
-7. `ARQUITECTURA — Impromptu` - 9 edges
-8. `scripts` - 9 edges
+5. `2026-11-16 · Fase 0 · Cimientos` - 10 edges
+6. `DECISIONES (ADRs)` - 10 edges
+7. `scripts` - 9 edges
+8. `ARQUITECTURA — Impromptu` - 9 edges
 9. `CLAUDE.md — Impromptu (léelo SIEMPRE al empezar)` - 8 edges
 10. `DESIGN — Identidad de Impromptu` - 8 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `2026-11-16 · Fase 0 · Cimientos` --references--> `Logo()`  [INFERRED]
   docs/BITACORA.md → packages/ui/src/components/Logo.tsx
-- `ADR-003 · Modelo de datos con mano, dedo, pedal e instrumento desde el inicio` --references--> `NoteEvent`  [INFERRED]
-  docs/DECISIONES.md → packages/core/src/model.ts
-- `ADR-003 · Modelo de datos con mano, dedo, pedal e instrumento desde el inicio` --references--> `Track`  [INFERRED]
-  docs/DECISIONES.md → packages/core/src/model.ts
 - `2026-11-16 · Fase 0 · Cimientos` --references--> `createNoteEvent()`  [INFERRED]
   docs/BITACORA.md → packages/core/src/factory.ts
+- `2026-11-16 · Fase 0 · Cimientos` --references--> `createTrack()`  [INFERRED]
+  docs/BITACORA.md → packages/core/src/factory.ts
 - `2026-11-16 · Fase 0 · Cimientos` --references--> `createTake()`  [INFERRED]
+  docs/BITACORA.md → packages/core/src/factory.ts
+- `2026-11-16 · Fase 0 · Cimientos` --references--> `sortNotes()`  [INFERRED]
   docs/BITACORA.md → packages/core/src/factory.ts
 
 ## Import Cycles
@@ -97,16 +97,16 @@ Cohesion: 0.07
 Nodes (33): root, COLORES, Componentes(), Formato, FORMATOS, Muestra(), Pestana, PESTANAS (+25 more)
 
 ### Community 1 - "model.test.ts"
-Cohesion: 0.10
-Nodes (37): 2026-11-16 · Fase 0 · Cimientos, ADR-003 · Modelo de datos con mano, dedo, pedal e instrumento desde el inicio, createNoteEvent(), createTake(), createTrack(), IdFactory, KEYBOARD_61, NoteInput (+29 more)
+Cohesion: 0.09
+Nodes (40): 2026-11-16 · Fase 0 · Cimientos, 2026-11-16 · Planeación, BITÁCORA, Plantilla, ADR-003 · Modelo de datos con mano, dedo, pedal e instrumento desde el inicio, createNoteEvent(), createTake(), createTrack() (+32 more)
 
 ### Community 2 - "web/package.json"
 Cohesion: 0.06
 Nodes (37): dependencies, @impromptu/core@workspace:*, @impromptu/ui@workspace:*, lucide-react@catalog:, react@catalog:, react-dom@catalog:, react-router@catalog:, description (+29 more)
 
 ### Community 3 - "package.json"
-Cohesion: 0.06
-Nodes (37): description, devDependencies, eslint@catalog:, @eslint/js@catalog:, eslint-plugin-react-hooks@catalog:, globals@catalog:, @playwright/test@catalog:, prettier@catalog: (+29 more)
+Cohesion: 0.09
+Nodes (28): description, devDependencies, eslint@catalog:, @eslint/js@catalog:, eslint-plugin-react-hooks@catalog:, globals@catalog:, @playwright/test@catalog:, prettier@catalog: (+20 more)
 
 ### Community 4 - "ui/package.json"
 Cohesion: 0.10
@@ -130,7 +130,7 @@ Nodes (15): Celular, El problema, En vivo, Estudio (crear videos) — primero, F
 
 ### Community 9 - "core/package.json"
 Cohesion: 0.15
-Nodes (14): description, devDependencies, typescript@catalog:, vitest@catalog:, exports, name, private, scripts (+6 more)
+Nodes (14): description, devDependencies, typescript@catalog:, vitest@catalog:, exports, typescript, name, private (+6 more)
 
 ### Community 10 - "ARQUITECTURA — Impromptu"
 Cohesion: 0.14
@@ -212,10 +212,6 @@ Nodes (4): AGENTS.md — Impromptu, Antes de tocar código, Reglas, Roles sugeri
 Cohesion: 0.40
 Nodes (4): Apoyar el proyecto, impromptu, Principios, Qué hace (cuando esté completo)
 
-### Community 31 - "BITÁCORA"
-Cohesion: 0.50
-Nodes (3): 2026-11-16 · Planeación, BITÁCORA, Plantilla
-
 ### Community 32 - "BUGS — trampas conocidas y registro"
 Cohesion: 0.50
 Nodes (3): BUGS — trampas conocidas y registro, Registro de bugs, Trampas conocidas (léelas antes de tocar estas áreas)
@@ -248,24 +244,28 @@ Nodes (3): extends, include, ../../tsconfig.base.json
 Cohesion: 0.50
 Nodes (3): printWidth, singleQuote, trailingComma
 
+### Community 62 - "scripts"
+Cohesion: 0.22
+Nodes (9): scripts, brand:icons, build, dev, e2e, format, lint, test (+1 more)
+
 ## Knowledge Gaps
-- **10 isolated node(s):** `ADR-0003`, `ADR-0003`, `../../tsconfig.base.json`, `../../tsconfig.base.json`, `../../tsconfig.base.json` (+5 more)
+- **10 isolated node(s):** `../../tsconfig.base.json`, `../../tsconfig.base.json`, `ADR-0003`, `ADR-0003`, `../../tsconfig.base.json` (+5 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 338 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `2026-11-16 · Fase 0 · Cimientos` connect `model.test.ts` to `ui/src/index.ts`, `BITÁCORA`?**
+- **Why does `2026-11-16 · Fase 0 · Cimientos` connect `model.test.ts` to `ui/src/index.ts`?**
   _High betweenness centrality (0.068) - this node is a cross-community bridge._
-- **What connects `ADR-0003`, `ADR-0003`, `../../tsconfig.base.json` to the rest of the system?**
+- **What connects `../../tsconfig.base.json`, `../../tsconfig.base.json`, `ADR-0003` to the rest of the system?**
   _10 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ui/src/index.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.07320024198427103 - nodes in this community are weakly interconnected._
 - **Why does `Logo()` connect `ui/src/index.ts` to `model.test.ts`?**
   _High betweenness centrality (0.067) - this node is a cross-community bridge._
 - **Should `model.test.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.10083256244218317 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08862745098039215 - nodes in this community are weakly interconnected._
 - **Why does `@playwright/test` connect `package.json` to `web/package.json`?**
   _High betweenness centrality (0.044) - this node is a cross-community bridge._
 - **Should `web/package.json` be split into smaller, more focused modules?**

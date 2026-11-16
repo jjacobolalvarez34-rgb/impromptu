@@ -38,7 +38,7 @@ Plataformas: **tres productos con una sola base de código**: la web, una app in
 1. Empieza con `/inicio-sesion`. Termina con `/fin-sesion` (o cuando notes el contexto lleno).
 2. Antes de buscar en el código, consulta el grafo: `/graphify query "..."`. Solo si no alcanza, busca a mano.
 3. Trabaja la fase y el paso que diga `docs/ROADMAP.md`. No adelantes fases.
-4. Commits pequeños y frecuentes. Nunca a `main` directo: rama `f<fase>/<slug>`, PR, CI verde.
+4. Trabajo directo en `main` (decisión de Jacobo, 2026-11-16): commits pequeños y frecuentes, cada uno con lint, typecheck y pruebas en verde, y push al terminar cada paso para que Jacobo lo previsualice. El CI corre en cada push a `main`; si sale rojo, se arregla antes de seguir.
 5. Antes de decir "listo": `/verificar`. **Nada de "debería funcionar"**: pruebas que corren, capturas con Playwright y, si toca MIDI real, pídele a Jacobo que pruebe con su Yamaha y anota el resultado.
 6. Si una decisión es de producto, licencia, marca o dinero, **no la inventes**: agrégala a `docs/PENDIENTES.md`, usa un valor provisional marcado `// PROVISIONAL(Pn)` y sigue.
 7. Decisión técnica relevante → ADR en `docs/DECISIONES.md`.

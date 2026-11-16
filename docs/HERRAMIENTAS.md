@@ -48,7 +48,7 @@ Genera `graphify-out/` con `graph.html` (navegable), `GRAPH_REPORT.md` y `graph.
 
 ## Pruebas y verificación
 - **Vitest:** lógica (modelo, MIDI, cuantización, digitación).
-- **Playwright:** flujos y capturas. Las capturas van al PR como evidencia.
+- **Playwright:** flujos y capturas. Las capturas quedan en el artefacto "playwright" del CI y en `test-results/capturas/`.
 - **Prueba humana:** Jacobo con el PSR-E343 en cada fase que toque MIDI, audio o video.
 
 ## Comandos del proyecto (`.claude/commands/`)
@@ -57,7 +57,7 @@ Genera `graphify-out/` con `graph.html` (navegable), `GRAPH_REPORT.md` y `graph.
 | `/inicio-sesion` | Lee bitácora, roadmap y pendientes, consulta el grafo y propone el plan de la sesión |
 | `/verificar` | Recorre `VERIFICACIONES.md` y reporta qué pasó y qué no |
 | `/fin-sesion` | Actualiza bitácora, grafo y pendientes; lista pedidos no atendidos |
-| `/nueva-fase N` | Prepara la rama y el plan de la fase N a partir de ROADMAP |
+| `/nueva-fase N` | Prepara el plan de la fase N a partir de ROADMAP |
 
 ## Para más adelante
 - **Voicebox** (generación de voz): Jacobo lo tiene en la mira. Posible uso futuro: narración de tutoriales. Revisar licencia antes de usarlo.
