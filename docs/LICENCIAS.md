@@ -21,7 +21,8 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 | PixiJS | Visualizador | MIT [VERIFICAR] | |
 | Tone.js | Audio | MIT [VERIFICAR] | |
 | `@tonejs/piano` | Piano incluido con pedal | MIT | Usa muestras de Salamander (ver abajo) |
-| `@tonejs/midi` | Leer y escribir .mid | [VERIFICAR] | |
+| `midi-file` 1.2 | Leer y escribir .mid (en uso desde la fase 1) | MIT (verificado) | Aviso de copyright. Se eligió en lugar de `@tonejs/midi` para controlar velocity 0 y notas sin cerrar |
+| `@tonejs/midi` | Leer y escribir .mid | MIT (verificado 2.0.28) | No se usa: ver la fila de `midi-file` |
 | Mediabunny | Escribir MP4 con WebCodecs | MPL-2.0 | Si modificas sus archivos, publica esos cambios bajo MPL. No quitar cabeceras de licencia |
 | OpenSheetMusicDisplay | Mostrar partitura | BSD-3-Clause | Aviso de copyright |
 | Verovio (alternativa) | Grabado de partitura | LGPL-3.0 | Dar crédito; cambios a Verovio deben publicarse |

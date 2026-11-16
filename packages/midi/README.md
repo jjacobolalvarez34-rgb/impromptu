@@ -1,3 +1,3 @@
 # @impromptu/midi
 
-Adaptadores de entrada MIDI (Web MIDI, Tauri), perfiles por dispositivo y parser .mid. Se construye en la fase 1 y 2 (ver `docs/ROADMAP.md`).
+Lector de archivos .mid (fase 1) y adaptadores de teclado en vivo (fase 2).
