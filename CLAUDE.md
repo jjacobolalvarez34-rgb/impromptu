@@ -13,7 +13,7 @@
 
 Público inicial: **gente que hace videos de música**. El dueño del proyecto, Jacobo, es pianista y es el primer usuario y probador. Su teclado: **Yamaha PSR-E343** (61 teclas, sensible a la fuerza, USB TO HOST, pedal FC4/FC5 de encendido/apagado).
 
-Plataformas: **web primero**, luego escritorio (Tauri) y celular (Android). Una sola base de código.
+Plataformas: **tres productos con una sola base de código**: la web, una app instalable de PC (Tauri) y una app instalable de celular (Android, sin conexión en todo lo posible). Ver ADR-008.
 
 ## Regla de producto número 1
 **No estamos haciendo otro Rousseau.** Cada fase tiene que dejar espacio para lo que nos diferencia: pedal visible, digitación, partitura, tutoriales, audio→notas, otros instrumentos, gratis. Por eso el modelo de datos guarda **mano, dedo, pedal e instrumento desde el día 1** (ver `docs/ARQUITECTURA.md`), aunque la fase 1 no los muestre.

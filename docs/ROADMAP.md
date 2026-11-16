@@ -14,7 +14,7 @@ Cada fase termina con algo que Jacobo puede usar y probar con su Yamaha. No se e
 | 5 | Audio o micrófono a notas (con pedal en piano) | Sin MIDI también |
 | 6 | Partitura formal (MusicXML, PDF, MIDI) | |
 | 7 | Tutoriales y modo práctica | |
-| 8 | Escritorio (Tauri) y Android | |
+| 8 | App instalable de PC (Tauri) y de celular (Android, sin conexión) | |
 | 9 | Guitarra (tablatura) y batería | |
 
 ---
@@ -75,7 +75,7 @@ Fase 2 de docs/ROADMAP.md.
 5. Pedales visibles: sustain, sostenuto y una corda, con barra continua para medio pedal.
 6. Ruta /en-vivo: solo el visualizador con fondo transparente o verde. Prueba la
    integración con OBS (ver [VERIFICAR] en ARQUITECTURA) y documenta el resultado.
-7. Vista celular (DESIGN §5, Grabar) en la misma PWA, probada en Chrome Android.
+7. Vista celular (DESIGN §5, Grabar), pensada como pantalla de la futura app instalable (ADR-008); por ahora se prueba en Chrome Android.
 ```
 **Prueba de Jacobo:** conectar el PSR-E343 por USB, tocar con pedal y grabar 3 tomas. Repetirlo en el celular Android con cable OTG.
 
@@ -152,8 +152,9 @@ Exportar video tutorial con dedos y pedal visibles.
 ## Fase 8 — Escritorio y Android
 ```
 Fase 8 de docs/ROADMAP.md. apps/desktop con Tauri 2 + tauri-plugin-midi; archivos
-locales; exportación con rutas del sistema. Android: decidir PWA o Capacitor según
-el [VERIFICAR] de ARQUITECTURA; ícono, splash e instalación.
+locales; exportación con rutas del sistema. apps/mobile: APK de Android instalable que
+funciona sin conexión (ADR-008); elegir Tauri 2 móvil o Capacitor con una prueba aislada
+de Web MIDI por OTG; todo empaquetado en el instalador; ícono, splash e instalación.
 ```
 
 ## Fase 9 — Más instrumentos

@@ -4,7 +4,7 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
 
 ### ADR-001 · Web primero, una sola base de código
 - **Contexto:** se quiere web, escritorio y celular, y un solo desarrollador con agentes.
-- **Decisión:** PWA en TypeScript; escritorio con Tauri envolviendo la misma app; celular con la PWA y, si hace falta, Capacitor.
+- **Decisión:** app en TypeScript; escritorio con Tauri envolviendo la misma app; celular como app instalable (ver ADR-008, que reemplaza la idea de usar la PWA en el celular).
 - **Consecuencias:** Safari e iPhone quedan sin MIDI al inicio. En macOS de escritorio se usa `tauri-plugin-midi`.
 
 ### ADR-002 · Todo se procesa en el equipo del usuario
@@ -36,6 +36,24 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
 - **Contexto:** MuScriptor es el mejor modelo abierto multi-instrumento, pero sus pesos son CC BY-NC 4.0.
 - **Decisión:** el núcleo solo usa modelos con licencias permisivas (Basic Pitch y ByteDance, Apache-2.0). MuScriptor queda, como mucho, como complemento opcional que descarga el usuario, y solo tras revisión legal.
 - **Consecuencias:** la transcripción de varios instrumentos será menos precisa al principio.
+
+### ADR-008 · Tres productos: web, PC y celular instalable, sin conexión
+- **Contexto:** ADR-001 dejaba el celular como la misma PWA. Jacobo aclaró (2026-11-16) que quiere tres productos distintos: la web, una app instalable en PC y una app instalable en el celular. El celular **no** debe ser una página web, y debe funcionar sin internet en todo lo que se pueda.
+- **Decisión:**
+  - La interfaz se escribe una sola vez (`apps/web` y `packages/*`) y se empaqueta tres veces:
+    - `apps/web`: la web.
+    - `apps/desktop`: Tauri 2 para Windows, macOS y Linux.
+    - `apps/mobile`: APK de Android instalable.
+  - Para el celular se usa Tauri 2 móvil o Capacitor. La elección se hace en la fase 8 con una prueba aislada de Web MIDI por OTG.
+  - Todo va **dentro del instalador**: interfaz, fuentes, ícono y piano Salamander. La app abre, graba, reproduce, edita y exporta sin red.
+  - Los modelos de IA (fase 5) se descargan una sola vez desde la app y quedan guardados. Si su tamaño lo permite, se evalúa incluirlos en el APK.
+  - No se hace una app nativa aparte (Kotlin o React Native) porque duplicaría cada función. Hacerla de forma nativa no aporta nada para trabajar sin conexión.
+- **Consecuencias:**
+  - Cambia la fase 2: la vista de celular se diseña como pantalla de la app (DESIGN §5), no como "la misma PWA".
+  - Cambia la fase 8: se hacen los dos instaladores.
+  - Ninguna función básica puede depender de un servidor (ya lo exigía ADR-002).
+  - La PWA queda solo para la versión web.
+  - iPhone sigue fuera de alcance por ahora.
 
 ---
 ### Plantilla
