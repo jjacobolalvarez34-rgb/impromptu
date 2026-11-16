@@ -24,3 +24,6 @@ graphify-out/.graphify_labels.pending.json
 graphify-out/manifest.json
 graphify-out/.graph.html.stale
 graphify-out/.pending_full
+
+# Videos exportados (marketing)
+exports/

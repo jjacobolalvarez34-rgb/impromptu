@@ -1,0 +1,386 @@
+/*
+ * Del logo de texto al ícono (DESIGN §1). Unidad: --u = lado del ícono / 100, como el viewBox
+ * de icon.svg. Los tiempos (ms) y las posiciones (u) llegan como variables desde LogoIntro.tsx.
+ * Sin degradados, brillos ni desenfoques (§6): solo posiciones, tamaños y colores de tokens.
+ */
+.intro {
+  --u: calc(var(--intro-size) / 100);
+  --f: calc(var(--u) * 30);
+  /* Grosor de la línea ámbar del Logo: max(2 px, 0,035 em) */
+  --line0: max(2px, calc(var(--f) * 0.035));
+  /* Tecla física: arranque firme y tope seco, sin rebote */
+  --ease-key: cubic-bezier(0.6, 0, 0.1, 1);
+  --ease-settle: cubic-bezier(0.2, 0, 0, 1);
+  --ease-drop: cubic-bezier(0.55, 0, 1, 0.45);
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: calc(var(--u) * 200);
+  height: var(--intro-size);
+  vertical-align: middle;
+  user-select: none;
+}
+
+/* El cuadro del ícono, centrado; la palabra se sale 40 u por cada lado (dentro del componente). */
+.stage {
+  position: absolute;
+  top: 0;
+  left: calc(var(--u) * 50);
+  width: var(--intro-size);
+  height: var(--intro-size);
+}
+
+.stage > * {
+  position: absolute;
+}
+
+.intro[data-paused='true'] * {
+  animation-play-state: paused;
+}
+
+/* Movimiento reducido: toda animación ya terminó, así que se ve el ícono final quieto. */
+.intro[data-reduced='true'] * {
+  animation-delay: -60s !important;
+}
+
+/* ---- 1. Línea ámbar y teclas del Logo ----------------------------------------------------- */
+
+.line {
+  left: calc(var(--word-x) * var(--u));
+  top: calc(var(--line-y) * var(--u));
+  width: calc(var(--word-w) * var(--u));
+  height: var(--line0);
+  background: var(--ambar);
+  transform-origin: left center;
+  animation:
+    line-in calc(var(--d-line-in) * 1ms) linear calc(var(--t-line-in) * 1ms) both,
+    line-gather calc(var(--d-gather) * 1ms) var(--ease-key) calc(var(--t-gather) * 1ms) forwards;
+}
+
+@keyframes line-in {
+  from {
+    scale: 0 1;
+  }
+  to {
+    scale: 1 1;
+  }
+}
+
+@keyframes line-gather {
+  from {
+    left: calc(var(--word-x) * var(--u));
+    top: calc(var(--line-y) * var(--u));
+    width: calc(var(--word-w) * var(--u));
+    height: var(--line0);
+  }
+  to {
+    left: calc(var(--u) * 14);
+    top: calc(var(--u) * 68);
+    width: calc(var(--u) * 72);
+    height: calc(var(--u) * 2);
+  }
+}
+
+/* Teclas en línea fina, como .tecla del Logo: borde derecho e inferior, y el izquierdo en la primera */
+.key {
+  left: calc(var(--x0) * var(--u));
+  top: calc(var(--line-y) * var(--u) + var(--line0));
+  width: calc(var(--w0) * var(--u));
+  height: calc(var(--f) * 0.32 - var(--line0));
+  border: 1px solid var(--linea);
+  border-top: 0;
+  border-left: 0;
+  background: transparent;
+  opacity: 0;
+  animation:
+    reveal 1ms linear calc(var(--t-reveal) * 1ms) forwards,
+    flash calc(var(--d-flash) * 1ms) step-end calc(var(--t-flash) * 1ms),
+    key-fill calc(var(--d-gather) * 1ms) var(--ease-key) calc(var(--t-gather) * 1ms) forwards,
+    key-gather calc(var(--d-gather) * 1ms) var(--ease-key) calc(var(--t-gather) * 1ms) forwards;
+}
+
+.key[data-first='true'] {
+  border-left: 1px solid var(--linea);
+  animation:
+    reveal 1ms linear calc(var(--t-reveal) * 1ms) forwards,
+    lit 1ms linear calc(var(--t-land) * 1ms) forwards,
+    press 160ms var(--ease-key) calc(var(--t-land) * 1ms),
+    key-gather calc(var(--d-gather) * 1ms) var(--ease-key) calc(var(--t-gather) * 1ms) forwards;
+}
+
+/* Las teclas 7 a 10 se pliegan contra el borde derecho del teclado del ícono. */
+.key[data-dropped='true'] {
+  animation:
+    reveal 1ms linear calc(var(--t-reveal) * 1ms) forwards,
+    flash calc(var(--d-flash) * 1ms) step-end calc(var(--t-flash) * 1ms),
+    key-fill calc(var(--d-gather) * 1ms) var(--ease-key) calc(var(--t-gather) * 1ms) forwards,
+    key-gather calc(var(--d-gather) * 1ms) var(--ease-key) calc(var(--t-gather) * 1ms) forwards,
+    hide calc(var(--d-gather) * 1ms) var(--ease-key) calc(var(--t-gather) * 1ms) forwards;
+}
+
+@keyframes reveal {
+  from,
+  to {
+    opacity: 1;
+  }
+}
+
+/* La tecla suena: se enciende de golpe y baja 1 u, como una tecla presionada */
+@keyframes lit {
+  from,
+  to {
+    background-color: var(--ambar);
+    border-color: var(--ambar);
+  }
+}
+
+@keyframes press {
+  30% {
+    translate: 0 var(--u);
+  }
+}
+
+@keyframes flash {
+  from,
+  to {
+    background-color: var(--ambar);
+    border-color: var(--ambar);
+  }
+}
+
+@keyframes key-fill {
+  from {
+    background-color: transparent;
+    border-color: var(--linea);
+  }
+  to {
+    background-color: var(--chasis);
+    border-color: var(--chasis);
+  }
+}
+
+@keyframes key-gather {
+  from {
+    left: calc(var(--x0) * var(--u));
+    top: calc(var(--line-y) * var(--u) + var(--line0));
+    width: calc(var(--w0) * var(--u));
+    height: calc(var(--f) * 0.32 - var(--line0));
+    border-radius: 0;
+  }
+  to {
+    left: calc(var(--x1) * var(--u));
+    top: calc(var(--u) * 70);
+    width: calc(var(--w1) * var(--u));
+    height: calc(var(--u) * 16);
+    border-radius: var(--u);
+  }
+}
+
+@keyframes hide {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ---- 2. Letras ---------------------------------------------------------------------------- */
+
+/* Recorte en el borde inferior de la línea ámbar: las letras caen y desaparecen en el teclado. */
+.letters {
+  left: calc(var(--u) * -50);
+  top: 0;
+  width: calc(var(--u) * 200);
+  height: calc(var(--line-y) * var(--u) + var(--line0));
+  overflow: hidden;
+}
+
+.letter {
+  position: absolute;
+  left: calc((var(--x) + 50) * var(--u));
+  top: calc(var(--word-y) * var(--u));
+  font: 400 var(--f) / 1 var(--fuente-mono);
+  color: var(--chasis);
+  white-space: pre;
+  opacity: 0;
+  animation:
+    letter-in calc(var(--d-letter-in) * 1ms) var(--ease-settle) calc(var(--t-in) * 1ms) forwards,
+    letter-out calc(var(--d-drain) * 1ms) var(--ease-drop) calc(var(--t-out) * 1ms) forwards;
+}
+
+@keyframes letter-in {
+  from {
+    opacity: 1;
+    translate: 0 calc(var(--f) * -0.06);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes letter-out {
+  from {
+    opacity: 1;
+    translate: 0 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 calc(var(--f) * 1.1);
+  }
+}
+
+/* ---- 3. Nota de la "i": mismas reglas que .palabra, .i y .nota de Logo.module.css ---------- */
+
+.word {
+  left: calc(var(--word-x) * var(--u));
+  top: calc(var(--word-y) * var(--u));
+  font: 400 var(--f) / 1 var(--fuente-mono);
+  letter-spacing: calc(var(--f) * -0.0345);
+  color: transparent;
+  white-space: nowrap;
+}
+
+.i {
+  position: relative;
+}
+
+.wordNote {
+  position: absolute;
+  left: calc(50% - 0.078em);
+  bottom: 0.66em;
+  width: 0.13em;
+  height: 0.36em;
+  background: var(--ambar);
+  transform-origin: 0 0;
+  opacity: 0;
+  animation:
+    word-note-fall calc(var(--d-note-fall) * 1ms) linear calc(var(--t-note-fall) * 1ms) both,
+    word-note-gather calc(var(--d-gather) * 1ms) var(--ease-key) calc(var(--t-gather) * 1ms)
+      forwards,
+    hide 1ms step-start calc(var(--t-handoff) * 1ms) forwards;
+}
+
+/* Cae a velocidad constante y se detiene en seco sobre la "ı" */
+@keyframes word-note-fall {
+  from {
+    opacity: 0;
+    translate: 0 calc(var(--f) * -1);
+  }
+  12% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* Vuela hasta la primera nota del ícono y cambia de proporción (0,13 × 0,36 em → 11 × 22 u) */
+@keyframes word-note-gather {
+  from {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1 1;
+  }
+  to {
+    opacity: 1;
+    translate: calc(var(--note-dx) * var(--u)) calc(var(--note-dy) * var(--u));
+    scale: var(--note-sx) var(--note-sy);
+  }
+}
+
+/* ---- 4. Cuadrado carbón y notas del ícono ------------------------------------------------- */
+
+/* Nace como el marco del teclado del ícono y crece hasta el cuadrado de radio 22 % */
+.box {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--u) * 22);
+  background: var(--carbon);
+  opacity: 0;
+  animation: box-grow calc(var(--d-box) * 1ms) var(--ease-key) calc(var(--t-box) * 1ms) forwards;
+}
+
+.intro[data-edge='true'] .box {
+  box-shadow: 0 0 0 1px var(--linea);
+}
+
+@keyframes box-grow {
+  from {
+    opacity: 1;
+    left: calc(var(--u) * 14);
+    top: calc(var(--u) * 68);
+    width: calc(var(--u) * 72);
+    height: calc(var(--u) * 18);
+    border-radius: var(--u);
+  }
+  to {
+    opacity: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: calc(var(--u) * 22);
+  }
+}
+
+/* Las notas entran por el borde superior del cuadrado */
+.notes {
+  inset: 0;
+  border-radius: calc(var(--u) * 22);
+  overflow: hidden;
+}
+
+.note1,
+.fallingNote {
+  position: absolute;
+  width: calc(var(--u) * 11);
+  border-radius: var(--u);
+  background: var(--ambar);
+}
+
+/* Toma el relevo de la nota de la "i" justo cuando esta llega: borde redondeado exacto */
+.note1 {
+  left: calc(var(--u) * 22);
+  top: calc(var(--u) * 42);
+  height: calc(var(--u) * 22);
+  opacity: 0;
+  animation: reveal 1ms linear calc(var(--t-handoff) * 1ms) forwards;
+}
+
+.fallingNote {
+  left: calc(var(--x) * var(--u));
+  top: calc(var(--y) * var(--u));
+  height: calc(var(--h) * var(--u));
+  animation: note-fall calc(var(--d-fall) * 1ms) linear calc(var(--t-fall) * 1ms) both;
+}
+
+.fallingNote[data-dim='true'] {
+  opacity: 0.5;
+}
+
+@keyframes note-fall {
+  from {
+    translate: 0 calc((var(--y) + var(--h)) * var(--u) * -1);
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+/* Reloj invisible: su animationend marca el final y respeta la pausa */
+.clock {
+  width: 0;
+  height: 0;
+  animation: clock calc(var(--d-total) * 1ms) linear forwards;
+}
+
+@keyframes clock {
+  to {
+    visibility: hidden;
+  }
+}

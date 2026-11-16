@@ -1,0 +1,22 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  background: var(--carbon);
+  padding: var(--e-6) var(--e-4);
+  overflow: hidden;
+}
+
+.stage {
+  display: grid;
+  place-items: center;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-6);
+  padding-bottom: var(--e-4);
+}

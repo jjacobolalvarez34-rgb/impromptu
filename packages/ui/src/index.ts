@@ -14,3 +14,5 @@ export { DeviceIndicator } from './components/DeviceIndicator';
 export type { DeviceIndicatorProps } from './components/DeviceIndicator';
 export { Logo } from './components/Logo';
 export type { LogoProps } from './components/Logo';
+export { LogoIntro } from './components/LogoIntro';
+export type { LogoIntroProps } from './components/LogoIntro';

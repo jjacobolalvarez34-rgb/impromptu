@@ -15,7 +15,8 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "e2e": "playwright test",
-    "brand:icons": "node scripts/brand-icons.mjs"
+    "brand:icons": "node scripts/brand-icons.mjs",
+    "intro:mp4": "node scripts/export-intro.mjs"
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
