@@ -1,0 +1,70 @@
+.logo {
+  --tinta: var(--chasis);
+  --nota: var(--ambar);
+  --tecla: transparent;
+  --tecla-borde: var(--linea);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: calc(var(--logo-size) * 0.08);
+  /* Espacio libre: el alto de la nota de la "i" (§1) */
+  padding: calc(var(--logo-size) * 0.36);
+  line-height: 1;
+}
+
+.logo[data-variante='claro'] {
+  --tinta: var(--carbon);
+  --tecla: #fff;
+  --tecla-borde: var(--gris-tecla);
+}
+
+.logo[data-variante='ambar'] {
+  --tinta: var(--carbon);
+  --nota: var(--carbon);
+}
+
+.palabra {
+  /* Espaciado −2 px a 58 px, proporcional al tamaño */
+  font: 400 var(--logo-size) / 1 var(--fuente-mono);
+  letter-spacing: calc(var(--logo-size) * -0.0345);
+  color: var(--tinta);
+  white-space: nowrap;
+}
+
+.i {
+  position: relative;
+}
+
+/* Nota cayendo: 0,13 em × 0,36 em, centrada sobre el palo y separada de él */
+.nota {
+  position: absolute;
+  left: 50%;
+  bottom: 0.66em;
+  width: 0.13em;
+  height: 0.36em;
+  transform: translateX(-60%);
+  background: var(--nota);
+}
+
+/* Línea ámbar de 2 px y 10 teclas en línea fina, la primera encendida */
+.teclado {
+  display: flex;
+  border-top: max(2px, calc(var(--logo-size) * 0.035)) solid var(--ambar);
+  height: calc(var(--logo-size) * 0.32);
+}
+
+.tecla {
+  flex: 1;
+  background: var(--tecla);
+  border: 1px solid var(--tecla-borde);
+  border-top: 0;
+}
+
+.tecla + .tecla {
+  border-left: 0;
+}
+
+.tecla[data-encendida='true'] {
+  background: var(--ambar);
+  border-color: var(--ambar);
+}

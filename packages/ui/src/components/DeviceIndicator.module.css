@@ -1,0 +1,27 @@
+.indicador {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  height: 28px;
+  padding: 0 var(--e-3);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  color: var(--chasis);
+  font: 400 11px/1 var(--fuente-mono);
+  white-space: nowrap;
+}
+
+.indicador[data-conectado='false'] {
+  color: var(--gris-texto);
+}
+
+.punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gris-texto);
+}
+
+.indicador[data-conectado='true'] .punto {
+  background: var(--ambar);
+}

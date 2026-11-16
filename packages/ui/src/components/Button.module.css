@@ -1,0 +1,70 @@
+/* Botones como teclas físicas: borde inferior de 3 px que se hunde al presionar (DESIGN §4). */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+  height: var(--toque);
+  min-width: var(--toque);
+  padding: 0 var(--e-4);
+  border: 0;
+  border-bottom: 3px solid;
+  border-radius: var(--radio);
+  font: 500 14px/1 var(--fuente-texto);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform 60ms ease-out,
+    border-bottom-width 60ms ease-out;
+}
+
+.boton:active:not(:disabled) {
+  border-bottom-width: 1px;
+  transform: translateY(2px);
+}
+
+.boton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.primary {
+  background: var(--chasis);
+  color: var(--carbon);
+  border-bottom-color: var(--gris-tecla);
+}
+
+.secondary {
+  background: var(--panel-alto);
+  color: var(--chasis);
+  border-bottom-color: var(--tecla-oscura-borde);
+}
+
+.stop {
+  background: var(--grabacion);
+  color: #fff;
+  border-bottom-color: var(--tecla-oscura-borde);
+}
+
+.soloIcono {
+  width: var(--toque);
+  padding: 0;
+}
+
+.icono {
+  display: inline-flex;
+}
+
+.icono svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+}
+
+.rec {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--punto-rec);
+}

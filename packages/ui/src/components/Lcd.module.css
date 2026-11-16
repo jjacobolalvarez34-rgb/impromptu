@@ -1,0 +1,29 @@
+.lcd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  background: var(--lcd);
+  border: 1px solid var(--lcd-borde);
+  border-radius: var(--radio-lcd);
+  color: var(--ambar);
+  font-family: var(--fuente-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sm {
+  padding: var(--e-1) var(--e-2);
+  font-size: 11px;
+}
+
+.md {
+  padding: 6px var(--e-3);
+  font-size: 14px;
+}
+
+.lg {
+  padding: var(--e-2) var(--e-4);
+  font-size: 22px;
+}

@@ -1,0 +1,34 @@
+.grupo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+
+.chip {
+  height: 28px;
+  padding: 0 var(--e-3);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: transparent;
+  color: var(--gris-texto);
+  font: 400 13px/1 var(--fuente-texto);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--chasis);
+}
+
+.chip[aria-checked='true'] {
+  background: var(--ambar);
+  border-color: var(--ambar);
+  color: var(--carbon);
+  font-weight: 500;
+}
+
+@media (pointer: coarse) {
+  .chip {
+    height: 44px;
+  }
+}

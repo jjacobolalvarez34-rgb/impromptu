@@ -1,0 +1,36 @@
+.lista {
+  display: flex;
+  gap: var(--e-5);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pestana {
+  position: relative;
+  height: var(--toque);
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--gris-texto);
+  font: 500 14px/1 var(--fuente-texto);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pestana:hover {
+  color: var(--chasis);
+}
+
+.pestana[aria-selected='true'] {
+  color: var(--chasis);
+}
+
+.pestana[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  height: 2px;
+  background: var(--ambar);
+}

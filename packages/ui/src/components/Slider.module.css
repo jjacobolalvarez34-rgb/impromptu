@@ -1,0 +1,83 @@
+.campo {
+  display: grid;
+  gap: var(--e-1);
+}
+
+.cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--e-3);
+}
+
+.etiqueta {
+  font: 400 14px/1.4 var(--fuente-texto);
+  color: var(--chasis);
+}
+
+.valor {
+  font: 400 12px/1 var(--fuente-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--gris-texto);
+}
+
+.rango {
+  --pista: 4px;
+  --perilla: 14px;
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .rango {
+    height: 44px;
+    --perilla: 20px;
+  }
+}
+
+.rango:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Recorrido ámbar sobre pista --linea, sin degradado visible: el corte es seco en --recorrido. */
+.rango::-webkit-slider-runnable-track {
+  height: var(--pista);
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--ambar) 0 var(--recorrido),
+    var(--linea) var(--recorrido) 100%
+  );
+}
+.rango::-moz-range-track {
+  height: var(--pista);
+  border-radius: 2px;
+  background: var(--linea);
+}
+.rango::-moz-range-progress {
+  height: var(--pista);
+  border-radius: 2px;
+  background: var(--ambar);
+}
+
+.rango::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--perilla);
+  height: var(--perilla);
+  margin-top: calc((var(--pista) - var(--perilla)) / 2);
+  border: 0;
+  border-radius: 2px;
+  background: var(--ambar);
+}
+.rango::-moz-range-thumb {
+  width: var(--perilla);
+  height: var(--perilla);
+  border: 0;
+  border-radius: 2px;
+  background: var(--ambar);
+}

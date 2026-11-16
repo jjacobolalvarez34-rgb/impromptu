@@ -1,0 +1,42 @@
+/* Tokens de docs/DESIGN.md. Los colores son EXACTOS (§2): no agregues colores sueltos. */
+:root {
+  --carbon: #1c1c1a; /* fondo de app y visualizador */
+  --panel: #232321; /* paneles y barras */
+  --panel-alto: #2e2e2b; /* teclas oscuras, campos, filas activas */
+  --linea: #3d3d39; /* bordes 1 px */
+  --chasis: #e8e4dc; /* texto principal y teclas claras */
+  --gris-tecla: #9a968c; /* borde inferior de teclas claras */
+  --gris-texto: #a39f95; /* texto secundario */
+  --ambar: #ff9f1c; /* acento: activo, seleccionado, pedal, LCD */
+  --lcd: #2a1a04; /* fondo de pantallas LCD */
+  --lcd-borde: #7a4a00;
+  --grabacion: #b83a0b; /* detener y alertas de grabación (texto blanco) */
+  --punto-rec: #d9480f; /* solo el punto del botón Grabar */
+  --tecla-oscura-borde: #0e0e0d;
+
+  /* Tipografía (§3) */
+  --fuente-mono: 'Martian Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --fuente-texto: 'Archivo', system-ui, sans-serif;
+
+  /* Espaciado en múltiplos de 4, radio 4 px y bordes 1 px (§4) */
+  --e-1: 4px;
+  --e-2: 8px;
+  --e-3: 12px;
+  --e-4: 16px;
+  --e-5: 20px;
+  --e-6: 24px;
+  --e-8: 32px;
+  --e-10: 40px;
+  --e-12: 48px;
+  --radio: 4px;
+  --radio-lcd: 3px;
+
+  /* Tamaño de toque: 44 px en pantallas táctiles (VERIFICACIONES §2) */
+  --toque: 40px;
+}
+
+@media (pointer: coarse) {
+  :root {
+    --toque: 44px;
+  }
+}

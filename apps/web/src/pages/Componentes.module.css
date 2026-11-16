@@ -1,0 +1,208 @@
+.pagina {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--e-10) var(--e-6) var(--e-12);
+}
+
+@media (max-width: 600px) {
+  .pagina {
+    padding: var(--e-6) var(--e-4) var(--e-10);
+  }
+}
+
+.cabecera {
+  display: grid;
+  gap: var(--e-2);
+  margin-bottom: var(--e-10);
+}
+
+.cabecera p {
+  margin: 0;
+}
+
+.secciones {
+  display: grid;
+  gap: var(--e-12);
+}
+
+.seccion {
+  display: grid;
+  gap: var(--e-4);
+}
+
+.seccion > p {
+  margin: 0;
+}
+
+/* Muestra: panel con su etiqueta abajo, como en el lienzo de identidad */
+.muestra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+  min-width: 0;
+  margin: 0;
+  padding: var(--e-5);
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+}
+
+.contenido {
+  flex: 1;
+  display: grid;
+  gap: var(--e-3);
+  align-content: center;
+}
+
+/* Logo */
+.rejillaLogo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e-4);
+}
+
+.logoPrincipal {
+  grid-column: span 2;
+  min-height: 280px;
+}
+
+.logoPrincipal .contenido,
+.fondoClaro .contenido,
+.fondoAmbar .contenido {
+  justify-items: center;
+}
+
+.iconos .contenido {
+  grid-auto-flow: column;
+  justify-content: center;
+  align-items: end;
+  gap: var(--e-4);
+}
+
+.fondoClaro {
+  background: var(--chasis);
+  border-color: var(--chasis);
+}
+
+.fondoClaro figcaption {
+  color: var(--carbon);
+}
+
+/* Muestra de la versión "una tinta"; es la única área grande en ámbar y es parte de la marca. */
+.fondoAmbar {
+  background: var(--ambar);
+  border-color: var(--ambar);
+}
+
+.fondoAmbar figcaption {
+  color: var(--carbon);
+}
+
+.reglas {
+  margin: 0;
+  padding-left: var(--e-4);
+  display: grid;
+  gap: var(--e-2);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .rejillaLogo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .logoPrincipal {
+    grid-column: auto;
+    min-height: 200px;
+  }
+}
+
+/* Color */
+.colores {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  gap: var(--e-3);
+}
+
+.color {
+  display: grid;
+  gap: 2px;
+  padding: var(--e-3);
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+}
+
+.chip {
+  height: 64px;
+  margin-bottom: var(--e-2);
+  border: 1px solid var(--linea);
+  border-radius: 2px;
+}
+
+.nombreColor {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.token {
+  font: 400 11px/1.4 var(--fuente-mono);
+  color: var(--gris-texto);
+}
+
+/* Tipografía */
+.tipos {
+  margin: 0;
+  display: grid;
+  gap: var(--e-5);
+  padding: var(--e-5);
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+}
+
+.tipos dd {
+  margin: var(--e-1) 0 0;
+}
+
+.tipoMono {
+  font: 500 22px/1.2 var(--fuente-mono);
+  color: var(--ambar);
+}
+
+.dedos {
+  display: flex;
+  gap: var(--e-2);
+}
+
+.dedo {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 2px;
+  background: var(--chasis);
+  color: var(--carbon);
+  font: 600 12px/1 var(--fuente-texto);
+}
+
+/* Componentes */
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: var(--e-4);
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-3);
+}
+
+.columna {
+  display: grid;
+  gap: var(--e-2);
+}
