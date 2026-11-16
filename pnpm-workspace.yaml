@@ -29,6 +29,7 @@ catalog:
   vite-plugin-pwa: ^2.0.0
   vitest: ^5.1.0
   midi-file: ^1.2.4
+  pixi.js: ^8.0.0
 
 minimumReleaseAgeExclude:
   - '@typescript-eslint/eslint-plugin@8.73.0'
