@@ -14,7 +14,8 @@
   "dependencies": {
     "@impromptu/core": "workspace:*",
     "@spotify/basic-pitch": "1.0.1",
-    "@tensorflow/tfjs": "3.21.0"
+    "@tensorflow/tfjs": "3.21.0",
+    "onnxruntime-web": "1.31.1"
   },
   "devDependencies": {
     "typescript": "catalog:",

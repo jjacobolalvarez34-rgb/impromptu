@@ -2,11 +2,13 @@ import {
   TranscriptionCancelled,
   peakLevel,
   prepareTranscriber,
+  takeFromPiano,
   takeFromTranscription,
   transcribe,
+  transcribePiano,
 } from '@impromptu/transcribe';
-import type { TranscribeStage } from '@impromptu/transcribe';
-import { Button, Lcd } from '@impromptu/ui';
+import type { Take } from '@impromptu/core';
+import { Button, Chips, Lcd } from '@impromptu/ui';
 import { FileAudio, Mic, Square, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { engine } from './audio';
@@ -18,8 +20,26 @@ import own from './TranscribeSection.module.css';
 type State =
   | { step: 'idle' }
   | { step: 'recording'; device: string }
-  | { step: 'working'; stage: TranscribeStage; progress: number; name: string }
+  /** `progress` null: avance indeterminado (preparando). */
+  | { step: 'working'; label: string; progress: number | null; name: string }
   | { step: 'error'; message: string };
+
+type Model = 'piano' | 'rapido';
+
+/**
+ * Modelo de piano con pedal (ADR-014). En desarrollo se sirve desde la carpeta local de modelos;
+ * para la web publicada hace falta VITE_PIANO_MODEL_URL. PROVISIONAL(P21).
+ */
+const PIANO_MODEL_URL: string | null =
+  (import.meta.env.VITE_PIANO_MODEL_URL as string | undefined) ??
+  (import.meta.env.DEV ? `${import.meta.env.BASE_URL}modelos/kong-note-pedal.onnx` : null);
+
+const MODELS = [
+  { value: 'piano', label: 'Piano con pedal' },
+  { value: 'rapido', label: 'Rápido' },
+] as const;
+
+const mb = (bytes: number) => Math.round(bytes / 1e6);
 
 /** Por debajo de esto (unos −50 dB) el audio se considera silencio. */
 const SILENCE = 0.003;
@@ -31,6 +51,7 @@ const SILENCE = 0.003;
  */
 export function TranscribeSection() {
   const [state, setState] = useState<State>({ step: 'idle' });
+  const [model, setModel] = useState<Model>(PIANO_MODEL_URL ? 'piano' : 'rapido');
   const input = useRef<HTMLInputElement>(null);
   const abort = useRef<AbortController | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -42,7 +63,9 @@ export function TranscribeSection() {
   const run = async (blob: Blob, name: string, fromMic: boolean) => {
     const controller = new AbortController();
     abort.current = controller;
-    setState({ step: 'working', stage: 'listening', progress: 0, name });
+    setState({ step: 'working', label: `Escuchando «${name}»…`, progress: null, name });
+    const show = (label: string, progress: number | null) =>
+      setState((s) => (s.step === 'working' ? { ...s, label, progress } : s));
     try {
       const context = engine.audioContext;
       const buffer = await context.decodeAudioData(await blob.arrayBuffer());
@@ -55,13 +78,40 @@ export function TranscribeSection() {
         });
         return;
       }
-      const raw = await transcribe(buffer, {
-        signal: controller.signal,
-        onStage: (stage) => setState((s) => (s.step === 'working' ? { ...s, stage } : s)),
-        onProgress: (progress) =>
-          setState((s) => (s.step === 'working' ? { ...s, stage: 'listening', progress } : s)),
-      });
-      const take = takeFromTranscription(raw, name, buffer.duration);
+      let take: Take;
+      if (model === 'piano' && PIANO_MODEL_URL) {
+        const result = await transcribePiano(buffer, {
+          modelUrl: PIANO_MODEL_URL,
+          signal: controller.signal,
+          onStage: (st) => {
+            if (st.stage === 'downloading')
+              show(
+                `Descargando el modelo de piano (${mb(st.total || 154e6)} MB, solo la primera vez)…`,
+                st.total ? st.loaded / st.total : null,
+              );
+            else if (st.stage === 'preparing') show('Preparando el modelo de piano…', null);
+            else
+              show(
+                `Escuchando «${name}» (${st.backend === 'webgpu' ? 'tarjeta gráfica' : `procesador, ${st.threads} hilos`})…`,
+                st.progress,
+              );
+          },
+        });
+        take = takeFromPiano(result, name, buffer.duration);
+      } else {
+        const raw = await transcribe(buffer, {
+          signal: controller.signal,
+          onStage: (stage) =>
+            show(
+              stage === 'preparing'
+                ? 'Preparando la IA. Solo la primera vez; puede tardar hasta medio minuto.'
+                : `Escuchando «${name}»…`,
+              stage === 'preparing' ? null : 0,
+            ),
+          onProgress: (progress) => show(`Escuchando «${name}»…`, progress),
+        });
+        take = takeFromTranscription(raw, name, buffer.duration);
+      }
       if (take.tracks[0]!.notes.length === 0) {
         setState({
           step: 'error',
@@ -118,8 +168,8 @@ export function TranscribeSection() {
 
   const startMic = async () => {
     void engine.start();
-    // La IA se prepara mientras se graba: al detener, empieza a escuchar de inmediato.
-    prepareTranscriber();
+    // La IA rápida se prepara mientras se graba: al detener, empieza a escuchar de inmediato.
+    if (model === 'rapido') prepareTranscriber();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
@@ -166,10 +216,20 @@ export function TranscribeSection() {
           <p className="ui-secundario">
             Sin MIDI también: la IA escucha tu grabación y saca las notas, en tu equipo.
           </p>
+          {PIANO_MODEL_URL && (
+            <>
+              <Chips label="Modelo de IA" options={MODELS} value={model} onChange={setModel} />
+              <p className="ui-secundario">
+                {model === 'piano'
+                  ? 'Solo piano: más preciso, ignora voces y ruido, y saca el pedal. Más lento.'
+                  : 'Cualquier instrumento, más rápido, menos preciso en piano y sin pedal.'}
+              </p>
+            </>
+          )}
           <Button
             icon={<FileAudio />}
             onClick={() => {
-              prepareTranscriber();
+              if (model === 'rapido') prepareTranscriber();
               input.current?.click();
             }}
           >
@@ -199,12 +259,10 @@ export function TranscribeSection() {
       {state.step === 'working' && (
         <>
           <p className="ui-secundario" role="status">
-            {state.stage === 'preparing'
-              ? 'Preparando la IA. Solo la primera vez; puede tardar hasta medio minuto.'
-              : `Escuchando «${state.name}»…`}
+            {state.label}
           </p>
           <div className={styles.toma}>
-            {state.stage === 'preparing' ? (
+            {state.progress === null ? (
               <div className={own.preparando} style={{ flex: 1 }} aria-hidden="true" />
             ) : (
               <Lcd size="md">{Math.round(state.progress * 100)} %</Lcd>

@@ -113,6 +113,38 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
   - En piano, Basic Pitch es menos preciso que un modelo especializado y no da pedal.
   - La F1 de ataques contra las grabaciones de Jacobo queda en la BITÁCORA para comparar después.
 
+### ADR-014 · Modelo de piano con pedal (Kong et al.) en ONNX
+- **Contexto:**
+  - Jacobo probó Basic Pitch con el micrófono: confunde el ventilador y la voz con notas y se le escapan notas suaves.
+  - Contra sus MIDI, Basic Pitch encuentra el 55 % de las notas.
+  - Él pidió que se reconozca el pedal y que todo quede en MIDI.
+- **Decisión:**
+  - Se agrega el modelo de piano de Kong et al. 2021 (ByteDance, *High-resolution piano transcription with pedals*). Pesos CC BY 4.0 (Zenodo 4034264), código de inferencia MIT.
+  - Se exportó a ONNX (154 MB, fp32) con un script local (`D:\.cache\claude-tmp\kong_onnx.py`). La versión int8 fue más lenta y menos precisa: se descartó.
+  - Corre con `onnxruntime-web` 1.31 (MIT) en un worker, en el procesador (WASM, varios hilos).
+  - Para los hilos, la app se sirve aislada: `Cross-Origin-Opener-Policy: same-origin` y `Cross-Origin-Embedder-Policy: credentialless` en Vite y en Vercel.
+  - El posprocesado (notas, fuerza y pedal) se portó a TypeScript. Una prueba local lo compara con el Python original: mismas 264 notas y 10 pedales en 25 s de Consuelo.
+  - Basic Pitch queda como modelo "Rápido".
+- **Medidas** (portátil de Jacobo, Intel i5-4300M de 2014, 2 núcleos):
+
+  | Dónde | Velocidad |
+  |---|---|
+  | ONNX nativo | 1,2× tiempo real |
+  | PyTorch | 0,28× tiempo real |
+  | Navegador, WASM con 4 hilos | ~0,12× tiempo real (80 s por cada 10 s de audio) |
+  | Navegador, WebGPU (Intel HD 4600) | no avanzó en 15 min y congeló la página; no se usa |
+
+- **Precisión** (Consuelo, contra su MIDI):
+  - Encuentra el 96 % de las notas; Basic Pitch, el 55 %.
+  - La precisión no se puede medir con ese MP3: tiene reverb y sustain de Cakewalk que no están en el MIDI.
+  - Falta la prueba con teclado y micrófono a la vez (BITÁCORA).
+- **Consecuencias:**
+  - En el navegador de un equipo viejo, el modelo preciso no sirve para tiempo real ni para piezas largas.
+  - La app de PC (fase 8) debe correrlo nativo (ONNX Runtime desde Rust), cerca del tiempo real.
+  - El modelo no va en el repositorio.
+    - En desarrollo se sirve desde `D:\.cache\models` (`/modelos/`).
+    - Para publicarlo hace falta un lugar (P21).
+
 ---
 ### Plantilla
 ```

@@ -1,4 +1,5 @@
-import { copyFileSync, readFileSync } from 'node:fs';
+import { copyFileSync, createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
+import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
@@ -32,6 +33,42 @@ function spaFallback(): Plugin {
   };
 }
 
+/**
+ * Modelos grandes de IA (el de piano con pedal, ~154 MB) no van en el repositorio. En desarrollo
+ * se sirven desde una carpeta local en /modelos/; en el equipo de Jacobo, D:\.cache\models.
+ * PROVISIONAL(P21): dónde se publican para la web y las apps.
+ */
+const modelsDir = process.env.IMPROMPTU_MODELS ?? 'D:/.cache/models';
+
+function localModels(): Plugin {
+  return {
+    name: 'impromptu-modelos-locales',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/modelos/', (req, res, next) => {
+        const file = join(
+          modelsDir,
+          basename(decodeURIComponent(req.url ?? '').split('?')[0] ?? ''),
+        );
+        if (!file.endsWith('.onnx') || !existsSync(file)) return next();
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Length', String(statSync(file).size));
+        createReadStream(file).pipe(res);
+      });
+    },
+  };
+}
+
+/**
+ * Aislamiento entre orígenes: el modelo de piano usa varios hilos del procesador
+ * (SharedArrayBuffer), que el navegador solo permite con estas cabeceras. "credentialless"
+ * deja seguir bajando recursos de otros sitios (las muestras del piano) sin cambios.
+ */
+const isolation = {
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Embedder-Policy': 'credentialless',
+};
+
 /** Versión de la app (package.json), para la pantalla "Acerca de". */
 const version = (
   JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
@@ -46,6 +83,7 @@ export default defineConfig({
   plugins: [
     react(),
     spaFallback(),
+    localModels(),
     VitePWA({
       // PROVISIONAL: el aviso "Hay una versión nueva. Recargar" (BUGS B-016) queda pendiente.
       registerType: 'autoUpdate',
@@ -77,6 +115,8 @@ export default defineConfig({
   ],
   // El worker de transcripción usa módulos ES (importa TensorFlow.js y el modelo).
   worker: { format: 'es' },
-  server: { port: 5173 },
-  preview: { port: 4173 },
+  // onnxruntime-web carga su .wasm con una URL propia: no se preempaqueta.
+  optimizeDeps: { exclude: ['onnxruntime-web'] },
+  server: { port: 5173, headers: isolation },
+  preview: { port: 4173, headers: isolation },
 });

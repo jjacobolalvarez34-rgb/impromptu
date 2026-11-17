@@ -46,6 +46,8 @@ minimumReleaseAgeExclude:
   - '@typescript-eslint/visitor-keys@8.73.0'
   - typescript-eslint@8.73.0
 
-# Scripts de instalación: core-js (vía TensorFlow.js) solo imprime un aviso de donaciones; no se ejecuta.
+# Scripts de instalación que no se ejecutan: core-js (vía TensorFlow.js) solo imprime un aviso de
+# donaciones; protobufjs (vía onnxruntime-web) solo revisa versiones.
 allowBuilds:
   core-js: false
+  protobufjs: false
