@@ -169,3 +169,14 @@ Fase 9 de docs/ROADMAP.md. Guitarra: transcripción, asignación de cuerda y tra
 tablatura con alphaTab y exportación Guitar Pro. Batería: transcripción y tablatura
 de batería. El visualizador se adapta (diapasón para guitarra, pads para batería).
 ```
+
+## Fase 10 — Editor de partitura y video de la partitura (pedido de Jacobo, 2026-11-17)
+```
+Fase 10 de docs/ROADMAP.md. MVP de editor de partitura dentro de la pestaña Partitura:
+seleccionar una nota o acorde en la hoja, cambiar altura, figura (duración), alteración,
+ligadura, silencio y mano (pentagrama), con deshacer y rehacer; lo editado actualiza la
+toma (visualizador, audio y MIDI) y se guarda con ella. Exportar un video de la
+partitura: la hoja con el cursor avanzando (y desplazándose por los sistemas) en
+sincronía con el audio, en los mismos formatos del video del visualizador (16:9, 9:16,
+1:1). Jacobo valida que se pueda corregir una transcripción a mano sin salir de la app.
+```
