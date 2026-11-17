@@ -19,8 +19,25 @@ export function frameSize(
   }
 }
 
-/** Segundos de cola después de la última nota (apagadores, chispas que caen). */
-export const TAIL = 1.5;
+/**
+ * Segundos de cola después de la última nota: lo que sigue sonando por el pedal o el sustain,
+ * y un margen para editar el video (pedido de Jacobo). El último segundo se desvanece.
+ */
+export const TAIL = 4;
+
+/** Desvanecido al final del audio exportado (s), para que nunca termine con un corte. */
+export const FADE_OUT = 1;
+
+/** Baja el volumen a cero en los últimos `seconds` del audio (lineal, en el lugar). */
+export function fadeOut(buffer: AudioBuffer, seconds = FADE_OUT): AudioBuffer {
+  const n = Math.min(buffer.length, Math.round(seconds * buffer.sampleRate));
+  const from = buffer.length - n;
+  for (let c = 0; c < buffer.numberOfChannels; c++) {
+    const data = buffer.getChannelData(c);
+    for (let i = 0; i < n; i++) data[from + i] = data[from + i]! * (1 - (i + 1) / n);
+  }
+  return buffer;
+}
 
 /** Cuadros del video: el cuadro N muestra el instante N / fps (ADR-004). */
 export function frameCount(duration: number, fps: FrameRate): number {

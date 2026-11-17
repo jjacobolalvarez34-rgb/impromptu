@@ -17,7 +17,7 @@ import {
   canEncodeAudio,
   canEncodeVideo,
 } from 'mediabunny';
-import { TAIL, frameCount, frameSize, frameTime } from './formats';
+import { TAIL, fadeOut, frameCount, frameSize, frameTime } from './formats';
 import type { Aspect, FrameRate, Resolution } from './formats';
 
 export interface ExportOptions {
@@ -204,7 +204,7 @@ export async function renderPianoAudio(
       });
     }
     signal?.addEventListener('abort', () => reject(new ExportFailure('cancelled')), { once: true });
-    context.startRendering().then(resolve, reject);
+    context.startRendering().then((b) => resolve(fadeOut(b)), reject);
   });
 }
 
@@ -221,7 +221,7 @@ export async function renderOwnAudio(
   source.connect(context.destination);
   // offset > 0: el audio entra más tarde; offset < 0: se salta su comienzo.
   source.start(Math.max(0, offset), Math.max(0, -offset));
-  return context.startRendering();
+  return fadeOut(await context.startRendering());
 }
 
 interface DecodedFrame {

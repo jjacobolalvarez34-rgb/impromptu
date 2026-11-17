@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TAIL, fileName, frameCount, frameSize, frameTime } from './formats';
+import { TAIL, fadeOut, fileName, frameCount, frameSize, frameTime } from './formats';
 
 describe('formatos de video', () => {
   it('1080p y 4K en 16:9, 9:16 y 1:1, siempre con lados pares', () => {
@@ -32,5 +32,23 @@ describe('formatos de video', () => {
     expect(fileName('Nocturno en mi bemol', 'mp4')).toBe('nocturno-en-mi-bemol.mp4');
     expect(fileName('Canción ñ #1!', 'webm')).toBe('cancion-n-1.webm');
     expect(fileName('???', 'mp4')).toBe('impromptu.mp4');
+  });
+});
+
+describe('final del video', () => {
+  it('deja 4 s de cola y desvanece el último segundo sin tocar lo anterior', () => {
+    expect(TAIL).toBe(4);
+    const rate = 100;
+    const data = new Float32Array(300).fill(1);
+    const buffer = {
+      length: 300,
+      sampleRate: rate,
+      numberOfChannels: 1,
+      getChannelData: () => data,
+    } as unknown as AudioBuffer;
+    fadeOut(buffer, 1);
+    expect(data[199]).toBe(1);
+    expect(data[250]).toBeCloseTo(0.49, 2);
+    expect(data[299]).toBe(0);
   });
 });

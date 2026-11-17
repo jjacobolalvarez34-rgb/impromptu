@@ -147,7 +147,13 @@ export function Timeline({ playheadRef }: { playheadRef: RefObject<HTMLDivElemen
   const onUp = (e: ReactPointerEvent) => {
     const d = drag.current;
     drag.current = null;
-    if (d && !d.moved) transport.seek(timeAt(e.clientX));
+    if (d && !d.moved) {
+      const t = timeAt(e.clientX);
+      // Un clic fuera de la sección marcada la quita (pedido de Jacobo); dentro, solo busca.
+      const loopNow = useStudio.getState().loop;
+      if (loopNow && (t < loopNow.start || t > loopNow.end)) useStudio.getState().setLoop(null);
+      transport.seek(t);
+    }
   };
 
   const pct = (t: number) => (duration > 0 ? `${(t / duration) * 100}%` : '0%');
@@ -164,7 +170,7 @@ export function Timeline({ playheadRef }: { playheadRef: RefObject<HTMLDivElemen
         className={styles.area}
         role="slider"
         tabIndex={take ? 0 : -1}
-        aria-label="Línea de tiempo. Clic para ir a un momento; arrastra para marcar la sección que se repite."
+        aria-label="Línea de tiempo. Clic para ir a un momento; arrastra para marcar la sección que se repite; clic fuera de ella o Esc para quitarla."
         aria-valuemin={0}
         aria-valuemax={Math.round(duration)}
         aria-valuenow={0}
@@ -180,6 +186,8 @@ export function Timeline({ playheadRef }: { playheadRef: RefObject<HTMLDivElemen
           const step = e.shiftKey ? 10 : 2;
           if (e.key === 'ArrowRight') transport.seek(transport.now() + step);
           else if (e.key === 'ArrowLeft') transport.seek(transport.now() - step);
+          else if (e.key === 'Escape' && useStudio.getState().loop)
+            useStudio.getState().setLoop(null);
           else return;
           e.preventDefault();
         }}
