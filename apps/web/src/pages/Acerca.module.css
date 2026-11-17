@@ -1,0 +1,90 @@
+.acerca {
+  min-height: 100dvh;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--e-8) var(--e-6) var(--e-12);
+  display: grid;
+  gap: var(--e-8);
+  align-content: start;
+}
+
+@media (max-width: 600px) {
+  .acerca {
+    padding: var(--e-6) var(--e-4) var(--e-10);
+  }
+}
+
+.volver {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: 44px;
+  color: var(--chasis);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.volver svg {
+  width: 16px;
+  height: 16px;
+}
+
+.volver:focus-visible,
+.enlace:focus-visible {
+  outline: 2px solid var(--ambar);
+  outline-offset: 2px;
+}
+
+.cabecera {
+  display: grid;
+  gap: var(--e-2);
+  justify-items: start;
+}
+
+.cabecera > span[role='img'] {
+  padding-left: 0;
+}
+
+.cabecera p,
+.empresa p,
+.derechos {
+  margin: 0;
+}
+
+.empresa {
+  display: grid;
+  gap: var(--e-3);
+  justify-items: start;
+  padding-top: var(--e-6);
+  border-top: 1px solid var(--linea);
+}
+
+.empresa > p:not([class]) {
+  max-width: 56ch;
+  color: var(--chasis);
+}
+
+.enlace {
+  color: var(--chasis);
+}
+
+.creditos {
+  margin: var(--e-3) 0 0;
+  display: grid;
+  gap: var(--e-3);
+}
+
+.creditos div {
+  display: grid;
+  gap: 2px;
+}
+
+.creditos dt {
+  color: var(--chasis);
+  font-size: 14px;
+}
+
+.creditos dd {
+  margin: 0;
+}

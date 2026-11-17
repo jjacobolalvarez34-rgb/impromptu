@@ -606,6 +606,16 @@ html:has(.landing) {
   stroke-width: 1.5;
 }
 
-.pie > a:last-child {
+.pie > a[href$='/acerca'] {
   margin-left: auto;
+}
+
+/* Firma de Mamut Herd: más pequeña que el logo de Impromptu (GUIA-DE-USO del kit). */
+.firma {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
 }

@@ -10,6 +10,7 @@ import { Portada } from './pages/Portada';
 import { EnVivo } from './pages/EnVivo';
 import { Componentes } from './pages/Componentes';
 import { Intro } from './pages/Intro';
+import { Acerca } from './pages/Acerca';
 
 // El piano se descarga al abrir la app (luego queda en caché y sirve sin conexión), pero
 // después de la intro: decodificar 150 muestras a la vez la hacía ver trabada.
@@ -29,6 +30,7 @@ createRoot(root).render(
         <Route path="/en-vivo" element={<EnVivo />} />
         <Route path="/componentes" element={<Componentes />} />
         <Route path="/intro" element={<Intro />} />
+        <Route path="/acerca" element={<Acerca />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

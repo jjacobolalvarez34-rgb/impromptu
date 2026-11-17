@@ -20,6 +20,8 @@ import { Link, useNavigate } from 'react-router';
 import { HeroVisualizer } from '../landing/HeroVisualizer';
 import { useReveal } from '../landing/useReveal';
 import styles from './Landing.module.css';
+import { MamutHerdSello } from '../brand/MamutHerdSello';
+import { MAMUT_HERD } from '../brand/mamutHerd';
 
 const INTRO_KEY = 'impromptu-intro-vista';
 const REPO = 'https://github.com/jjacobolalvarez34-rgb/impromptu';
@@ -280,7 +282,12 @@ export function Landing() {
           </a>
           . Piano: Salamander Grand Piano (Alexander Holm).
         </p>
+        <Link to="/acerca">Acerca de</Link>
         <Link to="/app">Abrir la app</Link>
+        <div className={styles.firma}>
+          <MamutHerdSello />
+          <span>{MAMUT_HERD.derechos}</span>
+        </div>
       </footer>
     </div>
   );

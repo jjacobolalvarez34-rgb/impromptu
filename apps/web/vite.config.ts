@@ -1,4 +1,4 @@
-import { copyFileSync } from 'node:fs';
+import { copyFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
@@ -32,8 +32,16 @@ function spaFallback(): Plugin {
   };
 }
 
+/** Versión de la app (package.json), para la pantalla "Acerca de". */
+const version = (
+  JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
+    version: string;
+  }
+).version;
+
 export default defineConfig({
   base,
+  define: { __APP_VERSION__: JSON.stringify(version) },
   publicDir: brandDir,
   plugins: [
     react(),

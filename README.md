@@ -51,3 +51,9 @@ Monorepo con pnpm + Turborepo: `apps/web` (Vite + React + PWA) y `packages/*` (c
 ## Créditos
 
 Piano: Salamander Grand Piano (Alexander Holm). Lista completa de licencias en [`docs/LICENCIAS.md`](docs/LICENCIAS.md). Licencia del proyecto: por decidir (provisional GPL-3.0).
+
+---
+
+Un producto de **Mamut Herd**. Contacto: mamutherdoficial@gmail.com
+
+© 2026 Mamut Herd

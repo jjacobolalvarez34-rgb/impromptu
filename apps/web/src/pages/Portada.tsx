@@ -2,7 +2,9 @@ import { Button, Logo, LogoIntro } from '@impromptu/ui';
 import { Drum, Guitar, Piano } from 'lucide-react';
 import { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
+import { MamutHerdSello } from '../brand/MamutHerdSello';
+import { MAMUT_HERD } from '../brand/mamutHerd';
 import styles from './Portada.module.css';
 
 const INTRO_KEY = 'impromptu-intro-vista';
@@ -121,6 +123,12 @@ export function Portada() {
           </ol>
         </section>
       </main>
+
+      <footer className={styles.pie}>
+        <MamutHerdSello />
+        <span>{MAMUT_HERD.derechos}</span>
+        <Link to="/acerca">Acerca de</Link>
+      </footer>
     </div>
   );
 }

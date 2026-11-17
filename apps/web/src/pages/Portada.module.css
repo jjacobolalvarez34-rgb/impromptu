@@ -181,3 +181,25 @@
   color: var(--ambar);
   font: 500 14px/1 var(--fuente-mono);
 }
+
+/* Firma de Mamut Herd y enlace a "Acerca de". */
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-3) var(--e-5);
+  padding-top: var(--e-5);
+  border-top: 1px solid var(--linea);
+  color: var(--gris-texto);
+  font-size: 13px;
+}
+
+.pie > a:last-child {
+  flex: none;
+  white-space: nowrap;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--chasis);
+}
