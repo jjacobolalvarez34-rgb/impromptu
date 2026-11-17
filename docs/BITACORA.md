@@ -14,6 +14,32 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-16 · Fase 1 · Visualizador desde un MIDI
+- Hecho:
+  - `packages/midi`: lector de .mid con `midi-file`. Maneja velocity 0, notas sin cerrar, repeticiones FIFO, tempo variable en cualquier pista, SMPTE, compás y armadura, y canal 10 como batería. Aplica a la pista del piano el pedal que viene en una pista aparte, y quita pistas duplicadas aunque una esté cuantizada (caso Nostalgia).
+  - `packages/core`: rangos de 61, 76 y 88 teclas y ajuste automático (B-015).
+  - `packages/render`, con PixiJS 8:
+    - Geometría del teclado con las negras ubicadas por clase de nota (B-014).
+    - Notas cayendo recortadas en la línea, teclas iluminadas, brillo, guías de octava y barra de pedal continua.
+    - Chispas con semilla sin estado (B-012) y pools de objetos (B-013).
+    - Temas Ámbar y Sala; colores por mano personalizables, que pueden ser iguales.
+  - `packages/audio`: piano Salamander propio con Web Audio (ADR-009). Resuelve sustain, sostenuto, una corda y la repetición de una tecla. Descarga 5 capas una sola vez y las guarda en caché.
+  - Pantalla Estudio:
+    - Abrir MIDI o arrastrarlo; las piezas locales de Jacobo y una prueba de 2.000 notas.
+    - Formato 16:9, 9:16 o 1:1; teclado Auto, 61, 76 u 88.
+    - Panel de tema, notas, efectos y pedales.
+    - Transporte con LCD, buscar, velocidad de 0,5× a 1,5× y botón para silenciar.
+  - Animación de marca `/intro` y exportación a MP4 (`pnpm intro:mp4`), hecha por un agente.
+- Pruebas: vitest de core 27, midi 14, render 22 y audio 11; las 4 piezas reales pasan. CI verde en cada push.
+- Probado por Jacobo (Chrome, Windows): abrió sus MIDIs, se ve fluido, suena y "funciona todo correcto".
+  - Arreglado a partir de su prueba: el lienzo salía en blanco por perderse el contexto WebGL en el doble montaje de desarrollo; el selector de color trababa la pantalla; el botón de sonido estaba en un lugar confuso.
+- Pendiente:
+  - "Repetir sección" y la línea de tiempo con carriles (MD, MI, pedal y video) pasan a la fase 2, porque ahí se graban las tomas.
+  - Falta la cifra de fps con la prueba de 2.000 notas medida por Jacobo (el contador aparece al abrir esa prueba).
+  - El teclado realista queda para el final.
+  - P14 (detalles del logo) y P15 (espejo del piano).
+- Pedidos del usuario no atendidos: "repetir sección" y "línea de tiempo con carriles" del prompt de la fase 1 no se hicieron todavía; se harán en la fase 2.
+
 ### 2026-11-16 · Fase 0 · Cimientos
 - Hecho:
   - Kit descomprimido y commit inicial en `main`. Toda la fase va en la rama `f0/cimientos`. Git configurado solo para este repo (Jacobo, jjacobolalvarez34@gmail.com).

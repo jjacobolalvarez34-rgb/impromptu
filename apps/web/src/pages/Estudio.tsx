@@ -1,7 +1,7 @@
 import { Button, Chips, IconButton, Lcd, Logo, Slider, Switch, Tabs } from '@impromptu/ui';
 import { THEMES } from '@impromptu/render';
 import type { PedalKind } from '@impromptu/core';
-import { FileMusic, Gauge, Pause, Play, SkipBack } from 'lucide-react';
+import { FileMusic, Gauge, Pause, Play, SkipBack, Volume2, VolumeX } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
 import { useSearchParams } from 'react-router';
@@ -355,6 +355,12 @@ export function Estudio() {
           disabled={!take}
           onClick={togglePlay}
         />
+        <IconButton
+          label={audioEnabled ? 'Silenciar el piano de la app' : 'Activar el piano de la app'}
+          icon={audioEnabled ? <Volume2 /> : <VolumeX />}
+          aria-pressed={!audioEnabled}
+          onClick={() => useAudio.getState().setEnabled(!audioEnabled)}
+        />
         <Lcd size="md" aria-label="Tiempo">
           <span ref={timeRef}>00:00.00</span>
           <span className={styles.duracion}>/ {formatTime(take?.duration ?? 0)}</span>
@@ -381,13 +387,7 @@ export function Estudio() {
             No pudimos descargar el piano. Revisa tu conexión y vuelve a reproducir.
           </p>
         )}
-        <div className={styles.sonido}>
-          <Switch
-            label="Sonido de la app"
-            checked={audioEnabled}
-            onChange={useAudio.getState().setEnabled}
-          />
-        </div>
+
         <div className={styles.velocidad}>
           <span className="ui-etiqueta">Velocidad</span>
           <Chips
