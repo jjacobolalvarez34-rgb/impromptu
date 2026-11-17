@@ -14,6 +14,52 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-17 · Fase 5 (continuación) · Piano con pedal, micrófono en vivo y Mamut Herd
+- Hecho:
+  - **Transkun V2 como "Piano con pedal" (ADR-015).**
+    - En 30 s de Consuelo, contra su MIDI: F1 99 % en el navegador, igual que el original en Python.
+    - Kong (ADR-014) daba 65 % y Basic Pitch 54 %.
+    - Red y cabezas en ONNX; espectro y decodificación portados a TypeScript, con pruebas contra Python.
+    - Se quitó Kong.
+  - **Micrófono en vivo:** las notas suben mientras se toca, con ~1 s de retraso (IA rápida por bloques). Al detener, el modelo elegido repasa todo.
+  - Las grabaciones del micrófono quedan como "Grabación de audio N", con su audio, en "Tus grabaciones".
+  - **Panel del estudio ordenado** en bloques:
+    - Grabar, Tus grabaciones, Abrir y Con esta pieza.
+    - Aviso de avance fijo arriba.
+    - Íconos de origen en cada grabación.
+    - "Ver todas" cuando hay muchas.
+  - **Grabar con el teclado y a la vez el sonido con el micrófono** (interruptor).
+    - En desarrollo, "Guardar para pruebas" deja el MIDI y el audio en `fixtures/jacobo/pares/`.
+  - **Guardar MIDI**: cualquier pieza a .mid tipo 1, con tempo, compás, una pista por mano y pedales CC64/66/67.
+  - **Sustain sin pedal** (como el botón SUSTAIN del PSR-E343): corto, medio o largo; limitador para que no sature.
+  - **Mamut Herd** (P20):
+    - Sello en el pie de la página de inicio y de la app.
+    - Pantalla "Acerca de" (`/acerca`) con contacto y créditos.
+    - © 2026 Mamut Herd.
+    - El enlace va al correo de la empresa, por ahora.
+  - **BUG-001:** la sincronía de "Mi audio" y del video tenía el desfase con el signo al revés.
+  - **CI rojo desde la fase 5:** pnpm bloqueaba los scripts de instalación de core-js y protobufjs. Ya se ignoran.
+- Pruebas:
+  - lint, typecheck y pruebas unitarias en verde.
+  - 14/14 de Playwright con las cabeceras COOP/COEP.
+  - Transkun en el navegador (`scripts/local/piano-check.mjs`): F1 99 % contra el MIDI.
+  - Micrófono en vivo con un micrófono simulado (15 s de Consuelo): notas en cada bloque.
+  - Grabación de audio: se guarda, se recarga y vuelve con su audio.
+- Probado por Jacobo:
+  - Basic Pitch con micrófono: confundía el ventilador y se le escapaban notas.
+  - Kong: mejor, pero metía notas.
+  - Con pedal pisado, las notas se veían larguísimas. Con Transkun el final es el soltar de la tecla.
+- Pendiente de prueba de Jacobo:
+  - Transkun con su piano, idealmente con "Grabar también el sonido" y "Guardar para pruebas" para medirlo.
+  - Micrófono en vivo.
+  - Sustain sin pedal.
+  - Revisar que "Mi audio" ahora suena sincronizado (BUG-001).
+- Pendiente para la próxima:
+  - Fase 6 (partitura): la duración de las notas sale del ritmo, como pidió Jacobo.
+  - P21: dónde publicar el modelo (~58 MB). Sin eso, en la web publicada solo está el modelo rápido.
+- Pedidos del usuario no atendidos:
+  - Instantáneo como el MIDI no se pudo: en su portátil el retraso mínimo es ~1 s, y el modelo preciso corre a ~0,2× tiempo real en el navegador. En la app de PC (nativo) debería ir cerca de 2× tiempo real.
+
 ### 2026-11-17 · Fase 5 · Audio a notas
 - Hecho:
   - `packages/transcribe`: Basic Pitch (Spotify, Apache-2.0) con TensorFlow.js en un Web Worker. El modelo (900 KB) va empaquetado con la app y entra en la caché de la PWA, así que funciona sin conexión. Cancelar termina el worker de inmediato.
