@@ -19,7 +19,7 @@ export default defineConfig({
         short_name: 'Impromptu',
         description: 'Videos de piano con notas cayendo, gratis y open source.',
         lang: 'es',
-        start_url: '/',
+        start_url: '/app',
         display: 'standalone',
         theme_color: '#1C1C1A',
         background_color: '#1C1C1A',

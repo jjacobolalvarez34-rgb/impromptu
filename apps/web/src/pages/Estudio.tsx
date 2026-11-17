@@ -195,7 +195,7 @@ export function Estudio() {
       onDrop={onDrop}
     >
       <header className={`${styles.barra} ui-aparece-texto`}>
-        <Link to="/" className={styles.inicio} aria-label="Ir al inicio">
+        <Link to="/app" className={styles.inicio} aria-label="Ir al inicio de la app">
           <Logo size={18} keyboard={false} />
         </Link>
         <div className={styles.toma}>

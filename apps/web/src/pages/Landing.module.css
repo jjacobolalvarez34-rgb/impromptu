@@ -1,0 +1,611 @@
+/* Página principal (pedido de Jacobo): estética C3 Consola ámbar, animaciones que no
+   dependen de "reducir movimiento" del sistema (P19) y solo con transform/opacity. */
+
+.landing {
+  --curva: cubic-bezier(0.2, 0.7, 0.1, 1);
+  background: var(--carbon);
+  color: var(--chasis);
+  overflow-x: clip;
+}
+
+html:has(.landing) {
+  scroll-behavior: smooth;
+}
+
+/* ── Intro ─────────────────────────────────────────────────────────── */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: var(--carbon);
+  cursor: pointer;
+}
+
+.saltar {
+  position: absolute;
+  right: var(--e-6);
+  bottom: calc(var(--e-6) + env(safe-area-inset-bottom, 0px));
+  min-height: var(--toque);
+  padding: 0 var(--e-4);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: transparent;
+  color: var(--gris-texto);
+  font: 400 13px/1 var(--fuente-texto);
+  cursor: pointer;
+}
+
+/* ── Navegación ────────────────────────────────────────────────────── */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--e-6);
+  padding: calc(var(--e-3) + env(safe-area-inset-top, 0px)) var(--e-6) var(--e-3);
+  background: rgb(28 28 26 / 0.86);
+  border-bottom: 1px solid var(--linea);
+  animation: nav-baja 600ms var(--curva) 200ms both;
+}
+
+@keyframes nav-baja {
+  from {
+    transform: translateY(-100%);
+  }
+}
+
+.marca {
+  display: inline-flex;
+  color: inherit;
+  text-decoration: none;
+}
+
+.marca > span[role='img'] {
+  padding: 0;
+}
+
+.enlaces {
+  display: flex;
+  gap: var(--e-5);
+  margin-left: auto;
+}
+
+.enlaces a {
+  position: relative;
+  color: var(--gris-texto);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.enlaces a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 2px;
+  background: var(--ambar);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms var(--curva);
+}
+
+.enlaces a:hover {
+  color: var(--chasis);
+}
+
+.enlaces a:hover::after {
+  transform: scaleX(1);
+}
+
+@media (max-width: 760px) {
+  .enlaces {
+    display: none;
+  }
+  .nav {
+    justify-content: space-between;
+    padding-inline: var(--e-4);
+  }
+}
+
+/* ── Portada ───────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Velo para que el texto se lea sobre las notas: oscurece a la izquierda y arriba. */
+.veloHero {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(17 17 16 / 0.92) 0%,
+      rgb(17 17 16 / 0.7) 42%,
+      rgb(17 17 16 / 0.15) 75%
+    ),
+    linear-gradient(180deg, rgb(17 17 16 / 0.6) 0%, transparent 30%);
+  pointer-events: none;
+}
+
+.heroTexto {
+  position: relative;
+  max-width: 720px;
+  padding: 120px var(--e-6) var(--e-12) clamp(var(--e-6), 7vw, 120px);
+  display: grid;
+  gap: var(--e-5);
+}
+
+/* Mientras está la intro, el texto espera (y entra al cerrarla). */
+.heroTexto[data-intro='true'] * {
+  animation-play-state: paused !important;
+}
+
+.kicker {
+  margin: 0;
+  color: var(--ambar);
+  animation: aparece 500ms var(--curva) 250ms both;
+}
+
+.titulo {
+  margin: 0;
+  font: 500 clamp(40px, 6.4vw, 84px) / 1.02 var(--fuente-texto);
+  letter-spacing: -0.02em;
+}
+
+.palabra {
+  display: inline-block;
+  white-space: nowrap;
+  margin-right: 0.24em;
+}
+
+/* Cada letra cae como una nota y se posa. */
+.letra {
+  display: inline-block;
+  animation: letra-cae 620ms var(--curva) calc(var(--retraso, 0ms) + 350ms) both;
+}
+
+@keyframes letra-cae {
+  0% {
+    opacity: 0;
+    transform: translateY(-0.9em);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(0.04em);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+.lema {
+  margin: 0;
+  max-width: 46ch;
+  font-size: clamp(16px, 1.4vw, 19px);
+  color: var(--chasis);
+  animation: aparece 600ms var(--curva) 1300ms both;
+}
+
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-3);
+  animation: aparece-tecla 520ms var(--curva) 1500ms both;
+}
+
+.ctaPrincipal,
+.ctaSecundario {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  height: var(--toque);
+  padding: 0 var(--e-4);
+  border-bottom: 3px solid;
+  border-radius: var(--radio);
+  font: 500 14px/1 var(--fuente-texto);
+  text-decoration: none;
+  transition: transform 60ms ease-out;
+}
+
+.ctaPrincipal {
+  background: var(--chasis);
+  color: var(--carbon);
+  border-bottom-color: var(--gris-tecla);
+}
+
+.ctaSecundario {
+  background: var(--panel-alto);
+  color: var(--chasis);
+  border-bottom-color: var(--tecla-oscura-borde);
+}
+
+.ctaPrincipal:active,
+.ctaSecundario:active {
+  border-bottom-width: 1px;
+  transform: translateY(2px);
+}
+
+.ctaPrincipal svg,
+.ctaSecundario svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+}
+
+/* Indicador para bajar: una nota que cae en bucle. */
+.bajar {
+  position: absolute;
+  left: 50%;
+  bottom: var(--e-6);
+  width: 2px;
+  height: 44px;
+  overflow: hidden;
+  background: var(--linea);
+  animation: aparece 600ms var(--curva) 2000ms both;
+}
+
+.bajar span {
+  display: block;
+  width: 2px;
+  height: 14px;
+  background: var(--ambar);
+  animation: cae-bucle 1.6s cubic-bezier(0.5, 0, 0.5, 1) 2.2s infinite;
+}
+
+@keyframes cae-bucle {
+  from {
+    transform: translateY(-14px);
+  }
+  to {
+    transform: translateY(44px);
+  }
+}
+
+@keyframes aparece {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes aparece-tecla {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+
+/* ── Secciones ─────────────────────────────────────────────────────── */
+.seccion {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: clamp(72px, 10vw, 140px) var(--e-6) 0;
+}
+
+.encabezado {
+  display: grid;
+  gap: var(--e-3);
+  margin-bottom: var(--e-10);
+}
+
+.encabezado p {
+  margin: 0;
+  color: var(--ambar);
+}
+
+.encabezado h2,
+.apoyar h2 {
+  margin: 0;
+  max-width: 22ch;
+  font: 500 clamp(30px, 4vw, 52px) / 1.08 var(--fuente-texto);
+  letter-spacing: -0.015em;
+}
+
+.subrayado {
+  display: block;
+  width: 96px;
+  height: 2px;
+  background: var(--ambar);
+}
+
+/* Revelado al hacer scroll: cada tipo tiene su movimiento. */
+[data-revelar] {
+  opacity: 0;
+  transition:
+    opacity 640ms var(--curva) var(--retraso, 0ms),
+    transform 720ms var(--curva) var(--retraso, 0ms);
+  will-change: transform, opacity;
+}
+[data-revelar='cae'] {
+  transform: translateY(-28px);
+}
+[data-revelar='texto'] {
+  transform: none;
+}
+[data-revelar='tecla'] {
+  transform: translateY(18px) scale(0.97);
+}
+[data-revelar='escala'] {
+  transform: scale(0.86);
+}
+[data-revelar='traza'] {
+  opacity: 1;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+[data-revelar][data-visible='true'] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Tarjetas de funciones */
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: var(--e-4);
+}
+
+.tarjeta,
+.descarga {
+  position: relative;
+  display: grid;
+  gap: var(--e-3);
+  align-content: start;
+  padding: var(--e-6);
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  transition:
+    opacity 640ms var(--curva) var(--retraso, 0ms),
+    transform 720ms var(--curva) var(--retraso, 0ms),
+    border-color 200ms ease-out;
+}
+
+/* Al pasar el mouse, una línea ámbar se enciende arriba, como el LED de un botón. */
+.tarjeta::before,
+.descarga::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  top: -1px;
+  height: 2px;
+  background: var(--ambar);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 300ms var(--curva);
+}
+
+.tarjeta:hover::before,
+.descarga:hover::before {
+  transform: scaleX(1);
+}
+
+.tarjeta h3,
+.descarga h3,
+.pasos h3 {
+  margin: 0;
+  font: 500 20px/1.25 var(--fuente-texto);
+}
+
+.tarjeta p,
+.descarga p,
+.pasos p {
+  margin: 0;
+  color: var(--gris-texto);
+  font-size: 15px;
+}
+
+.icono {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  color: var(--ambar);
+}
+
+.icono svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.5;
+}
+
+/* Pasos */
+.pasos {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--e-6);
+}
+
+.riel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 22px;
+  height: 1px;
+  background: var(--linea);
+  transition-duration: 1400ms;
+}
+
+.pasos li {
+  position: relative;
+  display: grid;
+  gap: var(--e-2);
+}
+
+.numero {
+  justify-self: start;
+  display: grid;
+  place-items: center;
+  height: 44px;
+  padding: 0 var(--e-3);
+  margin-bottom: var(--e-2);
+  background: var(--lcd);
+  border: 1px solid var(--lcd-borde);
+  border-radius: var(--radio-lcd);
+  color: var(--ambar);
+  font: 500 18px/1 var(--fuente-mono);
+}
+
+@media (max-width: 860px) {
+  .pasos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .riel {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .pasos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Lo que viene */
+.chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-3);
+}
+
+.chips li {
+  padding: var(--e-3) var(--e-4);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  color: var(--chasis);
+  font-size: 15px;
+}
+
+/* Descargas */
+.descargas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e-4);
+}
+
+.descarga > :last-child {
+  justify-self: start;
+  margin-top: var(--e-2);
+}
+
+@media (max-width: 860px) {
+  .descargas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.pronto {
+  padding: var(--e-1) var(--e-2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  color: var(--gris-texto);
+  font: 500 11px/1.4 var(--fuente-mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Apoyar */
+.apoyar {
+  display: grid;
+  justify-items: center;
+  gap: var(--e-5);
+  text-align: center;
+}
+
+.apoyar h2 {
+  max-width: 20ch;
+}
+
+.apoyar p {
+  margin: 0;
+  max-width: 54ch;
+  color: var(--gris-texto);
+  font-size: 17px;
+}
+
+.apoyar .ctas {
+  justify-content: center;
+  animation: none;
+}
+
+.corazon {
+  width: 36px;
+  height: 36px;
+  stroke-width: 1.5;
+  color: var(--ambar);
+  animation: late 1.6s ease-in-out infinite;
+}
+
+@keyframes late {
+  0%,
+  60%,
+  100% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1.14);
+  }
+  25% {
+    transform: scale(1.05);
+  }
+}
+
+/* Pie */
+.pie {
+  max-width: 1160px;
+  margin: clamp(72px, 10vw, 140px) auto 0;
+  padding: var(--e-6) var(--e-6) calc(var(--e-8) + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-5);
+  border-top: 1px solid var(--linea);
+  color: var(--gris-texto);
+  font-size: 13px;
+}
+
+.pie > span[role='img'] {
+  padding: 0;
+}
+
+.pie p {
+  margin: 0;
+}
+
+.pie a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--chasis);
+}
+
+.pie svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.5;
+}
+
+.pie > a:last-child {
+  margin-left: auto;
+}
