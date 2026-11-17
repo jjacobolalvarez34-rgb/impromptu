@@ -30,3 +30,7 @@ exports/
 
 # Permisos locales de Claude Code (no se suben)
 .claude/settings.local.json
+
+# Pruebas locales de Claude (no se suben)
+scripts/local/
+fixtures/local/

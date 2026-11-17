@@ -1,10 +1,14 @@
 import { Piano, takeVoices } from '@impromptu/audio';
-import type { Take } from '@impromptu/core';
+import type { KeyboardCalibration, Take } from '@impromptu/core';
 import { Visualizer } from '@impromptu/render';
 import type { VisualSettings } from '@impromptu/render';
 import {
+  ALL_FORMATS,
   AudioBufferSource,
+  BlobSource,
   BufferTarget,
+  CanvasSink,
+  Input,
   CanvasSource,
   Mp4OutputFormat,
   Output,
@@ -29,6 +33,11 @@ export interface ExportOptions {
    * de la toma en que suena el segundo 0 del archivo (MediaRef.offset).
    */
   ownAudio?: { buffer: AudioBuffer; offset: number } | null;
+  /**
+   * Video de la cámara para las plantillas que lo usan. Cada cuadro sale decodificado del
+   * archivo en el instante exacto (no del reproductor), con su desfase y su calibración.
+   */
+  video?: { file: Blob; offset: number; calibration?: KeyboardCalibration } | null;
   onProgress?: (progress: ExportProgress) => void;
   signal?: AbortSignal;
 }
@@ -134,10 +143,16 @@ export async function exportVideo(opts: ExportOptions): Promise<ExportResult> {
     if (audioSource && audio) await audioSource.add(audio);
 
     const total = frameCount(take.duration, fps);
+    const frames = opts.video ? await videoFrames(opts.video, total, fps) : null;
+    viz.setCalibration(opts.video?.calibration ?? null);
     for (let i = 0; i < total; i++) {
       if (signal?.aborted) {
         await output.cancel();
         throw new ExportFailure('cancelled');
+      }
+      if (frames) {
+        const frame = await frames.next(i);
+        viz.setVideoFrame(frame?.canvas ?? null, frame?.width ?? 0, frame?.height ?? 0);
       }
       viz.render(frameTime(i, fps));
       await video.add(frameTime(i, fps), 1 / fps);
@@ -207,4 +222,41 @@ export async function renderOwnAudio(
   // offset > 0: el audio entra más tarde; offset < 0: se salta su comienzo.
   source.start(Math.max(0, offset), Math.max(0, -offset));
   return context.startRendering();
+}
+
+interface DecodedFrame {
+  canvas: CanvasImageSource;
+  width: number;
+  height: number;
+}
+
+/**
+ * Cuadros del video de la cámara para cada cuadro del video final, en orden. Se piden
+ * todos de una vez para que el decodificador avance sin volver a buscar.
+ */
+async function videoFrames(
+  video: { file: Blob; offset: number },
+  total: number,
+  fps: FrameRate,
+): Promise<{ next: (i: number) => Promise<DecodedFrame | null> }> {
+  const input = new Input({ source: new BlobSource(video.file), formats: ALL_FORMATS });
+  const track = await input.getPrimaryVideoTrack();
+  if (!track) return { next: async () => null };
+  const duration = await track.computeDuration();
+  const width = Math.min(1920, track.displayWidth);
+  const height = Math.round((track.displayHeight * width) / track.displayWidth);
+  const sink = new CanvasSink(track, { width, height, fit: 'fill', poolSize: 2 });
+  const times = Array.from({ length: total }, (_, i) =>
+    Math.max(0, frameTime(i, fps) - video.offset),
+  );
+  const iterator = sink.canvasesAtTimestamps(times);
+  return {
+    next: async (i) => {
+      const result = await iterator.next();
+      const t = frameTime(i, fps) - video.offset;
+      // Antes de que empiece o después de que termine el video: sin cámara en ese cuadro.
+      if (result.done || !result.value || t < 0 || t > duration) return null;
+      return { canvas: result.value.canvas, width, height };
+    },
+  };
 }

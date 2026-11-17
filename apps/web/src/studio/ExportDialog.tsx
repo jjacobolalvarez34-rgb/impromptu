@@ -5,6 +5,7 @@ import { Download } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { engine, useAudio } from './audio';
 import { audioOffset, useOwnAudio } from './ownAudio';
+import { useVideo, videoOffset } from './video';
 import { useStudio } from './store';
 import type { Aspect } from './store';
 import styles from './ExportDialog.module.css';
@@ -95,9 +96,19 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
       const duration = ownAudio
         ? Math.max(take.duration, ownAudio.offset + ownAudio.buffer.duration)
         : take.duration;
+      const cam = useVideo.getState().video;
+      const usesVideo = settings.layout !== 'visualizer';
       const result = await exportVideo({
         take: { ...take, duration },
         ownAudio,
+        video:
+          cam && usesVideo
+            ? {
+                file: cam.file,
+                offset: videoOffset(cam),
+                ...(cam.calibration ? { calibration: cam.calibration } : {}),
+              }
+            : null,
         settings,
         aspect,
         resolution,
