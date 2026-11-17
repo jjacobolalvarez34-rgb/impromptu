@@ -1,4 +1,5 @@
 import { Visualizer } from '@impromptu/render';
+import type { Background } from '@impromptu/render';
 import { useEffect, useRef, useState } from 'react';
 import { live, liveNow } from './live';
 import { transport, useStudio } from './store';
@@ -11,10 +12,18 @@ interface Props {
   /** Se llama en cada cuadro con el tiempo actual (para el LCD y la barra de tiempo). */
   onFrame?: (t: number) => void;
   showFps?: boolean;
+  /** Ocupar todo el espacio, sin la proporción del formato (ruta /en-vivo). */
+  fill?: boolean;
+  background?: Background;
 }
 
 /** Lienzo del visualizador. Dibuja con el reloj del transporte, fuera del ciclo de React. */
-export function VisualizerView({ onFrame, showFps = false }: Props) {
+export function VisualizerView({
+  onFrame,
+  showFps = false,
+  fill = false,
+  background = 'theme',
+}: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const fpsRef = useRef<HTMLSpanElement>(null);
@@ -57,6 +66,7 @@ export function VisualizerView({ onFrame, showFps = false }: Props) {
 
   useEffect(() => viz?.setTake(take), [viz, take]);
   useEffect(() => viz?.setSettings(settings), [viz, settings]);
+  useEffect(() => viz?.setBackground(background), [viz, background]);
 
   // Encajar el lienzo en el espacio disponible con la proporción elegida.
   useEffect(() => {
@@ -64,7 +74,7 @@ export function VisualizerView({ onFrame, showFps = false }: Props) {
     if (!viz || !stage) return;
     const fit = () => {
       const { width, height } = stage.getBoundingClientRect();
-      const ratio = RATIO[aspect];
+      const ratio = fill ? width / Math.max(1, height) : RATIO[aspect];
       let w = width;
       let h = width / ratio;
       if (h > height) {
@@ -77,7 +87,7 @@ export function VisualizerView({ onFrame, showFps = false }: Props) {
     const observer = new ResizeObserver(fit);
     observer.observe(stage);
     return () => observer.disconnect();
-  }, [viz, aspect]);
+  }, [viz, aspect, fill]);
 
   // Bucle de dibujo.
   useEffect(() => {
@@ -117,7 +127,7 @@ export function VisualizerView({ onFrame, showFps = false }: Props) {
   }, [viz]);
 
   return (
-    <div ref={stageRef} className={styles.stage}>
+    <div ref={stageRef} className={styles.stage} data-fill={fill}>
       <div ref={hostRef} className={styles.host} />
       {failed && (
         <p className={styles.error}>

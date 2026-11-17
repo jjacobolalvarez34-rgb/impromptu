@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
-import { useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { ColorField } from '../studio/ColorField';
 import { VisualizerView } from '../studio/VisualizerView';
 import { LOCAL_PIECES, createDemoTake, openLocalPiece, openMidiFile } from '../studio/sources';
@@ -122,6 +122,7 @@ export function Estudio() {
   const timeRef = useRef<HTMLSpanElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
   const [params] = useSearchParams();
+  const navigate = useNavigate();
 
   const load = async (promise: Promise<OpenedTake>) => {
     try {
@@ -208,7 +209,15 @@ export function Estudio() {
               : 'Abre un MIDI para empezar'}
           </span>
         </div>
-        <Tabs label="Secciones" idPrefix="app" tabs={TABS} value="estudio" onChange={() => {}} />
+        <Tabs
+          label="Secciones"
+          idPrefix="app"
+          tabs={TABS}
+          value="estudio"
+          onChange={(id) => {
+            if (id === 'en-vivo') void navigate('/en-vivo');
+          }}
+        />
         <div className={styles.acciones}>
           {device && (
             <button

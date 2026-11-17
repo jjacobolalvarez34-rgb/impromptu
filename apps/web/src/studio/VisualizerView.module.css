@@ -38,3 +38,8 @@
 .host {
   display: contents;
 }
+
+.stage[data-fill='true'] .canvas {
+  border: 0;
+  border-radius: 0;
+}

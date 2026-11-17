@@ -1,5 +1,5 @@
 export { Visualizer, DEFAULT_SETTINGS } from './visualizer';
-export type { VisualizerOptions } from './visualizer';
+export type { Background, VisualizerOptions } from './visualizer';
 export { THEMES, DEFAULT_THEME, getTheme } from './themes';
 export type { Theme } from './themes';
 export { layoutKeyboard, isBlack } from './keyboard-layout';

@@ -17,6 +17,9 @@ import type { Spark } from './sparks';
 import { getTheme, hexToNumber } from './themes';
 import type { Theme } from './themes';
 
+/** 'theme', un color (0xRRGGBB) o 'transparent'. */
+export type Background = 'theme' | 'transparent' | number;
+
 export interface VisualizerOptions {
   canvas?: HTMLCanvasElement;
   width: number;
@@ -70,6 +73,7 @@ export class Visualizer {
   private index: NoteIndex = { notes: [], maxDuration: 0 };
   private pedals: PedalEvent[] = [];
   private direction: Direction = 'fall';
+  private background: Background = 'theme';
   private keyboard: KeyboardLayout = layoutKeyboard({ low: 36, high: 96 });
   private settings: VisualSettings = DEFAULT_SETTINGS;
   private theme: Theme = getTheme('ambar');
@@ -150,6 +154,7 @@ export class Visualizer {
       antialias: true,
       autoStart: false,
       backgroundColor: getTheme('ambar').background,
+      backgroundAlpha: 1,
       preference: 'webgl',
     });
     app.ticker.stop();
@@ -182,8 +187,27 @@ export class Visualizer {
   setSettings(settings: VisualSettings): void {
     this.settings = settings;
     this.theme = getTheme(settings.themeId);
-    this.app.renderer.background.color = this.theme.background;
+    this.applyBackground();
     this.layout = frameLayout(this.layout.width, this.layout.height, settings.effects.fallSpeed);
+  }
+
+  /**
+   * Fondo para transmitir (ruta /en-vivo): el del tema, un color sólido (verde para
+   * recortar en OBS) o transparente (fuente de navegador de OBS).
+   */
+  setBackground(background: Background): void {
+    this.background = background;
+    this.applyBackground();
+  }
+
+  private applyBackground(): void {
+    const bg = this.app.renderer.background;
+    if (this.background === 'transparent') {
+      bg.alpha = 0;
+    } else {
+      bg.color = this.background === 'theme' ? this.theme.background : this.background;
+      bg.alpha = 1;
+    }
   }
 
   resize(width: number, height: number): void {
@@ -321,7 +345,10 @@ export class Visualizer {
   private drawPedal(t: number): void {
     const L = this.layout;
     const g = this.pedal.clear();
-    g.rect(0, L.pedalY, L.width, L.pedalHeight).fill(this.theme.background);
+    if (this.background !== 'transparent') {
+      const color = this.background === 'theme' ? this.theme.background : this.background;
+      g.rect(0, L.pedalY, L.width, L.pedalHeight).fill(color);
+    }
     const show = this.settings.show.pedals;
     if (show.length === 0) {
       this.pedalLabel.visible = false;

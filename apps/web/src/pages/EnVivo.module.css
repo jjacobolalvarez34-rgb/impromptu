@@ -1,0 +1,50 @@
+.envivo {
+  position: fixed;
+  inset: 0;
+  background: var(--carbon);
+}
+
+.envivo[data-fondo='verde'] {
+  background: #00ff00; /* verde de croma (no es un color de interfaz) */
+}
+
+.envivo[data-fondo='transparente'] {
+  background: transparent;
+}
+
+.controles {
+  position: absolute;
+  top: var(--e-3);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-3);
+  max-width: calc(100% - var(--e-8));
+  padding: var(--e-2) var(--e-3);
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  transition: opacity 200ms ease-out;
+}
+
+.controles[data-visible='false'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  color: var(--chasis);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.volver svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.5;
+}
