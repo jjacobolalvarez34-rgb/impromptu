@@ -1,3 +1,11 @@
 export { importMidi } from './import';
 export type { ImportOptions, ImportResult, ImportWarning } from './import';
 export { createTempoMap } from './tempo';
+export { normalizeMessage } from './live/normalize';
+export type { LiveEvent } from './live/normalize';
+export { PROFILES, GENERIC_PROFILE, profileFor } from './live/profiles';
+export type { DeviceProfile } from './live/profiles';
+export { Recorder } from './live/recorder';
+export type { OpenNote } from './live/recorder';
+export { WebMidiInput, WebMidiError, isWebMidiSupported } from './live/webmidi';
+export type { MidiDevice, MidiAccessError } from './live/webmidi';
