@@ -59,8 +59,9 @@ export interface Alignment {
 }
 
 /**
- * Busca el desfase entre ±maxLag segundos. Un offset positivo significa que el audio
- * empieza después que el MIDI: el segundo 0 del audio suena en el segundo `offset` de la toma.
+ * Busca el desfase entre ±maxLag segundos, con la convención de MediaRef.offset: el segundo 0
+ * del audio suena en el segundo `offset` de la toma (segundo de la toma = segundo del archivo
+ * + offset). Si el archivo trae silencio o algo antes de la pieza, el offset es negativo.
  */
 export function align(audio: Float32Array, midi: Float32Array, maxLag = 10, hop = HOP): Alignment {
   const maxShift = Math.round(maxLag / hop);
@@ -82,7 +83,8 @@ export function align(audio: Float32Array, midi: Float32Array, maxLag = 10, hop 
   mean /= scores.length;
   const peak = scores[best]!;
   return {
-    offset: Math.round((maxShift - best) * hop * 1000) / 1000,
+    // audio[i] ↔ midi[i + k]: el segundo i del archivo es el i + k de la toma.
+    offset: Math.round((best - maxShift) * hop * 1000) / 1000,
     confidence: mean > 0 ? peak / mean : peak > 0 ? Infinity : 0,
     agree: true,
   };
@@ -236,7 +238,7 @@ export function alignAudioToNotes(
   const ac = audioChroma(samples, sampleRate);
   const mc = midiChroma(notes, Math.max(ac.length, Math.ceil(lastNote / CHROMA_HOP) + 1));
   const coarse = chromaLag(ac, mc, Math.round(maxLag / CHROMA_HOP));
-  const coarseOffset = -coarse.lag * CHROMA_HOP;
+  const coarseOffset = coarse.lag * CHROMA_HOP;
 
   const a = audioOnsets(samples, sampleRate);
   const frames = Math.max(a.length, Math.ceil(lastNote / HOP) + 1);
@@ -260,7 +262,7 @@ function alignNear(
   center: number,
   radius: number,
 ): number {
-  const c = Math.round(-center / HOP);
+  const c = Math.round(center / HOP);
   const r = Math.round(radius / HOP);
   let bestK = c;
   let bestScore = -Infinity;
@@ -274,7 +276,7 @@ function alignNear(
       bestK = k;
     }
   }
-  return Math.round(-bestK * HOP * 1000) / 1000;
+  return Math.round(bestK * HOP * 1000) / 1000;
 }
 
 function unit(v: Float32Array): Float32Array {

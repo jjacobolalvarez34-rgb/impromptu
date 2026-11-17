@@ -31,3 +31,10 @@
 - Causa:
 - Arreglo y prueba que lo cubre:
 ```
+
+### BUG-001 · El audio propio y el video se sincronizaban con el desfase al revés
+- Dónde: `packages/media/src/align.ts` (`alignAudioToNotes`), usado por "Mi audio" (fase 3) y por el video de la cámara.
+- Cómo reproducir: abrir `consuelo.mid` y luego `consuelo.mp3`. La app decía "desfase +0,39 s" y el audio sonaba unos 0,8 s corrido respecto a las notas.
+- Esperado / obtenido: esperado −0,39 s (el MP3 trae 0,39 s antes de la primera nota). Obtenido +0,39 s.
+- Causa: la app usa MediaRef.offset como "segundo de la toma = segundo del archivo + offset", pero la alineación devolvía "archivo − toma". Las pruebas unitarias tenían la misma convención invertida, así que no lo detectaron.
+- Arreglo y prueba que lo cubre: signo corregido en `align`, `alignNear` y el paso de cromagrama. `align.test.ts` ahora prueba la convención de la app (archivo con silencio al comienzo → offset negativo). Se confirmó con datos reales: al transcribir el MP3 de Consuelo, las notas de la IA calzan con el MIDI con −0,40 s, y no hay deriva en toda la pieza (±0,02 s por ventana de 20 s).

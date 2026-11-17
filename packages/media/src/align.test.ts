@@ -35,17 +35,18 @@ const STARTS = [0.5, 0.9, 1.2, 2.1, 2.4, 3.3, 3.5, 4.8, 5.1, 5.15, 6.4, 7.2, 7.9
 const NOTES = () => STARTS.map((s, i) => note(s, i));
 
 describe('sincronía audio ↔ MIDI', () => {
-  it('encuentra el desfase cuando el audio empieza después', () => {
+  // Convención de MediaRef.offset: segundo de la toma = segundo del archivo + offset.
+  it('archivo con silencio al comienzo: offset negativo', () => {
     const audio = render(STARTS, 13, 1.25);
     const result = alignAudioToNotes(audio, RATE, NOTES());
-    expect(result.offset).toBeCloseTo(1.25, 1);
+    expect(result.offset).toBeCloseTo(-1.25, 1);
     expect(result.confidence).toBeGreaterThan(1.5);
   });
 
-  it('y cuando el audio empieza antes (offset negativo)', () => {
+  it('archivo que empieza ya dentro de la pieza: offset positivo', () => {
     const audio = render(STARTS, 13, -0.4);
     const result = alignAudioToNotes(audio, RATE, NOTES());
-    expect(result.offset).toBeCloseTo(-0.4, 1);
+    expect(result.offset).toBeCloseTo(0.4, 1);
   });
 
   it('sin desfase da 0', () => {
