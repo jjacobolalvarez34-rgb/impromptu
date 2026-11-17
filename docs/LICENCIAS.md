@@ -24,7 +24,7 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 | `midi-file` 1.2 | Leer y escribir .mid (en uso desde la fase 1) | MIT (verificado) | Aviso de copyright. Se eligió en lugar de `@tonejs/midi` para controlar velocity 0 y notas sin cerrar |
 | `@tonejs/midi` | Leer y escribir .mid | MIT (verificado 2.0.28) | No se usa: ver la fila de `midi-file` |
 | Mediabunny 1.66 | Escribir MP4 con WebCodecs (en uso desde la fase 3) | MPL-2.0 (verificado) | Si modificas sus archivos, publica esos cambios bajo MPL. No quitar cabeceras de licencia |
-| OpenSheetMusicDisplay | Mostrar partitura | BSD-3-Clause | Aviso de copyright |
+| OpenSheetMusicDisplay 2.2.1 | Mostrar la partitura (fase 6) | BSD-3-Clause (verificado en npm) | Aviso de copyright; crédito en "Acerca de" |
 | Verovio (alternativa) | Grabado de partitura | LGPL-3.0 | Dar crédito; cambios a Verovio deben publicarse |
 | alphaTab | Tablaturas (fase 9) | MPL-2.0 | Igual que Mediabunny |
 | onnxruntime-web | Ejecutar modelos ONNX | MIT [VERIFICAR] | |

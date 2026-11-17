@@ -14,7 +14,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, DragEvent } from 'react';
 import { beatAt, beatGrid, tempoAt } from '@impromptu/core';
 import { Link, useNavigate, useSearchParams } from 'react-router';
@@ -28,6 +28,9 @@ import { EditBar, useEditShortcuts } from '../studio/EditBar';
 import { ExportDialog } from '../studio/ExportDialog';
 import { ConvertAudioButton, MicSection, TranscribeStatus } from '../studio/TranscribeSection';
 import { saveMidi } from '../studio/saveMidi';
+
+// La partitura (y OpenSheetMusicDisplay) se carga solo al abrir su pestaña.
+const ScoreTab = lazy(() => import('../score/ScoreTab').then((m) => ({ default: m.ScoreTab })));
 import { VideoSection, openCameraVideo } from '../studio/VideoSection';
 import { KeyboardSection, TakesSection } from '../studio/LivePanel';
 import { SettingsPanel } from '../studio/SettingsPanel';
@@ -60,6 +63,7 @@ const TABS = [
 
 export function Estudio() {
   const take = useStudio((s) => s.take);
+  const [tab, setTab] = useState<'estudio' | 'partitura'>('estudio');
   const notices = useStudio((s) => s.notices);
   const aspect = useStudio((s) => s.aspect);
   const playing = useStudio((s) => s.playing);
@@ -219,9 +223,11 @@ export function Estudio() {
           label="Secciones"
           idPrefix="app"
           tabs={TABS}
-          value="estudio"
+          value={tab}
           onChange={(id) => {
             if (id === 'en-vivo') void navigate('/en-vivo');
+            // PROVISIONAL: Tutorial llega en la fase 7.
+            if (id === 'estudio' || id === 'partitura') setTab(id);
           }}
         />
         <div className={styles.acciones}>
@@ -286,11 +292,24 @@ export function Estudio() {
         </div>
       </header>
 
+      {tab === 'partitura' && (
+        <div
+          className={styles.cuerpoPartitura}
+          role="tabpanel"
+          id="app-panel-partitura"
+          aria-labelledby="app-tab-partitura"
+        >
+          <Suspense fallback={<p className="ui-secundario">Cargando la partitura…</p>}>
+            <ScoreTab />
+          </Suspense>
+        </div>
+      )}
       <div
         className={styles.cuerpo}
         role="tabpanel"
         id="app-panel-estudio"
         aria-labelledby="app-tab-estudio"
+        hidden={tab !== 'estudio'}
       >
         <aside className={`${styles.panel} ui-aparece-izquierda`} aria-label="Fuentes y tomas">
           <TranscribeStatus />

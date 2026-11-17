@@ -1,0 +1,23 @@
+{
+  "name": "@impromptu/notation",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Partitura: tempo y pulsos, cuantización, armadura, figuras y MusicXML.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@impromptu/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@impromptu/midi": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

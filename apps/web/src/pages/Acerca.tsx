@@ -10,6 +10,7 @@ const CREDITOS: [string, string][] = [
   ['Sonido de piano', 'Salamander Grand Piano, de Alexander Holm (CC BY 3.0).'],
   ['Audio a notas', 'Basic Pitch, de Spotify (Apache-2.0), con TensorFlow.js (Apache-2.0).'],
   ['Piano con pedal', 'Transkun V2, © 2021 Yujia Yan (MIT), con ONNX Runtime (MIT).'],
+  ['Partitura', 'OpenSheetMusicDisplay (BSD-3-Clause).'],
   ['Video', 'Mediabunny (MPL-2.0).'],
   ['Visualizador', 'PixiJS (MIT).'],
   ['Íconos', 'Lucide (ISC).'],

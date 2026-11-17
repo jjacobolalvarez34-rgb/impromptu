@@ -319,3 +319,13 @@
 .bloque > h2 {
   margin: var(--e-2) 0 0;
 }
+
+/* Pestaña Partitura: ocupa el lugar del cuerpo del estudio. */
+.cuerpoPartitura {
+  display: grid;
+  min-height: 0;
+}
+
+.cuerpo[hidden] {
+  display: none;
+}

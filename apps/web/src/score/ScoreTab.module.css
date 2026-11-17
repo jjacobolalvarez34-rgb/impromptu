@@ -1,0 +1,112 @@
+.cuerpo {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  min-height: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  padding: var(--e-4);
+  background: var(--panel);
+  border-right: 1px solid var(--linea);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.panel h2 {
+  margin: var(--e-2) 0 0;
+}
+
+.panel p {
+  margin: 0;
+}
+
+.campo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+}
+
+.campo input {
+  width: 5.5em;
+  min-height: 44px;
+  padding: 0 var(--e-2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--panel-alto);
+  color: var(--chasis);
+  font: 400 16px/1 var(--fuente-mono);
+}
+
+.campo input:focus-visible,
+.enlace:focus-visible {
+  outline: 2px solid var(--ambar);
+  outline-offset: 2px;
+}
+
+.enlace {
+  justify-self: start;
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--chasis);
+  font: 400 13px/1 var(--fuente-texto);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* La hoja: papel claro, como una partitura impresa (la tinta de OSMD es negra). */
+.hoja {
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--e-5);
+  background: var(--carbon);
+}
+
+.papel {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--e-4);
+  border-radius: var(--radio);
+  background: #f7f4ec;
+  color: #111;
+}
+
+.vacio {
+  display: grid;
+  place-items: center;
+  padding: var(--e-8);
+  color: var(--gris-texto);
+}
+
+@media (max-width: 800px) {
+  .cuerpo {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Imprimir o guardar PDF: solo la hoja, en blanco y negro, a todo el ancho. */
+@media print {
+  :global(body) * {
+    visibility: hidden;
+  }
+
+  .papel,
+  .papel * {
+    visibility: visible;
+  }
+
+  .papel {
+    position: absolute;
+    inset: 0 0 auto 0;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+}

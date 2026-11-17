@@ -47,7 +47,9 @@ minimumReleaseAgeExclude:
   - typescript-eslint@8.73.0
 
 # Scripts de instalación que no se ejecutan: core-js (vía TensorFlow.js) solo imprime un aviso de
-# donaciones; protobufjs (vía onnxruntime-web) solo revisa versiones.
+# donaciones; protobufjs (vía onnxruntime-web) solo revisa versiones; gl (vía OpenSheetMusicDisplay)
+# compila WebGL para Node, que la app no usa.
 allowBuilds:
   core-js: false
+  gl: false
   protobufjs: false
