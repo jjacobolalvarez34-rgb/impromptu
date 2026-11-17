@@ -164,6 +164,22 @@ class LiveSession {
     this.prune(e.time);
   }
 
+  /**
+   * Notas escuchadas por el micrófono (en vivo, con ~1 s de retraso): suben como las del
+   * teclado. Los tiempos van en el reloj en vivo (liveNow).
+   */
+  pushHeard(notes: { pitch: number; start: number; end: number; velocity: number }[]): void {
+    for (const n of notes) {
+      this.notes.push(createNoteEvent({ ...n, origin: 'audio' }));
+    }
+    this.notes.sort((a, b) => a.start - b.start);
+    this.lastActivity = liveNow();
+    if (!transport.playing && useStudio.getState().view !== 'live') {
+      useStudio.getState().setView('live');
+    }
+    this.prune(liveNow());
+  }
+
   private prune(now: number): void {
     let drop = 0;
     while (drop < this.notes.length && this.notes[drop]!.end < now - KEEP) drop++;

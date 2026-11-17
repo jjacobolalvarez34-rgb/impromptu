@@ -1,6 +1,7 @@
 import { Button, Chips, Lcd } from '@impromptu/ui';
 import { FileAudio, Mic, Square, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { prepareTranscriber } from '@impromptu/transcribe';
 import { engine } from './audio';
 import { PIANO_MODEL_URL, micStream, useTranscribe } from './transcribeStore';
 import styles from './LivePanel.module.css';
@@ -21,7 +22,8 @@ export function MicSection() {
     return (
       <div className={styles.seccion}>
         <p className="ui-secundario" role="status">
-          Grabando con el micrófono. Toca y aprieta Detener al terminar.
+          Grabando. Las notas aparecen al tocar, con un segundo de retraso. Al terminar, aprieta
+          Detener y la IA repasa todo para dejarlo preciso.
         </p>
         <p className={own.mic} title={state.device}>
           {state.device}
@@ -35,7 +37,14 @@ export function MicSection() {
   }
   return (
     <div className={styles.seccion}>
-      <Button icon={<Mic />} disabled={state.step === 'working'} onClick={() => void startMic()}>
+      <Button
+        icon={<Mic />}
+        disabled={state.step === 'working'}
+        // Al acercarse al botón se va preparando la IA que escucha en vivo.
+        onPointerEnter={prepareTranscriber}
+        onFocus={prepareTranscriber}
+        onClick={() => void startMic()}
+      >
         Grabar con el micrófono
       </Button>
       {PIANO_MODEL_URL && (

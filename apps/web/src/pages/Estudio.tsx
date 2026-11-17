@@ -400,7 +400,7 @@ export function Estudio() {
               showFps={params.has('fps') || take?.title.startsWith('Prueba') === true}
             />
             <EditBar />
-            {!take && (
+            {!take && view !== 'live' && (
               <div className={styles.vacio}>
                 <p>Abre un MIDI o arrástralo aquí para verlo caer.</p>
               </div>

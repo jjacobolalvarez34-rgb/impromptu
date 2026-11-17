@@ -11,6 +11,7 @@ import type { Take } from '@impromptu/core';
 import { create } from 'zustand';
 import { engine } from './audio';
 import { refreshTakes, useLive } from './live';
+import { LiveListener } from './liveMic';
 import { saveMedia } from './mediaStore';
 import { useStudio } from './store';
 import { saveTake } from './takesDb';
@@ -57,6 +58,7 @@ interface Store {
 let abort: AbortController | null = null;
 let recorder: MediaRecorder | null = null;
 let stream: MediaStream | null = null;
+let listener: LiveListener | null = null;
 
 const mb = (bytes: number) => Math.round(bytes / 1e6);
 
@@ -167,8 +169,8 @@ export const useTranscribe = create<Store>((set, get) => {
 
     startMic: async () => {
       void engine.start();
-      // La IA rápida se prepara mientras se graba: al detener, empieza a escuchar de inmediato.
-      if (get().model === 'rapido') prepareTranscriber();
+      // La IA rápida escucha en vivo mientras se graba (las notas suben al tocar).
+      prepareTranscriber();
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
@@ -189,12 +191,19 @@ export const useTranscribe = create<Store>((set, get) => {
         if (e.data.size > 0) chunks.push(e.data);
       };
       rec.onstop = () => {
+        listener?.stop();
+        listener = null;
         for (const t of stream?.getTracks() ?? []) t.stop();
         stream = null;
         void run(new Blob(chunks, { type: rec.mimeType }), nextAudioName(), true);
       };
       rec.start(1000);
       recorder = rec;
+      listener = new LiveListener();
+      void listener.start(stream, engine.audioContext).catch(() => {
+        // Sin AudioWorklet: se graba igual y se transcribe al detener.
+        listener = null;
+      });
       set({
         state: { step: 'recording', device: stream.getAudioTracks()[0]?.label || 'Micrófono' },
       });

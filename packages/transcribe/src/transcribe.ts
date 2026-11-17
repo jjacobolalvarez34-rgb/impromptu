@@ -89,15 +89,41 @@ export function prepareTranscriber(): void {
  */
 export async function transcribe(
   buffer: AudioBuffer,
-  options: {
-    onProgress?: (value: number) => void;
-    onStage?: (stage: TranscribeStage) => void;
-    signal?: AbortSignal;
-    params?: Partial<TranscribeParams>;
-  } = {},
+  options: TranscribeOptions = {},
 ): Promise<RawNote[]> {
   const samples = await toModelRate(buffer);
   if (options.signal?.aborted) throw new TranscriptionCancelled();
+  return transcribeSamples(samples, options);
+}
+
+export interface TranscribeOptions {
+  onProgress?: (value: number) => void;
+  onStage?: (stage: TranscribeStage) => void;
+  signal?: AbortSignal;
+  params?: Partial<TranscribeParams>;
+}
+
+/** ¿La IA rápida ya está preparada (la siguiente transcripción empieza de inmediato)? */
+export const isTranscriberReady = () => shared?.ready === true;
+
+/** Las corridas van de a una: el worker devuelve un resultado por pedido, en orden. */
+let queue: Promise<unknown> = Promise.resolve();
+
+/**
+ * Transcribe muestras mono que ya están a 22 050 Hz (MODEL_RATE). Sirve para escuchar en vivo
+ * por bloques, sin remuestrear cada vez. El arreglo se transfiere al worker (queda vacío).
+ */
+export function transcribeSamples(
+  samples: Float32Array,
+  options: TranscribeOptions = {},
+): Promise<RawNote[]> {
+  const job = queue.then(() => runSamples(samples, options));
+  queue = job.catch(() => undefined);
+  return job;
+}
+
+function runSamples(samples: Float32Array, options: TranscribeOptions): Promise<RawNote[]> {
+  if (options.signal?.aborted) return Promise.reject(new TranscriptionCancelled());
   const w = getWorker();
   options.onStage?.(w.ready ? 'listening' : 'preparing');
   return new Promise<RawNote[]>((resolve, reject) => {
