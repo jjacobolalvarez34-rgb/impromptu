@@ -7,5 +7,5 @@ const run = (cmd, args, cwd) => {
   if (r.status !== 0) process.exit(r.status ?? 1);
 };
 run('node', ['scripts/sync.mjs']);
-run('gradlew.bat', ['assembleDebug', '--no-daemon'], 'android');
+run('.\\gradlew.bat', ['assembleDebug', '--no-daemon'], 'android');
 process.stdout.write('APK: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk\n');

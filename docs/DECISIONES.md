@@ -230,7 +230,7 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
     - Menú Archivo con atajos (DESIGN §5).
     - El binario de Electron no se baja en `pnpm install` (el CI no lo necesita): lo baja el script de la app de escritorio.
   - **Android: Capacitor, solo para probar** (pedido de Jacobo). La app definitiva será nativa.
-    - Java 17 y el SDK de Android en D:.
+    - Java 21 (lo pide Capacitor 8) y el SDK de Android en D:.
     - Un puente propio a la API MIDI de Android para el teclado por OTG.
 - **Consecuencias:**
   - El instalador de PC pesa más que con Tauri (~90 MB más el modelo).

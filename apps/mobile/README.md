@@ -1,7 +1,7 @@
 # App de Android (para probar)
 
 La web de Impromptu empaquetada con Capacitor (ADR-018). Es para probar en el celular: la app
-definitiva será nativa. Todo queda en D: (Java 17 en `D:\tools`, SDK en `D:\Android\sdk`,
+definitiva será nativa. Todo queda en D: (Java 21 en `D:\tools`, SDK en `D:\Android\sdk`,
 Gradle en `D:\.cache\gradle`).
 
 - `pnpm --filter @impromptu/mobile sync`: compila la web y la pasa al proyecto de Android.
