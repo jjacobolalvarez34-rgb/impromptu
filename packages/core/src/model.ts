@@ -76,7 +76,14 @@ export interface VisualProject {
   themeId: string;
   layout: 'visualizer' | 'camera-top' | 'camera-inset' | 'background';
   aspect: '16:9' | '9:16' | '1:1';
-  effects: { sparks: number; keyGlow: number; fallSpeed: number; octaveGuides: boolean };
+  effects: {
+    sparks: number; // 0–200 %
+    keyGlow: number; // 0–200 %
+    fallSpeed: number;
+    octaveGuides: boolean;
+    noteGlow: number; // 0–200 %, halo de las notas (ADR-010)
+    noteStyle: 'flat' | 'glow'; // ADR-010
+  };
   show: { fingers: boolean; noteNames: boolean; pedals: PedalKind[] };
   colors: { right: string; left: string; unassigned: string };
   background?: { kind: 'color' | 'image' | 'video' | 'blur'; value: string };

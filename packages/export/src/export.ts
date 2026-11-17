@@ -84,7 +84,12 @@ export async function exportVideo(opts: ExportOptions): Promise<ExportResult> {
   let audio: AudioBuffer | null = null;
   if (opts.piano?.loaded) {
     opts.onProgress?.({ phase: 'audio', value: 0 });
-    audio = await renderPianoAudio(take, opts.piano);
+    audio = await renderPianoAudio(
+      take,
+      opts.piano,
+      (value) => opts.onProgress?.({ phase: 'audio', value }),
+      signal,
+    );
     check();
   }
 
@@ -145,12 +150,36 @@ export async function exportVideo(opts: ExportOptions): Promise<ExportResult> {
   }
 }
 
-/** Audio de la toma con el piano incluido, hecho fuera de tiempo real. */
-export async function renderPianoAudio(take: Take, source: Piano): Promise<AudioBuffer> {
-  const length = Math.ceil((take.duration + TAIL) * SAMPLE_RATE);
+/** Cada cuánto (s de audio) el render offline se detiene a informar y a revisar si se canceló. */
+const AUDIO_STEP = 5;
+
+/**
+ * Audio de la toma con el piano incluido, hecho fuera de tiempo real. Se pausa cada
+ * AUDIO_STEP segundos para informar el avance y permitir cancelar (el navegador no deja
+ * interrumpir un OfflineAudioContext; si se cancela, simplemente no se reanuda).
+ */
+export async function renderPianoAudio(
+  take: Take,
+  source: Piano,
+  onProgress?: (value: number) => void,
+  signal?: AbortSignal,
+): Promise<AudioBuffer> {
+  const seconds = take.duration + TAIL;
+  const length = Math.ceil(seconds * SAMPLE_RATE);
   const context = new OfflineAudioContext(2, length, SAMPLE_RATE);
   const piano = new Piano(context);
   piano.shareSamplesFrom(source);
   for (const voice of takeVoices(take)) piano.play(voice, voice.start, voice.release);
-  return context.startRendering();
+
+  return new Promise<AudioBuffer>((resolve, reject) => {
+    for (let t = AUDIO_STEP; t < seconds; t += AUDIO_STEP) {
+      void context.suspend(t).then(() => {
+        if (signal?.aborted) return reject(new ExportFailure('cancelled'));
+        onProgress?.(t / seconds);
+        void context.resume();
+      });
+    }
+    signal?.addEventListener('abort', () => reject(new ExportFailure('cancelled')), { once: true });
+    context.startRendering().then(resolve, reject);
+  });
 }

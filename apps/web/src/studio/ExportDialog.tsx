@@ -40,6 +40,7 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
   const take = useStudio((s) => s.take);
   const aspect = useStudio((s) => s.aspect);
   const audioStatus = useAudio((s) => s.status);
+  const audioProgress = useAudio((s) => s.progress);
   const [resolution, setResolution] = useState<Resolution>('1080p');
   const [fps, setFps] = useState<FrameRate>(60);
   const [withPiano, setWithPiano] = useState(true);
@@ -61,17 +62,27 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
   }, [state]);
 
   const close = () => {
-    abort.current?.abort();
+    if (state.step === 'working') cancel();
+    else setState({ step: 'form' });
     onClose();
-    if (state.step !== 'working') setState({ step: 'form' });
+  };
+
+  /** Cancelar responde al instante: la ventana vuelve al formulario sin esperar al render. */
+  const cancel = () => {
+    abort.current?.abort();
+    abort.current = null;
+    useStudio.setState({ exporting: false });
+    setState({ step: 'form' });
   };
 
   const start = async () => {
     if (!take) return;
     const controller = new AbortController();
     abort.current = controller;
-    setState({ step: 'working', phase: PHASES.audio!, value: 0 });
-    if (withPiano && audioStatus !== 'ready') await engine.start();
+    setState({ step: 'working', phase: 'Descargando el piano', value: 0 });
+    // Si el piano aún se está descargando, se espera (con su avance en la barra).
+    const piano = withPiano ? await engine.preload() : null;
+    if (controller.signal.aborted) return;
     useStudio.setState({ exporting: true });
     try {
       const { settings } = useStudio.getState();
@@ -81,7 +92,7 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
         aspect,
         resolution,
         fps,
-        piano: withPiano ? engine.loadedPiano : null,
+        piano,
         signal: controller.signal,
         onProgress: ({ phase, value }) =>
           setState({ step: 'working', phase: PHASES[phase] ?? '', value }),
@@ -93,7 +104,8 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
         size: `${(result.blob.size / 1_048_576).toFixed(1)} MB`,
       });
     } catch (e) {
-      if (e instanceof ExportFailure && e.reason === 'cancelled') setState({ step: 'form' });
+      if (controller.signal.aborted)
+        return; // ya se volvió al formulario al cancelar
       else if (e instanceof ExportFailure && e.reason === 'unsupported')
         setState({
           step: 'error',
@@ -106,8 +118,10 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
           message: 'No pudimos terminar el video. Prueba con 1080p o 30 fps y vuelve a intentar.',
         });
     } finally {
-      useStudio.setState({ exporting: false });
-      abort.current = null;
+      if (abort.current === controller) {
+        useStudio.setState({ exporting: false });
+        abort.current = null;
+      }
     }
   };
 
@@ -164,6 +178,13 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
         </div>
       )}
 
+      {state.step === 'working' &&
+        state.phase === 'Descargando el piano' &&
+        audioStatus === 'loading' && (
+          <p className="ui-secundario">
+            Piano: {Math.round(audioProgress * 100)} % (solo la primera vez)
+          </p>
+        )}
       {state.step === 'working' && (
         <div className={styles.campos} aria-live="polite">
           <span className="ui-etiqueta">{state.phase}</span>
@@ -178,7 +199,7 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
           </div>
           <Lcd size="md">{Math.round(state.value * 100)} %</Lcd>
           <div className={styles.acciones}>
-            <Button onClick={() => abort.current?.abort()}>Cancelar</Button>
+            <Button onClick={cancel}>Cancelar</Button>
           </div>
         </div>
       )}

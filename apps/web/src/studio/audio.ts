@@ -57,27 +57,50 @@ class AudioEngine {
     transport.subscribe(() => this.reschedule());
   }
 
-  /** Crea el audio en el primer gesto del usuario (BUGS B-008) y descarga el piano. */
-  async start(): Promise<void> {
-    if (this.context) {
-      if (this.context.state === 'suspended') await this.context.resume();
-      return;
-    }
-    const context = new AudioContext({ latencyHint: 'interactive' });
-    this.context = context;
-    this.latency = context.outputLatency || context.baseLatency || 0;
-    transport.setClock(() => context.currentTime - this.latency);
-    const piano = new Piano(context);
+  private loading: Promise<Piano | null> | null = null;
+  private clockSwitched = false;
+
+  private ensureContext(): AudioContext {
+    this.context ??= new AudioContext({ latencyHint: 'interactive' });
+    return this.context;
+  }
+
+  /**
+   * Descarga el piano apenas se abre la app (pedido de Jacobo): bajar y decodificar no
+   * necesita un gesto del usuario; sonar sí (B-008), y eso lo hace `start()`.
+   */
+  preload(): Promise<Piano | null> {
+    if (this.loading) return this.loading;
+    const piano = new Piano(this.ensureContext());
     useAudio.setState({ status: 'loading', progress: 0 });
-    try {
-      await piano.load(({ loaded, total }) => useAudio.setState({ progress: loaded / total }));
-      this.piano = piano;
-      this.livePlayer = new LivePlayer(piano);
-      useAudio.setState({ status: 'ready', progress: 1 });
-      this.reschedule();
-    } catch {
-      useAudio.setState({ status: 'error' });
+    this.loading = piano
+      .load(({ loaded, total }) => useAudio.setState({ progress: loaded / total }))
+      .then(() => {
+        this.piano = piano;
+        this.livePlayer = new LivePlayer(piano);
+        useAudio.setState({ status: 'ready', progress: 1 });
+        this.reschedule();
+        return piano;
+      })
+      .catch(() => {
+        useAudio.setState({ status: 'error' });
+        this.loading = null; // se puede reintentar
+        return null;
+      });
+    return this.loading;
+  }
+
+  /** Activa el sonido en un gesto del usuario (BUGS B-008) y une el reloj del estudio al audio. */
+  async start(): Promise<void> {
+    const context = this.ensureContext();
+    if (context.state === 'suspended') await context.resume();
+    if (!this.clockSwitched && context.state === 'running') {
+      this.clockSwitched = true;
+      this.latency = context.outputLatency || context.baseLatency || 0;
+      // Un AudioContext suspendido tiene el reloj quieto: solo se usa ya en marcha.
+      transport.setClock(() => context.currentTime - this.latency);
     }
+    void this.preload();
   }
 
   /** Apaga el audio por completo (al recargar este módulo en desarrollo). */

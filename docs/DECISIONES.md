@@ -67,6 +67,17 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
   - El mismo `Piano` funciona con un `OfflineAudioContext` para exportar.
   - Hoy las muestras vienen de una copia pública (PROVISIONAL, P15); antes de la v0.1 hay que servirlas desde un espejo propio.
 
+### ADR-010 · Estilo y brillo de las notas en `VisualProject.effects`
+- **Contexto:** Jacobo vio las notas "solo color" y pidió efectos como los de los videos de referencia. También pidió más brillo y más chispas que el máximo de entonces.
+- **Decisión:** se agregan dos campos a `VisualProject.effects`:
+  - `noteStyle: 'flat' | 'glow'`. Con 'glow', la nota lleva un cuerpo con degradado, un borde de luz y un halo aditivo de su color.
+  - `noteGlow` (0–200 %): la intensidad de ese halo.
+  - Además, `sparks` y `keyGlow` pasan de 0–100 a 0–200 %. El 100 % nuevo es más intenso que el máximo anterior, y al sonar una tecla sube un haz de luz.
+- **Consecuencias:**
+  - Todo sigue dependiendo solo de t (ADR-004).
+  - Los ajustes guardados de antes se completan con los valores por defecto al cargarse.
+  - En la vista plana (celulares lentos) el halo no se dibuja.
+
 ---
 ### Plantilla
 ```

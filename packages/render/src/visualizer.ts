@@ -32,7 +32,14 @@ export interface VisualizerOptions {
 
 export const DEFAULT_SETTINGS: VisualSettings = {
   themeId: 'ambar',
-  effects: { sparks: 62, keyGlow: 48, fallSpeed: 1, octaveGuides: true },
+  effects: {
+    sparks: 80,
+    keyGlow: 80,
+    fallSpeed: 1,
+    octaveGuides: true,
+    noteGlow: 70,
+    noteStyle: 'glow',
+  },
   show: { fingers: false, noteNames: false, pedals: ['sustain', 'sostenuto', 'soft'] },
   colors: { right: '#FF9F1C', left: '#E8E4DC', unassigned: '#9A968C' },
 };
