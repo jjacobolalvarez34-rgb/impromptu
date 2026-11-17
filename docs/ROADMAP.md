@@ -178,5 +178,7 @@ ligadura, silencio y mano (pentagrama), con deshacer y rehacer; lo editado actua
 toma (visualizador, audio y MIDI) y se guarda con ella. Exportar un video de la
 partitura: la hoja con el cursor avanzando (y desplazándose por los sistemas) en
 sincronía con el audio, en los mismos formatos del video del visualizador (16:9, 9:16,
-1:1). Jacobo valida que se pueda corregir una transcripción a mano sin salir de la app.
+1:1). Grabar directo en la partitura: desde la pestaña Partitura, grabar con el teclado o
+el micrófono (audio) y ver la partitura escribirse (pedido de Jacobo). Jacobo valida que se
+pueda corregir una transcripción a mano sin salir de la app.
 ```
