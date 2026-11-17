@@ -99,7 +99,7 @@ function LevelMeter() {
 }
 
 /** Botón "Convertir un audio" (archivo a notas). */
-export function ConvertAudioButton() {
+export function ConvertAudioButton({ label = 'Convertir un audio' }: { label?: string }) {
   const input = useRef<HTMLInputElement>(null);
   const busy = useTranscribe((s) => s.state.step === 'working' || s.state.step === 'recording');
   // Menú de la app de escritorio: Archivo › Convertir un audio.
@@ -119,7 +119,7 @@ export function ConvertAudioButton() {
         }}
       />
       <Button icon={<FileAudio />} disabled={busy} onClick={() => input.current?.click()}>
-        Convertir un audio
+        {label}
       </Button>
     </>
   );

@@ -12,6 +12,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@capacitor/core": "8.6.0",
+    "@capacitor/screen-orientation": "8.0.2",
     "@impromptu/audio": "workspace:*",
     "@impromptu/core": "workspace:*",
     "@impromptu/export": "workspace:*",

@@ -333,37 +333,3 @@
 .panel[hidden] {
   display: none;
 }
-
-/* Animación del logo al abrir la app de escritorio (una vez por sesión). */
-.intro {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  background: var(--carbon);
-  cursor: pointer;
-}
-
-.saltar {
-  position: absolute;
-  right: var(--e-6);
-  bottom: var(--e-6);
-  min-height: 44px;
-  padding: 0 var(--e-4);
-  border: 1px solid var(--linea);
-  border-radius: var(--radio);
-  background: transparent;
-  color: var(--gris-texto);
-  font: 400 13px/1 var(--fuente-texto);
-  cursor: pointer;
-}
-
-.saltar:hover {
-  color: var(--chasis);
-}
-
-.saltar:focus-visible {
-  outline: 2px solid var(--ambar);
-  outline-offset: 2px;
-}

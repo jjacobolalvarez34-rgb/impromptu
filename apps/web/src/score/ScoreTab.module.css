@@ -110,3 +110,12 @@
     background: #fff;
   }
 }
+
+/* Celular en horizontal: solo la hoja (los ajustes quedan en la PC). */
+.cuerpo[data-compact='true'] {
+  grid-template-columns: 1fr;
+}
+
+.panel[hidden] {
+  display: none;
+}

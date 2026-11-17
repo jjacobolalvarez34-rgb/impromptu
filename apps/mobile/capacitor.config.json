@@ -1,0 +1,7 @@
+{
+  "appId": "com.mamutherd.impromptu",
+  "appName": "Impromptu",
+  "webDir": "www",
+  "android": { "path": "android" },
+  "server": { "androidScheme": "https" }
+}

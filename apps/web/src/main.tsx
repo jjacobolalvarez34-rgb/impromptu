@@ -1,3 +1,5 @@
+// Primero: en la app de Android instala el relleno de Web MIDI antes de que la app lo busque.
+import './native/install';
 import '@impromptu/ui/styles.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

@@ -1,13 +1,4 @@
-import {
-  Button,
-  Chips,
-  DeviceIndicator,
-  IconButton,
-  Lcd,
-  Logo,
-  LogoIntro,
-  Tabs,
-} from '@impromptu/ui';
+import { Button, Chips, DeviceIndicator, IconButton, Lcd, Logo, Tabs } from '@impromptu/ui';
 import {
   Download,
   FileMusic,
@@ -127,25 +118,7 @@ export function Estudio() {
   const [dragging, setDragging] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
-  // App de escritorio: animación del logo al abrir (una vez por sesión) y bienvenida.
-  const [intro, setIntro] = useState(() => {
-    try {
-      return (
-        new URLSearchParams(window.location.search).has('intro') &&
-        sessionStorage.getItem('impromptu-intro-vista') === null
-      );
-    } catch {
-      return false;
-    }
-  });
-  const endIntro = () => {
-    try {
-      sessionStorage.setItem('impromptu-intro-vista', '1');
-    } catch {
-      // Sin almacenamiento: la animación puede volver a salir.
-    }
-    setIntro(false);
-  };
+  // App de escritorio: bienvenida al abrir (la animación del logo la hace Inicio, antes).
   const [welcome, setWelcome] = useState(() => isDesktop() && !useStudio.getState().take);
   // Menú nativo de la app de escritorio.
   useEffect(
@@ -175,11 +148,11 @@ export function Estudio() {
     };
   }, [take]);
   const meterLive = useRef(meter);
-  // Al entrar a una pantalla con sonido, el piano se descarga ya; si está la animación del
-  // logo, cuando termina (decodificar las muestras a la vez la trababa).
+  // Al entrar a una pantalla con sonido, el piano se descarga ya (la animación del logo, si la
+  // hay, ya terminó: Inicio monta el estudio después).
   useEffect(() => {
-    if (!intro) void engine.preload();
-  }, [intro]);
+    void engine.preload();
+  }, []);
   useEffect(() => {
     meterLive.current = meter;
   }, [meter]);
@@ -249,19 +222,6 @@ export function Estudio() {
   };
 
   const noteCount = take?.tracks.reduce((n, t) => n + t.notes.length, 0) ?? 0;
-
-  // Mientras corre la animación del logo, solo ella: el estudio (visualizador WebGL, paneles)
-  // se monta después, para que la animación no se trabe en equipos modestos.
-  if (intro) {
-    return (
-      <div className={styles.intro} onClick={endIntro}>
-        <LogoIntro size="min(36vw, 32vh, 260px)" onDone={() => window.setTimeout(endIntro, 500)} />
-        <button type="button" className={styles.saltar} onClick={endIntro}>
-          Saltar
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div

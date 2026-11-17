@@ -40,7 +40,7 @@ function download(name: string, data: BlobPart, type: string) {
  * siguiendo la reproducción. El tempo y el compás se pueden corregir; se exporta MusicXML,
  * MIDI cuantizado y PDF (imprimir).
  */
-export function ScoreTab() {
+export function ScoreTab({ compact = false }: { compact?: boolean }) {
   const take = useStudio((s) => s.take);
   const [meter, setMeter] = useState<Meter>(
     (take?.timeSignature ? `${take.timeSignature[0]}/${take.timeSignature[1]}` : '4/4') as Meter,
@@ -146,8 +146,8 @@ export function ScoreTab() {
 
   const base = take.title || 'impromptu';
   return (
-    <div className={styles.cuerpo}>
-      <aside className={styles.panel} aria-label="Ajustes de la partitura">
+    <div className={styles.cuerpo} data-compact={compact}>
+      <aside className={styles.panel} aria-label="Ajustes de la partitura" hidden={compact}>
         <h2 className="ui-etiqueta">Tempo</h2>
         <label className={styles.campo}>
           <input

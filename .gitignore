@@ -40,3 +40,11 @@ fixtures/local/
 apps/desktop/dist/
 apps/desktop/release/
 apps/desktop/modelos/
+
+# App de Android: copia de la web y compilados
+apps/mobile/www/
+apps/mobile/android/app/build/
+apps/mobile/android/build/
+apps/mobile/android/.gradle/
+apps/mobile/android/app/src/main/assets/public/
+apps/mobile/android/local.properties
