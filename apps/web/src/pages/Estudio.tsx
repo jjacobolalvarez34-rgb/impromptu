@@ -108,6 +108,10 @@ export function Estudio() {
     };
   }, [take]);
   const meterLive = useRef(meter);
+  // Al entrar a una pantalla con sonido, el piano se descarga ya (no espera la intro).
+  useEffect(() => {
+    void engine.preload();
+  }, []);
   useEffect(() => {
     meterLive.current = meter;
   }, [meter]);

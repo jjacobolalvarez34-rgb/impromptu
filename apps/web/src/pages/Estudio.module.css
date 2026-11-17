@@ -24,6 +24,8 @@
 .inicio {
   display: inline-flex;
   border-radius: var(--radio);
+  color: inherit;
+  text-decoration: none;
 }
 
 .inicio > span[role='img'] {

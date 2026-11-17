@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { KeyboardSection, TakesSection } from '../studio/LivePanel';
 import { SettingsPanel } from '../studio/SettingsPanel';
 import { VisualizerView } from '../studio/VisualizerView';
+import { engine } from '../studio/audio';
 import { live, useLive } from '../studio/live';
 import { useStudio } from '../studio/store';
 import { formatTime } from '../studio/transport';
@@ -31,6 +32,10 @@ export function Celular() {
   const firstOpen = useRef(opened);
 
   // Al abrir una toma desde la lista, se pasa al estudio para verla y oírla.
+  // Al entrar a una pantalla con sonido, el piano se descarga ya (no espera la intro).
+  useEffect(() => {
+    void engine.preload();
+  }, []);
   useEffect(() => {
     if (opened && opened !== firstOpen.current) setTab('estudio');
     firstOpen.current = opened;

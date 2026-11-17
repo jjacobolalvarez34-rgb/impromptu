@@ -3,6 +3,7 @@ import type { Background } from '@impromptu/render';
 import { ArrowLeft, Cable } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
+import { engine } from '../studio/audio';
 import { live, useLive } from '../studio/live';
 import { useStudio } from '../studio/store';
 import { VisualizerView } from '../studio/VisualizerView';
@@ -37,6 +38,10 @@ export function EnVivo() {
   const [visible, setVisible] = useState(true);
   const timer = useRef(0);
 
+  // Al entrar a una pantalla con sonido, el piano se descarga ya (no espera la intro).
+  useEffect(() => {
+    void engine.preload();
+  }, []);
   useEffect(() => {
     useStudio.getState().setView('live');
     // Si el permiso MIDI ya se dio antes, se conecta solo (útil al reabrir en OBS).

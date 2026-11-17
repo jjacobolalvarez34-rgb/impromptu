@@ -10,8 +10,9 @@ import { EnVivo } from './pages/EnVivo';
 import { Componentes } from './pages/Componentes';
 import { Intro } from './pages/Intro';
 
-// El piano se descarga apenas se abre la app (luego queda en caché y sirve sin conexión).
-void engine.preload();
+// El piano se descarga al abrir la app (luego queda en caché y sirve sin conexión), pero
+// después de la intro: decodificar 150 muestras a la vez la hacía ver trabada.
+window.setTimeout(() => void engine.preload(), 4000);
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Falta el elemento #root en index.html');

@@ -20,6 +20,8 @@ const STEPS = [
 /** Pantalla de inicio: intro animada (una vez por sesión) y elección del instrumento. */
 export function Portada() {
   const [intro, setIntro] = useState(() => {
+    // `?intro` la muestra siempre (para verla otra vez o grabarla).
+    if (new URLSearchParams(window.location.search).has('intro')) return true;
     try {
       return sessionStorage.getItem(INTRO_KEY) === null;
     } catch {
