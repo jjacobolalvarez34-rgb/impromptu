@@ -1,0 +1,24 @@
+{
+  "name": "@impromptu/transcribe",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Audio o micrófono a notas, con IA que corre en el equipo (Basic Pitch).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@impromptu/core": "workspace:*",
+    "@spotify/basic-pitch": "1.0.1",
+    "@tensorflow/tfjs": "3.21.0"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -19,6 +19,7 @@
     "@impromptu/midi": "workspace:*",
     "@impromptu/practice": "workspace:*",
     "@impromptu/render": "workspace:*",
+    "@impromptu/transcribe": "workspace:*",
     "@impromptu/ui": "workspace:*",
     "lucide-react": "catalog:",
     "react": "catalog:",

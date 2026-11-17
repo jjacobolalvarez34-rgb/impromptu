@@ -60,11 +60,15 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // Incluye el modelo de transcripción (json + bin) para que funcione sin conexión.
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2,json,bin}'],
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: `${base}index.html`,
       },
     }),
   ],
+  // El worker de transcripción usa módulos ES (importa TensorFlow.js y el modelo).
+  worker: { format: 'es' },
   server: { port: 5173 },
   preview: { port: 4173 },
 });

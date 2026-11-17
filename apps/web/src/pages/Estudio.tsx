@@ -25,6 +25,7 @@ import { live, useLive } from '../studio/live';
 import { AudioSection, openOwnAudio } from '../studio/AudioSection';
 import { EditBar, useEditShortcuts } from '../studio/EditBar';
 import { ExportDialog } from '../studio/ExportDialog';
+import { TranscribeSection } from '../studio/TranscribeSection';
 import { VideoSection, openCameraVideo } from '../studio/VideoSection';
 import { KeyboardSection, TakesSection } from '../studio/LivePanel';
 import { SettingsPanel } from '../studio/SettingsPanel';
@@ -284,6 +285,7 @@ export function Estudio() {
           <TakesSection />
           <AudioSection />
           <VideoSection />
+          <TranscribeSection />
           <h2 className="ui-etiqueta">Archivos MIDI</h2>
           <input
             ref={fileInput}

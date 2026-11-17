@@ -14,6 +14,35 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-17 · Fase 5 · Audio a notas
+- Hecho:
+  - `packages/transcribe`: Basic Pitch (Spotify, Apache-2.0) con TensorFlow.js en un Web Worker. El modelo (900 KB) va empaquetado con la app y entra en la caché de la PWA, así que funciona sin conexión. Cancelar termina el worker de inmediato.
+  - Sección "Audio a notas" en el Estudio: convertir un archivo (MP3, WAV, M4A, FLAC, OGG) o grabar con el micrófono. La pieza se abre con manos y dedos sugeridos, y el audio original queda como "Mi audio", sincronizado con desfase 0.
+  - Umbrales ajustados con las grabaciones de Jacobo: ataque 0,6, cuadro 0,4, largo mínimo 8 cuadros. Quedan como parámetros de `transcribe()` para un control de sensibilidad más adelante.
+  - Pedal y modelo de piano de ByteDance: quedan para después (ADR-013).
+  - **BUG-001 arreglado** (commit aparte): la sincronía de "Mi audio" y del video usaba el desfase con el signo al revés. Apareció al medir la transcripción.
+- Pruebas:
+  - `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde (133 pruebas).
+  - Playwright `transcribir.spec.ts`: un WAV sintético (do, mi, sol) da exactamente esas 3 notas y abre la pieza (34 s; captura `test-results/capturas/transcribir-escritorio.png`).
+  - F1 de ataques (misma tecla, ±50 ms) contra el MIDI de Jacobo, con `scripts/local/transcribe-f1.mjs`:
+
+    | Pieza | Umbrales de Basic Pitch (0,5 / 0,3 / 5) | Umbrales elegidos (0,6 / 0,4 / 8) | Tiempo |
+    |---|---|---|---|
+    | Consuelo (138 s) | 54 % | **58 %** (precisión 61 %, exhaustividad 55 %) | 67 s |
+    | Still learning (102 s) | 52 % | **61 %** (precisión 52 %, exhaustividad 72 %) | 34 s |
+
+  - Análisis de errores (Consuelo):
+    - No hay deriva entre el MP3 y el MIDI: −0,40 ± 0,02 s en todas las ventanas de 20 s.
+    - Casi no hay errores de octava.
+    - De las notas falsas, 2 de cada 3 son re-ataques de una tecla que ya suena. Un filtro para unirlas no mejoró la F1, así que no se agregó.
+    - Para piano, el techo de Basic Pitch está cerca del 60 %. Un modelo especializado (ByteDance) es el paso siguiente si hace falta más.
+- Probado por Jacobo: pendiente.
+  - Convertir una grabación suya de piano (celular o MP3 sin MIDI) y decir si las notas sirven como punto de partida para editar.
+  - Probar "Grabar con el micrófono".
+  - Revisar que "Mi audio" ahora suene sincronizado con Consuelo y Still learning (BUG-001).
+- Pendiente para la próxima: fase 6 (partitura).
+- Pedidos del usuario no atendidos: ninguno.
+
 ### 2026-11-17 · Fase 4 · Manos y dedos
 - Hecho:
   - `packages/practice`, con algoritmo propio (ADR-012):

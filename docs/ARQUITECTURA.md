@@ -164,7 +164,7 @@ Audio → remuestreo (16 o 22 kHz mono) → Worker
 → separación de manos → Take con origin 'audio'
 ```
 - Archivos largos por ventanas con solapamiento y barra de progreso; cancelable.
-- **[VERIFICAR]** que el modelo de ByteDance convierta bien a ONNX y su tamaño final. Plan B: Basic Pitch también para piano, con pedal desactivado.
+- **[VERIFICAR, ADR-013]** que el modelo de ByteDance convierta bien a ONNX y su tamaño final. **Hoy se usa el plan B:** Basic Pitch también para piano, sin pedal.
 
 ## Plataformas
 | Plataforma | MIDI | Notas |

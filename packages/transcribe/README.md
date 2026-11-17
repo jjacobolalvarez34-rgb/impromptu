@@ -1,1 +1,3 @@
-Workers de audio a notas (Basic Pitch y modelo de piano de ByteDance). Fase 5.
+# @impromptu/transcribe
+
+Audio o micrófono a notas con Basic Pitch (Spotify, Apache-2.0) en un Web Worker. El modelo viene empaquetado: funciona sin conexión.

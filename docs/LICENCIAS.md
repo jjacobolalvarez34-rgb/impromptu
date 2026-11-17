@@ -28,7 +28,8 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 | Verovio (alternativa) | Grabado de partitura | LGPL-3.0 | Dar crédito; cambios a Verovio deben publicarse |
 | alphaTab | Tablaturas (fase 9) | MPL-2.0 | Igual que Mediabunny |
 | onnxruntime-web | Ejecutar modelos ONNX | MIT [VERIFICAR] | |
-| TensorFlow.js | Basic Pitch | Apache-2.0 [VERIFICAR] | |
+| TensorFlow.js 3.21 | Ejecutar Basic Pitch | Apache-2.0 (verificado) | Aviso de licencia |
+| `@spotify/basic-pitch` 1.0.1 (código y modelo) | Audio a notas (fase 5) | Apache-2.0 (verificado) | Aviso de licencia; crédito en "Acerca de" |
 | Dexie (IndexedDB) | Almacenamiento | [VERIFICAR] | |
 | Tauri 2 | Escritorio | MIT o Apache-2.0 [VERIFICAR] | |
 | `tauri-plugin-midi` | MIDI en escritorio | MIT | |

@@ -102,6 +102,17 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
   - La calidad se mide con Jacobo en 3 piezas: el porcentaje que cambiaría queda en la BITÁCORA.
   - Si en el futuro conviene comparar con PianoPlayer, se hace como prueba externa, no copiando su código.
 
+### ADR-013 · Transcripción con Basic Pitch; el modelo de piano con pedal queda para después
+- **Contexto:** la fase 5 pide Basic Pitch para todo y el modelo de piano de ByteDance (con pedal) convertido a ONNX. Esa conversión necesita Python, PyTorch y el modelo original (cerca de 170 MB), y es un [VERIFICAR] de ARQUITECTURA. El paquete `@spotify/basic-pitch` (Apache-2.0) ya trae su modelo (900 KB) y corre con TensorFlow.js.
+- **Decisión:** se usa el plan B de ARQUITECTURA.
+  - Basic Pitch para todo, piano incluido, en un Web Worker, con el modelo empaquetado en la app (sin conexión).
+  - El pedal no se detecta todavía.
+  - El modelo de ByteDance se evaluará aparte: conversión a ONNX en D:, tamaño y velocidad. Si conviene, entra como opción "Piano con pedal", que se descarga a demanda.
+- **Consecuencias:**
+  - Transcribir funciona ya en todos los equipos.
+  - En piano, Basic Pitch es menos preciso que un modelo especializado y no da pedal.
+  - La F1 de ataques contra las grabaciones de Jacobo queda en la BITÁCORA para comparar después.
+
 ---
 ### Plantilla
 ```
