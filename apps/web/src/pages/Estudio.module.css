@@ -277,3 +277,13 @@
     bottom: 0;
   }
 }
+
+.alertaAudio {
+  margin: 0;
+  font-size: 13px;
+  color: var(--chasis);
+}
+
+.sonido {
+  min-width: 190px;
+}

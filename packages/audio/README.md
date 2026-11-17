@@ -1,3 +1,3 @@
 # @impromptu/audio
 
-Sampler de piano, mezcla y render offline de audio. Se construye en la fase 1 y 2 (ver `docs/ROADMAP.md`).
+Piano de cola Salamander con Web Audio: capas de fuerza, pedales (sustain, sostenuto, una corda) y descarga única guardada en caché.

@@ -55,6 +55,18 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
   - La PWA queda solo para la versión web.
   - iPhone sigue fuera de alcance por ahora.
 
+### ADR-009 · Piano propio con Web Audio en lugar de `@tonejs/piano`
+- **Contexto:** `@tonejs/piano` está sin mantenimiento desde 2022 y pide Tone 14 (hoy va en 15). Además, descarga las muestras en cada uso y corre en el contexto en tiempo real de Tone, lo que complica el render offline de la fase 3.
+- **Decisión:** `packages/audio` implementa su propio sampler sobre Web Audio, con las muestras MP3 del Salamander Grand. Detalles:
+  - Usa 5 de las 16 capas de fuerza, unos 30 MB, con ganancia continua dentro de cada capa.
+  - Las muestras se descargan la primera vez y se guardan en la Cache Storage, así que después funciona sin conexión (ADR-008).
+  - Los pedales se resuelven antes de sonar, con una función pura que tiene pruebas: el sustain, el sostenuto solo para las notas atrapadas, la una corda y la repetición de una misma tecla.
+  - El reloj del estudio pasa a ser el del AudioContext, corregido por la latencia de salida, para que imagen y sonido no se separen.
+- **Consecuencias:**
+  - No depende de Tone.js.
+  - El mismo `Piano` funciona con un `OfflineAudioContext` para exportar.
+  - Hoy las muestras vienen de una copia pública (PROVISIONAL, P15); antes de la v0.1 hay que servirlas desde un espejo propio.
+
 ---
 ### Plantilla
 ```

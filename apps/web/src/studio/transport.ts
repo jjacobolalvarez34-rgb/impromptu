@@ -16,7 +16,33 @@ export class Transport {
   duration = 0;
   loop: LoopRange | null = null;
 
-  constructor(private readonly clock: () => number = () => performance.now() / 1000) {}
+  private readonly listeners = new Set<() => void>();
+
+  constructor(private clock: () => number = () => performance.now() / 1000) {}
+
+  /** Avisa de play, pausa, búsqueda, velocidad o cambio de reloj (para reprogramar el audio). */
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private emit(): void {
+    for (const l of this.listeners) l();
+  }
+
+  /** Cambia el reloj base (por ejemplo, al del AudioContext) sin saltar de posición. */
+  setClock(clock: () => number): void {
+    const t = this.now();
+    this.clock = clock;
+    this.anchorTime = t;
+    this.anchorClock = clock();
+    this.emit();
+  }
+
+  /** Valor del reloj base en que sonará el segundo `songTime` de la toma (si sigue sonando). */
+  toClock(songTime: number): number {
+    return this.anchorClock + (songTime - this.anchorTime) / this._speed;
+  }
 
   get playing(): boolean {
     return this._playing;
@@ -46,17 +72,20 @@ export class Transport {
     if (this.anchorTime >= this.duration) this.anchorTime = this.loop?.start ?? 0;
     this.anchorClock = this.clock();
     this._playing = true;
+    this.emit();
   }
 
   pause(): void {
     if (!this._playing) return;
     this.anchorTime = this.now();
     this._playing = false;
+    this.emit();
   }
 
   seek(t: number): void {
     this.anchorTime = Math.min(Math.max(0, t), this.duration);
     this.anchorClock = this.clock();
+    this.emit();
   }
 
   setSpeed(speed: number): void {
@@ -64,6 +93,15 @@ export class Transport {
     this._speed = Math.min(1.5, Math.max(0.5, speed));
     this.anchorTime = t;
     this.anchorClock = this.clock();
+    this.emit();
+  }
+
+  /** La repetición saltó al inicio de la sección: el audio debe reprogramarse. */
+  private lastNow = 0;
+  wrapped(t: number): boolean {
+    const jumped = t < this.lastNow - 0.05;
+    this.lastNow = t;
+    return jumped;
   }
 }
 

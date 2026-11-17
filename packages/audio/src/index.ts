@@ -1,2 +1,5 @@
-// Sampler de piano, mezcla y render offline de audio. Se construye en la fase 1 y 2 (docs/ROADMAP.md).
-export {};
+export { Piano, takeVoices } from './piano';
+export type { LoadProgress, PianoOptions } from './piano';
+export { resolveVoices, pedalDownRanges } from './sustain';
+export type { Voice } from './sustain';
+export * from './salamander';

@@ -20,7 +20,7 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 | Prettier 3.10 | Formato | MIT (verificado) | Solo desarrollo |
 | PixiJS | Visualizador | MIT [VERIFICAR] | |
 | Tone.js | Audio | MIT [VERIFICAR] | |
-| `@tonejs/piano` | Piano incluido con pedal | MIT | Usa muestras de Salamander (ver abajo) |
+| `@tonejs/piano` | Piano incluido con pedal | MIT | No se usa (ADR-009): hay un sampler propio en `packages/audio` |
 | `midi-file` 1.2 | Leer y escribir .mid (en uso desde la fase 1) | MIT (verificado) | Aviso de copyright. Se eligió en lugar de `@tonejs/midi` para controlar velocity 0 y notas sin cerrar |
 | `@tonejs/midi` | Leer y escribir .mid | MIT (verificado 2.0.28) | No se usa: ver la fila de `midi-file` |
 | Mediabunny | Escribir MP4 con WebCodecs | MPL-2.0 | Si modificas sus archivos, publica esos cambios bajo MPL. No quitar cabeceras de licencia |
@@ -48,7 +48,7 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 | Recurso | Uso | Licencia | Notas |
 |---|---|---|---|
 | PianoPlayer (marcomusy) | Algoritmo de digitación (puerto a TS) | MIT | Conservar el aviso de copyright en el archivo portado |
-| Salamander Grand Piano (Alexander Holm) | Sonido de piano | Publicado como CC-BY 3.0; según la página del autor, de dominio público desde 2022 | Dar crédito igualmente en "Acerca de" |
+| Salamander Grand Piano (Alexander Holm) | Sonido de piano. Hoy se descarga en MP3 desde tambien.github.io/Piano (PROVISIONAL, P15) | Publicado como CC-BY 3.0; según la página del autor, de dominio público desde 2022 | Dar crédito igualmente en "Acerca de" |
 | Martian Mono, Archivo | Tipografías | SIL OFL 1.1 | Incluir el archivo OFL con las fuentes. Hoy se empaquetan vía `@fontsource` (que trae el OFL en `node_modules`); falta mostrar el texto OFL en "Acerca de" |
 
 ## Proyectos que NO se copian

@@ -9,6 +9,7 @@ import { ColorField } from '../studio/ColorField';
 import { VisualizerView } from '../studio/VisualizerView';
 import { LOCAL_PIECES, createDemoTake, openLocalPiece, openMidiFile } from '../studio/sources';
 import type { OpenedTake } from '../studio/sources';
+import { engine, useAudio } from '../studio/audio';
 import { transport, useStudio } from '../studio/store';
 import type { Aspect, KeyboardMode } from '../studio/store';
 import { formatTime } from '../studio/transport';
@@ -56,7 +57,24 @@ export function Estudio() {
   const keyboard = useStudio((s) => s.keyboard);
   const playing = useStudio((s) => s.playing);
   const speed = useStudio((s) => s.speed);
-  const { open, setSettings, setAspect, setKeyboard, togglePlay, setSpeed } = useStudio.getState();
+  const {
+    open,
+    setSettings,
+    setAspect,
+    setKeyboard,
+    togglePlay: toggle,
+    setSpeed,
+  } = useStudio.getState();
+  const audioStatus = useAudio((s) => s.status);
+  const audioProgress = useAudio((s) => s.progress);
+  const audioEnabled = useAudio((s) => s.enabled);
+
+  // El primer "Reproducir" es el gesto que permite crear el audio (BUGS B-008).
+  const togglePlay = () => {
+    void engine.start();
+    toggle();
+  };
+  useEffect(() => engine.setTake(take), [take]);
 
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -85,11 +103,12 @@ export function Estudio() {
       )
         return;
       e.preventDefault();
-      togglePlay();
+      void engine.start();
+      useStudio.getState().togglePlay();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [togglePlay]);
+  }, []);
 
   const onFrame = useCallback((t: number) => {
     if (timeRef.current) timeRef.current.textContent = formatTime(t);
@@ -352,6 +371,23 @@ export function Estudio() {
           disabled={!take}
           onChange={(e) => transport.seek(Number(e.target.value))}
         />
+        {audioStatus === 'loading' && (
+          <Lcd size="sm" aria-live="polite">
+            Descargando piano {Math.round(audioProgress * 100)} %
+          </Lcd>
+        )}
+        {audioStatus === 'error' && (
+          <p role="alert" className={styles.alertaAudio}>
+            No pudimos descargar el piano. Revisa tu conexión y vuelve a reproducir.
+          </p>
+        )}
+        <div className={styles.sonido}>
+          <Switch
+            label="Sonido de la app"
+            checked={audioEnabled}
+            onChange={useAudio.getState().setEnabled}
+          />
+        </div>
         <div className={styles.velocidad}>
           <span className="ui-etiqueta">Velocidad</span>
           <Chips

@@ -2,15 +2,20 @@
   "name": "@impromptu/audio",
   "version": "0.0.0",
   "private": true,
-  "description": "Sampler de piano, mezcla y render offline de audio.",
+  "description": "Piano de cola (Salamander) con Web Audio, pedales y render offline.",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@impromptu/core": "workspace:*"
   }
 }
