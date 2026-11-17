@@ -89,6 +89,19 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
   - Las tomas sin tempo (las grabadas en vivo) no muestran cuadrícula hasta que haya detección de tempo (fase 6).
   - Por ahora solo se usa el primer compás del MIDI; los cambios de compás quedan para la fase 6.
 
+### ADR-012 · Digitación con algoritmo propio en lugar de portar PianoPlayer
+- **Contexto:** el ROADMAP proponía portar a TypeScript el algoritmo de PianoPlayer (MIT). Mientras la licencia del proyecto no esté decidida (P1), CLAUDE.md pide no copiar código de otros proyectos.
+- **Decisión:** `packages/practice` implementa su propia digitación:
+  - Usa programación dinámica (Viterbi) sobre los dedos de cada nota o acorde.
+  - Las distancias cómodas entre pares de dedos salen del modelo publicado de Parncutt et al. (1997). Son datos de un artículo, no código.
+  - Agrega reglas propias: el pulgar y el meñique en tecla negra, el paso del pulgar, el mismo dedo en otra tecla, y que la distancia entre dedos de un acorde siga la de las notas.
+  - Tiene tamaño de mano configurable (pequeña, mediana, grande) y respeta los dedos que fija el usuario como anclas.
+  - La separación de manos también es propia: cuesta el registro, la continuidad y la apertura máxima.
+- **Consecuencias:**
+  - Sin obligaciones de licencia de terceros.
+  - La calidad se mide con Jacobo en 3 piezas: el porcentaje que cambiaría queda en la BITÁCORA.
+  - Si en el futuro conviene comparar con PianoPlayer, se hace como prueba externa, no copiando su código.
+
 ---
 ### Plantilla
 ```

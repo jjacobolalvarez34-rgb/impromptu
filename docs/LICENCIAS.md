@@ -47,7 +47,7 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 ## Algoritmos y datos
 | Recurso | Uso | Licencia | Notas |
 |---|---|---|---|
-| PianoPlayer (marcomusy) | Algoritmo de digitación (puerto a TS) | MIT | Conservar el aviso de copyright en el archivo portado |
+| PianoPlayer (marcomusy) | Referencia de digitación | MIT | No se usa: la digitación es propia (ADR-012), con datos publicados de Parncutt et al. (1997) |
 | Salamander Grand Piano (Alexander Holm) | Sonido de piano. Hoy se descarga en MP3 desde tambien.github.io/Piano (PROVISIONAL, P15) | Publicado como CC-BY 3.0; según la página del autor, de dominio público desde 2022 | Dar crédito igualmente en "Acerca de" |
 | Martian Mono, Archivo | Tipografías | SIL OFL 1.1 | Incluir el archivo OFL con las fuentes. Hoy se empaquetan vía `@fontsource` (que trae el OFL en `node_modules`); falta mostrar el texto OFL en "Acerca de" |
 

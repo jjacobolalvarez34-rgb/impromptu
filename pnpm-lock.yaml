@@ -418,6 +418,25 @@ importers:
         specifier: 'catalog:'
         version: 5.1.0(@types/node@22.20.5)(vite@8.3.8(@types/node@22.20.5)(terser@5.51.2))
 
+  packages/practice:
+    dependencies:
+      '@impromptu/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@impromptu/midi':
+        specifier: workspace:*
+        version: link:../midi
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.20.5
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.0(@types/node@22.20.5)(vite@8.3.8(@types/node@22.20.5)(terser@5.51.2))
+
   packages/render:
     dependencies:
       '@impromptu/core':

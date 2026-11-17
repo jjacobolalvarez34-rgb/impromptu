@@ -25,7 +25,7 @@
 | Transcripción | Web Workers + Basic Pitch (TF.js) y modelo de piano de ByteDance en ONNX Runtime Web | Fase 5 |
 | Partitura | Escritor propio de MusicXML + OpenSheetMusicDisplay (BSD-3) para mostrar | Fase 6 |
 | Tablaturas | alphaTab (MPL-2.0) | Fase 9 |
-| Digitación | Puerto a TypeScript del algoritmo de PianoPlayer (MIT) | Fase 4 |
+| Digitación | Algoritmo propio (Viterbi + distancias de Parncutt et al., ADR-012) | Fase 4 |
 | Escritorio | Tauri 2 + `tauri-plugin-midi` (MIT, emula Web MIDI con `midir`) | Fase 8 |
 | Pruebas | Vitest + Playwright | |
 

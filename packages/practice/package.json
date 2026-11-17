@@ -1,0 +1,23 @@
+{
+  "name": "@impromptu/practice",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Separación de manos, digitación sugerida y modo práctica.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@impromptu/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@impromptu/midi": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
