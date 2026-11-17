@@ -1,5 +1,7 @@
 import { KEYBOARD_PRESETS, fitKeyboardRange } from '@impromptu/core';
 import type { Take } from '@impromptu/core';
+import type { HandSize } from '@impromptu/practice';
+import { autoAssign, hasNoHands } from './edit';
 import { DEFAULT_SETTINGS } from '@impromptu/render';
 import type { VisualSettings } from '@impromptu/render';
 import { create } from 'zustand';
@@ -27,6 +29,19 @@ interface StudioState {
   loopOn: boolean;
   /** Mientras se exporta, el visualizador de la pantalla se pausa. */
   exporting: boolean;
+  /** Tamaño de mano para la digitación sugerida. */
+  handSize: HandSize;
+  /** Notas seleccionadas para editar (ids). */
+  selection: string[];
+  /** Tomas anteriores (deshacer) y deshechas (rehacer). */
+  history: Take[];
+  future: Take[];
+  /** Aplica una edición a la toma abierta y la guarda en el historial. */
+  edit: (fn: (take: Take) => Take) => void;
+  undo: () => void;
+  redo: () => void;
+  select: (ids: string[]) => void;
+  setHandSize: (size: HandSize) => void;
   playing: boolean;
   speed: number;
   open: (take: Take, notices?: string[]) => void;
@@ -55,6 +70,38 @@ export const useStudio = create<StudioState>()(
       loop: null,
       loopOn: false,
       exporting: false,
+      handSize: 'medium',
+      selection: [],
+      history: [],
+      future: [],
+      edit: (fn) => {
+        const take = get().take;
+        if (!take) return;
+        const next = fn(take);
+        set({ take: next, history: [...get().history.slice(-49), take], future: [] });
+        onTakeEdited(next);
+      },
+      undo: () => {
+        const { history, take, future } = get();
+        const prev = history[history.length - 1];
+        if (!prev || !take) return;
+        set({
+          take: prev,
+          history: history.slice(0, -1),
+          future: [take, ...future],
+          selection: [],
+        });
+        onTakeEdited(prev);
+      },
+      redo: () => {
+        const { history, take, future } = get();
+        const next = future[0];
+        if (!next || !take) return;
+        set({ take: next, history: [...history, take], future: future.slice(1), selection: [] });
+        onTakeEdited(next);
+      },
+      select: (selection) => set({ selection }),
+      setHandSize: (handSize) => set({ handSize }),
       playing: false,
       speed: 1,
       open: (take, notices = []) => {
@@ -65,8 +112,15 @@ export const useStudio = create<StudioState>()(
         transport.duration = take.duration;
         transport.loop = null;
         transport.seek(0);
+        // Una toma sin manos (un MIDI de una sola pista, una toma en vivo) las recibe sola,
+        // con sus dedos sugeridos (fase 4). Se puede deshacer.
+        const prepared = hasNoHands(take) ? autoAssign(take, get().handSize) : take;
         set({
-          take: withKeyboard(take, get().keyboard),
+          take: withKeyboard(prepared, get().keyboard),
+          selection: [],
+          // La versión sin manos queda en el historial: "Deshacer" la recupera.
+          history: prepared === take ? [] : [withKeyboard(take, get().keyboard)],
+          future: [],
           notices,
           playing: false,
           view: 'take',
@@ -114,7 +168,12 @@ export const useStudio = create<StudioState>()(
       // las tomas viven en IndexedDB.
       name: 'impromptu-estudio',
       version: 1,
-      partialize: (s) => ({ settings: s.settings, aspect: s.aspect, keyboard: s.keyboard }),
+      partialize: (s) => ({
+        settings: s.settings,
+        aspect: s.aspect,
+        keyboard: s.keyboard,
+        handSize: s.handSize,
+      }),
       // Ajustes guardados por una versión anterior: se completan con los valores por defecto
       // (por ejemplo, el estilo y el brillo de las notas de ADR-010).
       merge: (persisted, current) => {
@@ -146,3 +205,10 @@ function withKeyboard(take: Take, mode: KeyboardMode): Take {
 }
 
 setTakeIdGetter(() => useStudio.getState().take?.id);
+
+let takeEdited: (take: Take) => void = () => undefined;
+const onTakeEdited = (take: Take) => takeEdited(take);
+/** Quien guarda las tomas (live.ts) se registra aquí para guardar las ediciones. */
+export function setTakeEditedListener(listener: (take: Take) => void): void {
+  takeEdited = listener;
+}

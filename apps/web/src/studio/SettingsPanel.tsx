@@ -1,6 +1,7 @@
 import type { PedalKind } from '@impromptu/core';
 import { THEMES } from '@impromptu/render';
-import { Chips, Slider, Switch } from '@impromptu/ui';
+import { Button, Chips, Slider, Switch } from '@impromptu/ui';
+import { autoAssign } from './edit';
 import { ColorField } from './ColorField';
 import { useStudio } from './store';
 import type { KeyboardMode } from './store';
@@ -31,6 +32,12 @@ const BACKGROUNDS = [
   { value: 'color', label: 'Color' },
 ] as const;
 
+const HAND_SIZES = [
+  { value: 'small', label: 'Pequeña' },
+  { value: 'medium', label: 'Mediana' },
+  { value: 'large', label: 'Grande' },
+] as const;
+
 const PEDALS: { kind: PedalKind; label: string }[] = [
   { kind: 'sustain', label: 'Sustain' },
   { kind: 'sostenuto', label: 'Sostenuto' },
@@ -41,6 +48,8 @@ const PEDALS: { kind: PedalKind; label: string }[] = [
 export function SettingsPanel() {
   const settings = useStudio((s) => s.settings);
   const keyboard = useStudio((s) => s.keyboard);
+  const handSize = useStudio((s) => s.handSize);
+  const hasTake = useStudio((s) => s.take !== null);
   const { setSettings, setKeyboard } = useStudio.getState();
 
   const setEffect = (patch: Partial<typeof settings.effects>) =>
@@ -129,6 +138,37 @@ export function SettingsPanel() {
           onChange={setColor('unassigned')}
         />
       </div>
+
+      <h2 className="ui-etiqueta">Manos y dedos</h2>
+      <Switch
+        label="Números de dedo"
+        checked={settings.show.fingers}
+        onChange={(fingers) => setSettings({ show: { ...settings.show, fingers } })}
+      />
+      <Switch
+        label="Nombres de las notas"
+        checked={settings.show.noteNames}
+        onChange={(noteNames) => setSettings({ show: { ...settings.show, noteNames } })}
+      />
+      <Chips
+        label="Tamaño de mano"
+        options={HAND_SIZES}
+        value={handSize}
+        onChange={(size) => useStudio.getState().setHandSize(size)}
+      />
+      <Button
+        disabled={!hasTake}
+        onClick={() => {
+          const { edit, handSize: size } = useStudio.getState();
+          edit((t) => autoAssign(t, size));
+        }}
+      >
+        Recalcular manos y dedos
+      </Button>
+      <p className="ui-secundario">
+        Pausa y haz clic en una nota para cambiar su mano o su dedo. Lo que fijes se respeta al
+        recalcular.
+      </p>
 
       <h2 className="ui-etiqueta">Teclado</h2>
       <Chips

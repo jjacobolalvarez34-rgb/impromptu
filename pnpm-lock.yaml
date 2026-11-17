@@ -295,6 +295,9 @@ importers:
       '@impromptu/midi':
         specifier: workspace:*
         version: link:../../packages/midi
+      '@impromptu/practice':
+        specifier: workspace:*
+        version: link:../../packages/practice
       '@impromptu/render':
         specifier: workspace:*
         version: link:../../packages/render

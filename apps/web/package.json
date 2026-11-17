@@ -17,6 +17,7 @@
     "@impromptu/export": "workspace:*",
     "@impromptu/media": "workspace:*",
     "@impromptu/midi": "workspace:*",
+    "@impromptu/practice": "workspace:*",
     "@impromptu/render": "workspace:*",
     "@impromptu/ui": "workspace:*",
     "lucide-react": "catalog:",

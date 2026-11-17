@@ -6,7 +6,7 @@ import { create } from 'zustand';
 import { engine } from './audio';
 import { startCameraRecording, stopCameraRecording, useCamera } from './camera';
 import { saveMedia } from './mediaStore';
-import { transport, useStudio } from './store';
+import { setTakeEditedListener, transport, useStudio } from './store';
 import { listTakes, saveTake } from './takesDb';
 import type { TakeSummary } from './takesDb';
 
@@ -244,3 +244,8 @@ export const live = new LiveSession();
 // Desarrollo: al recargar este módulo, la conexión vieja se cierra para que no quede
 // sonando un teclado "fantasma" mientras la interfaz pide conectar de nuevo.
 import.meta.hot?.dispose(() => live.dispose());
+
+// Las ediciones de una toma guardada (manos, dedos, notas) se guardan solas.
+setTakeEditedListener((take) => {
+  if (useLive.getState().takes.some((t) => t.id === take.id)) void saveTake(take);
+});

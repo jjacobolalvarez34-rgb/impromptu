@@ -5,9 +5,11 @@ import {
   Gauge,
   Pause,
   Play,
+  Redo2,
   Repeat,
   SkipBack,
   Square,
+  Undo2,
   Volume2,
   VolumeX,
 } from 'lucide-react';
@@ -21,6 +23,7 @@ import type { OpenedTake } from '../studio/sources';
 import { engine, useAudio } from '../studio/audio';
 import { live, useLive } from '../studio/live';
 import { AudioSection, openOwnAudio } from '../studio/AudioSection';
+import { EditBar, useEditShortcuts } from '../studio/EditBar';
 import { ExportDialog } from '../studio/ExportDialog';
 import { VideoSection, openCameraVideo } from '../studio/VideoSection';
 import { KeyboardSection, TakesSection } from '../studio/LivePanel';
@@ -60,6 +63,9 @@ export function Estudio() {
   const view = useStudio((s) => s.view);
   const loop = useStudio((s) => s.loop);
   const loopOn = useStudio((s) => s.loopOn);
+  const canUndo = useStudio((s) => s.history.length > 0);
+  const canRedo = useStudio((s) => s.future.length > 0);
+  useEditShortcuts();
   const speed = useStudio((s) => s.speed);
   const {
     open,
@@ -356,6 +362,7 @@ export function Estudio() {
               onFrame={onFrame}
               showFps={params.has('fps') || take?.title.startsWith('Prueba') === true}
             />
+            <EditBar />
             {!take && (
               <div className={styles.vacio}>
                 <p>Abre un MIDI o arrástralo aquí para verlo caer.</p>
@@ -416,6 +423,18 @@ export function Estudio() {
             <span className={styles.duracion}>♩ {Math.round(meter.bpm)}</span>
           </Lcd>
         )}
+        <IconButton
+          label="Deshacer (Ctrl+Z)"
+          icon={<Undo2 />}
+          disabled={!canUndo}
+          onClick={() => useStudio.getState().undo()}
+        />
+        <IconButton
+          label="Rehacer (Ctrl+Y)"
+          icon={<Redo2 />}
+          disabled={!canRedo}
+          onClick={() => useStudio.getState().redo()}
+        />
         <IconButton
           label={loopOn ? 'Dejar de repetir la sección' : 'Repetir la sección marcada'}
           title="Arrastra sobre la línea de tiempo para marcar una sección"

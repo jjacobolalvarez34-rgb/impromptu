@@ -70,6 +70,29 @@ export function VisualizerView({
   }, []);
 
   useEffect(() => viz?.setTake(take), [viz, take]);
+  const selection = useStudio((s) => s.selection);
+  useEffect(() => viz?.setSelection(new Set(selection)), [viz, selection]);
+
+  // Editor (fase 4): con la pieza pausada, un clic en una nota la selecciona; Shift suma.
+  useEffect(() => {
+    if (!viz) return;
+    const canvas = viz.canvas;
+    const onDown = (e: PointerEvent) => {
+      const { view } = useStudio.getState();
+      if (view !== 'take' || transport.playing) return;
+      const r = canvas.getBoundingClientRect();
+      const id = viz.noteAt(e.clientX - r.left, e.clientY - r.top);
+      const { selection: current, select } = useStudio.getState();
+      if (!id) return select(e.shiftKey ? current : []);
+      if (e.shiftKey) {
+        select(current.includes(id) ? current.filter((x) => x !== id) : [...current, id]);
+      } else {
+        select([id]);
+      }
+    };
+    canvas.addEventListener('pointerdown', onDown);
+    return () => canvas.removeEventListener('pointerdown', onDown);
+  }, [viz]);
   useEffect(() => viz?.setSettings(settings), [viz, settings]);
   useEffect(() => viz?.setBackground(background), [viz, background]);
 

@@ -1,5 +1,7 @@
 import {
   Application,
+  BitmapFont,
+  BitmapText,
   BlurFilter,
   Container,
   Graphics,
@@ -123,6 +125,13 @@ export class Visualizer {
   /** Pulsos y compases de la toma (vacío si no tiene tempo). */
   private beats: Beat[] = [];
   private readonly barLabels = new Container();
+  /** Números de dedo y nombres de nota sobre las notas (fase 4). */
+  private readonly noteLabels = new Container();
+  private readonly noteLabelPool: Pool<BitmapText>;
+  /** Selección del editor y rectángulos del último cuadro (para saber qué nota hay bajo el cursor). */
+  private selection: ReadonlySet<string> = new Set();
+  private readonly selectionOutline = new Graphics();
+  private hitRects: { id: string; x: number; y: number; width: number; height: number }[] = [];
   /** Video de la cámara o importado (plantillas de ARQUITECTURA: recuadro y fondo). */
   private readonly bgLayer = new Container();
   private readonly insetLayer = new Container();
@@ -196,6 +205,11 @@ export class Visualizer {
     this.videoCanvas.width = this.videoCanvas.height = 2;
     this.videoTexture = Texture.from(this.videoCanvas);
     this.videoSprite = new Sprite(this.videoTexture);
+    installLabelFont();
+    this.noteLabelPool = new Pool(
+      this.noteLabels,
+      () => new BitmapText({ text: '', style: { fontFamily: LABEL_FONT, fontSize: 12 } }),
+    );
     this.barLabelPool = new Pool(
       this.barLabels,
       () =>
@@ -216,6 +230,8 @@ export class Visualizer {
       this.beamLayer,
       this.haloLayer,
       this.noteLayer,
+      this.noteLabels,
+      this.selectionOutline,
       this.keys,
       this.glowLayer,
       this.sparkLayer,
@@ -321,6 +337,24 @@ export class Visualizer {
     );
   }
 
+  /** Notas seleccionadas en el editor: se dibujan con borde ámbar. */
+  setSelection(ids: ReadonlySet<string>): void {
+    this.selection = ids;
+  }
+
+  /**
+   * Id de la nota bajo un punto del lienzo (px CSS), según lo dibujado en el último cuadro.
+   * Si hay varias encimadas, gana la de encima (la última dibujada).
+   */
+  noteAt(x: number, y: number): string | null {
+    for (let i = this.hitRects.length - 1; i >= 0; i--) {
+      const r = this.hitRects[i]!;
+      if (x >= r.x - 2 && x <= r.x + r.width + 2 && y >= r.y - 2 && y <= r.y + r.height + 2)
+        return r.id;
+    }
+    return null;
+  }
+
   setVideoFrame(frame: CanvasImageSource | null, width = 0, height = 0): void {
     this.videoFrame = frame;
     if (frame) this.videoSize = { width, height };
@@ -366,6 +400,10 @@ export class Visualizer {
     // Notas que caen
     this.notePool.begin();
     this.haloPool.begin();
+    this.noteLabelPool.begin();
+    const { fingers: showFingers, noteNames: showNames } = this.settings.show;
+    this.hitRects.length = 0;
+    const outline = this.selectionOutline.clear();
     this.active.clear();
     const glowStyle = effects.noteStyle === 'glow';
     const noteTexture = this.noteTextures[glowStyle ? 'glow' : 'flat'];
@@ -394,11 +432,20 @@ export class Visualizer {
         sprite.height = rect.height;
         sprite.tint = tint;
         sprite.alpha = 0.72 + 0.28 * v;
+        const text = labelFor(note, showFingers, showNames);
+        if (text) this.placeLabel(text, rect, tint, scale);
+        this.hitRects.push({ id: note.id, ...rect });
+        if (this.selection.has(note.id)) {
+          outline
+            .roundRect(rect.x - 2, rect.y - 2, rect.width + 4, rect.height + 4, 4)
+            .stroke({ width: Math.max(2, 2 * scale), color: 0xff9f1c });
+        }
       }
       if (isSounding(note, t)) this.active.set(note.pitch, note);
     });
     this.notePool.end();
     this.haloPool.end();
+    this.noteLabelPool.end();
 
     if (camera) this.keys.clear();
     else this.drawKeyboard(colors);
@@ -478,6 +525,28 @@ export class Visualizer {
       this.drawPedal(t);
     }
     this.app.render();
+  }
+
+  /** Dedo o nombre al pie de la nota, si cabe; oscuro sobre notas claras y claro sobre oscuras. */
+  private placeLabel(
+    text: string,
+    rect: { x: number; y: number; width: number; height: number },
+    tint: number,
+    scale: number,
+  ): void {
+    const size = Math.min(
+      22 * scale,
+      Math.max(8 * scale, rect.width * (text.length > 1 ? 0.42 : 0.62)),
+    );
+    if (rect.height < size + 4) return;
+    const label = this.noteLabelPool.next();
+    label.text = text;
+    label.style.fontSize = size;
+    label.tint = luminance(tint) > 0.55 ? 0x111110 : 0xf5f2ec;
+    label.position.set(
+      rect.x + (rect.width - label.width) / 2,
+      rect.y + rect.height - size - 3 * scale,
+    );
   }
 
   destroy(): void {
@@ -745,4 +814,41 @@ function makeBeamTexture(): Texture {
   ctx.fillStyle = sides;
   ctx.fillRect(0, 0, w, h);
   return Texture.from(canvas);
+}
+
+const LABEL_FONT = 'impromptu-etiquetas';
+const NOTE_NAMES = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
+
+/** Fuente de mapa de bits (Archivo 600, DESIGN §3) para dedos y nombres: se dibuja en la GPU. */
+function installLabelFont(): void {
+  if (BitmapFont.install && !installLabelFont.done) {
+    BitmapFont.install({
+      name: LABEL_FONT,
+      style: {
+        fontFamily: 'Archivo, system-ui, sans-serif',
+        fontSize: 40,
+        fontWeight: '600',
+        fill: 0xffffff,
+      },
+      chars: [['0', '9'], 'DoReMiFaSolLaSi#·'],
+      resolution: 2,
+    });
+    installLabelFont.done = true;
+  }
+}
+installLabelFont.done = false;
+
+/** Texto de la etiqueta de una nota: dedo, nombre o ambos ("3·Mi"). */
+function labelFor(note: NoteEvent, fingers: boolean, names: boolean): string {
+  const finger = fingers && note.finger ? String(note.finger) : '';
+  const name = names ? NOTE_NAMES[note.pitch % 12]! : '';
+  return finger && name ? `${finger}·${name}` : finger || name;
+}
+
+/** Luminancia relativa aproximada (0–1) de un color 0xRRGGBB. */
+function luminance(color: number): number {
+  const r = ((color >> 16) & 255) / 255;
+  const g = ((color >> 8) & 255) / 255;
+  const b = (color & 255) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
