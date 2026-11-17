@@ -2,6 +2,7 @@ import { pedalDownRanges } from '@impromptu/audio';
 import type { Take } from '@impromptu/core';
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react';
+import { audioOffset, useOwnAudio } from './ownAudio';
 import { transport, useStudio } from './store';
 import { formatTime } from './transport';
 import styles from './Timeline.module.css';
@@ -15,7 +16,7 @@ interface Lane {
   name: string;
 }
 
-function lanesFor(take: Take | null): Lane[] {
+function lanesFor(take: Take | null, hasAudio: boolean): Lane[] {
   const notes = take?.tracks.flatMap((t) => t.notes) ?? [];
   const hands = new Set(notes.map((n) => n.hand));
   const lanes: Lane[] =
@@ -26,6 +27,7 @@ function lanesFor(take: Take | null): Lane[] {
         ]
       : [{ id: 'all', label: 'Notas', name: 'Notas' }];
   lanes.push({ id: 'pedal', label: 'Ped.', name: 'Pedal' });
+  if (hasAudio) lanes.push({ id: 'audio', label: 'Audio', name: 'Audio' });
   return lanes;
 }
 
@@ -46,7 +48,8 @@ export function Timeline({ playheadRef }: { playheadRef: RefObject<HTMLDivElemen
   const areaRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const drag = useRef<{ x0: number; t0: number; moved: boolean } | null>(null);
-  const lanes = lanesFor(take);
+  const own = useOwnAudio((s) => s.audio);
+  const lanes = lanesFor(take, own !== null);
   const duration = take?.duration ?? 0;
 
   useEffect(() => {
@@ -63,7 +66,7 @@ export function Timeline({ playheadRef }: { playheadRef: RefObject<HTMLDivElemen
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || width === 0) return;
-    const lanes = lanesFor(take);
+    const lanes = lanesFor(take, own !== null);
     const laneH = 22;
     const gap = 4;
     const height = lanes.length * laneH + (lanes.length - 1) * gap;
@@ -88,6 +91,20 @@ export function Timeline({ playheadRef }: { playheadRef: RefObject<HTMLDivElemen
       ctx.fillStyle = token('--panel-alto');
       ctx.fillRect(0, y0, width, laneH);
       if (!take) return;
+      if (lane.id === 'audio') {
+        if (!own) return;
+        ctx.fillStyle = token('--gris-texto');
+        const start = audioOffset(own);
+        const cols = own.peaks.length;
+        const step = own.buffer.duration / cols;
+        for (let c = 0; c < cols; c++) {
+          const t0 = start + c * step;
+          if (t0 < 0 || t0 > duration) continue;
+          const h = Math.max(1, own.peaks[c]! * (laneH - 4));
+          ctx.fillRect(x(t0), y0 + (laneH - h) / 2, Math.max(1, x(t0 + step) - x(t0)), h);
+        }
+        return;
+      }
       if (lane.id === 'pedal') {
         ctx.fillStyle = token('--ambar');
         const pedals = take.tracks.flatMap((t) => t.pedals).sort((a, b) => a.time - b.time);
@@ -106,7 +123,7 @@ export function Timeline({ playheadRef }: { playheadRef: RefObject<HTMLDivElemen
         ctx.fillRect(x(n.start), y, Math.max(1, x(n.end) - x(n.start)), 1.5);
       }
     });
-  }, [take, width, colors, duration]);
+  }, [take, width, colors, duration, own]);
 
   const timeAt = (clientX: number) => {
     const rect = areaRef.current!.getBoundingClientRect();

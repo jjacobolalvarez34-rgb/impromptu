@@ -24,6 +24,11 @@ export interface ExportOptions {
   fps: FrameRate;
   /** Piano ya cargado cuyas muestras se reutilizan; sin él, el video sale sin audio. */
   piano?: Piano | null;
+  /**
+   * Audio propio de la pieza (MP3, WAV…) que suena en lugar del piano. `offset`: segundo
+   * de la toma en que suena el segundo 0 del archivo (MediaRef.offset).
+   */
+  ownAudio?: { buffer: AudioBuffer; offset: number } | null;
   onProgress?: (progress: ExportProgress) => void;
   signal?: AbortSignal;
 }
@@ -82,7 +87,11 @@ export async function exportVideo(opts: ExportOptions): Promise<ExportResult> {
 
   // 1. Audio: el piano se toca en un OfflineAudioContext, más rápido que el tiempo real.
   let audio: AudioBuffer | null = null;
-  if (opts.piano?.loaded) {
+  if (opts.ownAudio) {
+    opts.onProgress?.({ phase: 'audio', value: 0 });
+    audio = await renderOwnAudio(take, opts.ownAudio.buffer, opts.ownAudio.offset);
+    check();
+  } else if (opts.piano?.loaded) {
     opts.onProgress?.({ phase: 'audio', value: 0 });
     audio = await renderPianoAudio(
       take,
@@ -182,4 +191,20 @@ export async function renderPianoAudio(
     signal?.addEventListener('abort', () => reject(new ExportFailure('cancelled')), { once: true });
     context.startRendering().then(resolve, reject);
   });
+}
+
+/** Audio propio colocado en la línea de tiempo de la toma, a 48 kHz y con la duración del video. */
+export async function renderOwnAudio(
+  take: Take,
+  buffer: AudioBuffer,
+  offset: number,
+): Promise<AudioBuffer> {
+  const length = Math.ceil((take.duration + TAIL) * SAMPLE_RATE);
+  const context = new OfflineAudioContext(2, length, SAMPLE_RATE);
+  const source = context.createBufferSource();
+  source.buffer = buffer;
+  source.connect(context.destination);
+  // offset > 0: el audio entra más tarde; offset < 0: se salta su comienzo.
+  source.start(Math.max(0, offset), Math.max(0, -offset));
+  return context.startRendering();
 }

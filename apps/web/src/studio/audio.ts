@@ -2,6 +2,7 @@ import { LivePlayer, Piano, takeVoices } from '@impromptu/audio';
 import type { LiveVoiceHandle, Voice } from '@impromptu/audio';
 import type { Take } from '@impromptu/core';
 import { create } from 'zustand';
+import { audioOffset, useOwnAudio } from './ownAudio';
 import { transport } from './store';
 
 /** Cuánto por delante se programa el audio y cada cuánto se revisa (s / ms). */
@@ -53,12 +54,27 @@ class AudioEngine {
     return useAudio.getState().enabled ? this.livePlayer : null;
   }
 
+  private ownSource: AudioBufferSourceNode | null = null;
+
   constructor() {
     transport.subscribe(() => this.reschedule());
+    // Cambiar el audio propio, su ajuste fino o "Usar mi audio" reprograma lo que suena.
+    useOwnAudio.subscribe(() => this.reschedule());
   }
 
   private loading: Promise<Piano | null> | null = null;
   private clockSwitched = false;
+
+  /** Contexto de audio (para decodificar archivos propios con la misma frecuencia). */
+  get audioContext(): AudioContext {
+    return this.ensureContext();
+  }
+
+  /** ¿Suena el audio propio en vez del piano? Solo a 1×: a otra velocidad cambiaría de tono. */
+  get usingOwnAudio(): boolean {
+    const own = useOwnAudio.getState().audio;
+    return !!own && own.use && transport.speed === 1;
+  }
 
   private ensureContext(): AudioContext {
     this.context ??= new AudioContext({ latencyHint: 'interactive' });
@@ -118,13 +134,50 @@ class AudioEngine {
   /** Corta lo programado y vuelve a programar desde el instante actual. */
   reschedule(): void {
     this.piano?.stopAll();
+    this.stopOwn();
     window.clearInterval(this.timer);
     const t = transport.now();
     this.cursor = lowerBound(this.voices, t);
-    if (!transport.playing || !this.piano || !useAudio.getState().enabled) return;
-    this.chase(t);
-    this.tick();
+    if (!transport.playing || !useAudio.getState().enabled) return;
+    if (this.usingOwnAudio) {
+      this.startOwn(t);
+    } else {
+      if (!this.piano) return;
+      this.chase(t);
+      this.tick();
+    }
     this.timer = window.setInterval(() => this.tick(), TICK_MS);
+  }
+
+  /** Hace sonar el audio propio desde el instante t de la toma, con su desfase. */
+  private startOwn(t: number): void {
+    const own = useOwnAudio.getState().audio;
+    const context = this.context;
+    if (!own || !context) return;
+    const offset = audioOffset(own);
+    let from = t - offset; // segundo del archivo que corresponde a t
+    let at = transport.toClock(t) + this.latency;
+    if (from < 0) {
+      at = transport.toClock(offset) + this.latency;
+      from = 0;
+    }
+    if (from >= own.buffer.duration) return;
+    const source = context.createBufferSource();
+    source.buffer = own.buffer;
+    source.connect(context.destination);
+    source.start(Math.max(context.currentTime, at), from);
+    const loopEnd = transport.loop?.end;
+    if (loopEnd !== undefined) source.stop(transport.toClock(loopEnd) + this.latency);
+    this.ownSource = source;
+  }
+
+  private stopOwn(): void {
+    try {
+      this.ownSource?.stop();
+    } catch {
+      // Ya estaba detenido.
+    }
+    this.ownSource = null;
   }
 
   /**
@@ -150,6 +203,15 @@ class AudioEngine {
   }
 
   private tick(): void {
+    if (this.usingOwnAudio) {
+      // Con audio propio solo hay que reiniciarlo cuando la sección vuelve a empezar.
+      const t = transport.now();
+      if (transport.playing && transport.wrapped(t)) {
+        this.stopOwn();
+        this.startOwn(t);
+      }
+      return;
+    }
     const piano = this.piano;
     if (!piano || !transport.playing) return;
     const t = transport.now();

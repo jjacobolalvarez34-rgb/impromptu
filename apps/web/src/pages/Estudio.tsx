@@ -20,6 +20,7 @@ import { LOCAL_PIECES, createDemoTake, openLocalPiece, openMidiFile } from '../s
 import type { OpenedTake } from '../studio/sources';
 import { engine, useAudio } from '../studio/audio';
 import { live, useLive } from '../studio/live';
+import { AudioSection, openOwnAudio } from '../studio/AudioSection';
 import { ExportDialog } from '../studio/ExportDialog';
 import { KeyboardSection, TakesSection } from '../studio/LivePanel';
 import { SettingsPanel } from '../studio/SettingsPanel';
@@ -164,7 +165,13 @@ export function Estudio() {
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file) void load(openMidiFile(file));
+    if (!file) return;
+    // Un audio se sincroniza con el MIDI abierto; cualquier otro archivo se lee como MIDI.
+    if (file.type.startsWith('audio/') && !/midi/i.test(file.type)) {
+      void openOwnAudio(file).then((msg) => setError(msg));
+    } else {
+      void load(openMidiFile(file));
+    }
   };
 
   const noteCount = take?.tracks.reduce((n, t) => n + t.notes.length, 0) ?? 0;
@@ -246,6 +253,7 @@ export function Estudio() {
         <aside className={styles.panel} aria-label="Fuentes y tomas">
           <KeyboardSection />
           <TakesSection />
+          <AudioSection />
           <h2 className="ui-etiqueta">Archivos MIDI</h2>
           <input
             ref={fileInput}
@@ -259,7 +267,7 @@ export function Estudio() {
             }}
           />
           <p className="ui-secundario">
-            Arrastra un archivo .mid a cualquier parte de la pantalla.
+            Arrastra un archivo .mid (o su audio) a cualquier parte de la pantalla.
           </p>
 
           {LOCAL_PIECES.length > 0 && (

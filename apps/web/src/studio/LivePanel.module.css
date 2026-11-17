@@ -100,3 +100,27 @@
   color: var(--chasis);
   font-size: 13px;
 }
+
+.quitar {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radio);
+  background: transparent;
+  color: var(--gris-texto);
+  cursor: pointer;
+}
+
+.quitar:hover {
+  background: var(--panel-alto);
+  color: var(--chasis);
+}
+
+.quitar svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.5;
+}

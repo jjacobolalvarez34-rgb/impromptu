@@ -26,8 +26,13 @@ export function audioOnsets(samples: Float32Array, sampleRate: number, hop = HOP
     }
     energy[f] = Math.log10(1e-9 + sum / step);
   }
+  const rise = new Float32Array(frames);
+  for (let f = 1; f < frames; f++) rise[f] = Math.max(0, energy[f]! - energy[f - 1]!);
+  // Solo cuentan las subidas que destacan sobre su entorno (umbral adaptable): así el
+  // pedal y la reverberación no tapan los ataques.
+  const local = smooth(rise, 15);
   const onsets = new Float32Array(frames);
-  for (let f = 1; f < frames; f++) onsets[f] = Math.max(0, energy[f]! - energy[f - 1]!);
+  for (let f = 0; f < frames; f++) onsets[f] = Math.max(0, rise[f]! - 1.5 * local[f]!);
   return normalize(onsets);
 }
 

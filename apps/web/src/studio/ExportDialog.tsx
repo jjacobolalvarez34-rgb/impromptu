@@ -4,6 +4,7 @@ import { Button, Chips, Lcd, Switch } from '@impromptu/ui';
 import { Download } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { engine, useAudio } from './audio';
+import { audioOffset, useOwnAudio } from './ownAudio';
 import { useStudio } from './store';
 import type { Aspect } from './store';
 import styles from './ExportDialog.module.css';
@@ -41,6 +42,7 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
   const aspect = useStudio((s) => s.aspect);
   const audioStatus = useAudio((s) => s.status);
   const audioProgress = useAudio((s) => s.progress);
+  const ownName = useOwnAudio((s) => (s.audio?.use ? s.audio.name : null));
   const [resolution, setResolution] = useState<Resolution>('1080p');
   const [fps, setFps] = useState<FrameRate>(60);
   const [withPiano, setWithPiano] = useState(true);
@@ -81,13 +83,21 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
     abort.current = controller;
     setState({ step: 'working', phase: 'Descargando el piano', value: 0 });
     // Si el piano aún se está descargando, se espera (con su avance en la barra).
-    const piano = withPiano ? await engine.preload() : null;
+    const usingOwn = useOwnAudio.getState().audio?.use === true;
+    const piano = withPiano && !usingOwn ? await engine.preload() : null;
     if (controller.signal.aborted) return;
     useStudio.setState({ exporting: true });
     try {
       const { settings } = useStudio.getState();
+      const own = useOwnAudio.getState().audio;
+      const ownAudio = own?.use ? { buffer: own.buffer, offset: audioOffset(own) } : null;
+      // Con audio propio, el video dura hasta que termina el más largo de los dos.
+      const duration = ownAudio
+        ? Math.max(take.duration, ownAudio.offset + ownAudio.buffer.duration)
+        : take.duration;
       const result = await exportVideo({
-        take,
+        take: { ...take, duration },
+        ownAudio,
         settings,
         aspect,
         resolution,
@@ -166,7 +176,15 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
             value={String(fps) as '30' | '60'}
             onChange={(v) => setFps(Number(v) as FrameRate)}
           />
-          <Switch label="Incluir el piano de la app" checked={withPiano} onChange={setWithPiano} />
+          {ownName ? (
+            <p className="ui-secundario">Audio: {ownName} (tu archivo, sincronizado).</p>
+          ) : (
+            <Switch
+              label="Incluir el piano de la app"
+              checked={withPiano}
+              onChange={setWithPiano}
+            />
+          )}
           <p className="ui-secundario ui-mono">
             {size.width} × {size.height} · {fps} fps
           </p>
