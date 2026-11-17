@@ -17,6 +17,19 @@ const PARALLEL_DOWNLOADS = 6;
 /** Tiempo de caída del apagador (s): corto como en un piano real, sin clic. */
 const DAMPER = 0.12;
 const MASTER_GAIN = 0.55;
+/**
+ * Polifonía máxima, como un piano digital: si se pasa, la voz más vieja se apaga rápido.
+ * Sin límite, una ráfaga muy densa (la prueba de 2.000 notas) satura el audio y se corta.
+ */
+export const MAX_VOICES = 64;
+const STEAL_FADE = 0.008;
+
+interface ActiveVoice {
+  source: AudioBufferSourceNode;
+  gain: GainNode;
+  /** Instante (reloj del contexto) en que deja de sonar; Infinity si es en vivo y sigue abajo. */
+  end: number;
+}
 
 export interface LoadProgress {
   loaded: number;
@@ -37,7 +50,7 @@ export class Piano {
   readonly output: GainNode;
   private readonly baseUrl: string;
   private readonly layers: readonly number[];
-  private readonly sounding = new Set<AudioBufferSourceNode>();
+  private active: ActiveVoice[] = [];
 
   constructor(
     readonly context: BaseAudioContext,
@@ -101,11 +114,11 @@ export class Piano {
     gain.gain.setValueAtTime(level, at);
     gain.gain.setValueAtTime(level, releaseAt);
     gain.gain.setTargetAtTime(0, releaseAt, DAMPER / 3);
+    this.admit(at);
     source.connect(gain).connect(this.output);
     source.start(at);
     source.stop(releaseAt + DAMPER * 4);
-    this.sounding.add(source);
-    source.onended = () => this.sounding.delete(source);
+    this.track({ source, gain, end: releaseAt + DAMPER * 4 });
   }
 
   /** En vivo: hace sonar una tecla ya, sin saber cuándo se soltará. Devuelve null si no hay muestras. */
@@ -120,10 +133,10 @@ export class Piano {
     source.playbackRate.value = Math.pow(2, (pitch - sample) / 12);
     const gain = this.context.createGain();
     gain.gain.setValueAtTime(layerGain(velocity, layer) * gainScale, at);
+    this.admit(at);
     source.connect(gain).connect(this.output);
     source.start(at);
-    this.sounding.add(source);
-    source.onended = () => this.sounding.delete(source);
+    this.track({ source, gain, end: Infinity });
     return { source, gain };
   }
 
@@ -138,19 +151,44 @@ export class Piano {
     } catch {
       // Ya estaba detenida.
     }
+    const entry = this.active.find((v) => v.source === voice.source);
+    if (entry) entry.end = at + DAMPER * 4;
   }
 
   /** Corta todo lo que está sonando o programado (pausar, buscar, cambiar de pieza). */
   stopAll(): void {
     const now = this.context.currentTime;
-    for (const source of this.sounding) {
+    for (const { source } of this.active) {
       try {
         source.stop(now + 0.02);
       } catch {
         // Ya estaba detenida.
       }
     }
-    this.sounding.clear();
+    this.active = [];
+  }
+
+  /** Antes de una voz nueva en `at`: olvida las que ya terminaron y roba la más vieja si hace falta. */
+  private admit(at: number): void {
+    this.active = this.active.filter((v) => v.end > at);
+    while (this.active.length >= MAX_VOICES) {
+      const oldest = this.active.shift()!;
+      oldest.gain.gain.cancelScheduledValues(at);
+      oldest.gain.gain.setTargetAtTime(0, at, STEAL_FADE);
+      try {
+        oldest.source.stop(at + STEAL_FADE * 6);
+      } catch {
+        // Ya estaba detenida.
+      }
+    }
+  }
+
+  private track(voice: ActiveVoice): void {
+    this.active.push(voice);
+    voice.source.onended = () => {
+      const i = this.active.indexOf(voice);
+      if (i >= 0) this.active.splice(i, 1);
+    };
   }
 }
 
