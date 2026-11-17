@@ -73,7 +73,7 @@ export function EnVivo() {
     <main className={styles.envivo} data-fondo={choice}>
       <VisualizerView fill background={TO_BACKGROUND[choice]} />
       <div className={styles.controles} data-visible={visible} aria-hidden={!visible}>
-        <Link to="/" className={styles.volver}>
+        <Link to="/estudio" className={styles.volver}>
           <ArrowLeft aria-hidden="true" /> Estudio
         </Link>
         <Chips

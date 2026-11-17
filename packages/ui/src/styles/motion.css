@@ -1,0 +1,108 @@
+/*
+ * Apariciones (pedido de Jacobo): cada tipo de elemento entra con su propio movimiento,
+ * seco y físico como el resto de la identidad. Sin rebotes ni brillos (DESIGN §6).
+ * Uso: class="ui-aparece-tecla" y, para escalonar, style="--retraso: 120ms".
+ */
+:root {
+  --aparece-duracion: 360ms;
+  --aparece-curva: cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+/* Botones: suben como una tecla que vuelve a su lugar. */
+.ui-aparece-tecla {
+  animation: ui-tecla var(--aparece-duracion) var(--aparece-curva) var(--retraso, 0ms) both;
+}
+@keyframes ui-tecla {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Tarjetas y notas: caen desde arriba y se posan. */
+.ui-aparece-cae {
+  animation: ui-cae 440ms var(--aparece-curva) var(--retraso, 0ms) both;
+}
+@keyframes ui-cae {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+}
+
+/* Paneles: se deslizan desde su lado. */
+.ui-aparece-izquierda {
+  animation: ui-izquierda var(--aparece-duracion) var(--aparece-curva) var(--retraso, 0ms) both;
+}
+@keyframes ui-izquierda {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+.ui-aparece-derecha {
+  animation: ui-derecha var(--aparece-duracion) var(--aparece-curva) var(--retraso, 0ms) both;
+}
+@keyframes ui-derecha {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+/* Barras de abajo: suben desde el borde. */
+.ui-aparece-sube {
+  animation: ui-sube var(--aparece-duracion) var(--aparece-curva) var(--retraso, 0ms) both;
+}
+@keyframes ui-sube {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+/* Pantallas LCD: se encienden con un parpadeo corto, como una pantalla real. */
+.ui-aparece-lcd {
+  animation: ui-lcd 420ms steps(1, end) var(--retraso, 0ms) both;
+}
+@keyframes ui-lcd {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.6;
+  }
+  45% {
+    opacity: 0.15;
+  }
+  60% {
+    opacity: 1;
+  }
+}
+
+/* Líneas y separadores: se trazan de izquierda a derecha. */
+.ui-aparece-linea {
+  transform-origin: left center;
+  animation: ui-linea 520ms var(--aparece-curva) var(--retraso, 0ms) both;
+}
+@keyframes ui-linea {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* Texto: aparece sin moverse. */
+.ui-aparece-texto {
+  animation: ui-texto 400ms ease-out var(--retraso, 0ms) both;
+}
+@keyframes ui-texto {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*='ui-aparece-'] {
+    animation: none !important;
+  }
+}

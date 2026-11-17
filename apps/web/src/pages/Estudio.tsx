@@ -12,9 +12,9 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { DragEvent } from 'react';
+import type { CSSProperties, DragEvent } from 'react';
 import { beatAt, beatGrid, tempoAt } from '@impromptu/core';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { VisualizerView } from '../studio/VisualizerView';
 import { LOCAL_PIECES, createDemoTake, openLocalPiece, openMidiFile } from '../studio/sources';
 import type { OpenedTake } from '../studio/sources';
@@ -187,8 +187,10 @@ export function Estudio() {
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
     >
-      <header className={styles.barra}>
-        <Logo size={18} keyboard={false} />
+      <header className={`${styles.barra} ui-aparece-texto`}>
+        <Link to="/" className={styles.inicio} aria-label="Ir al inicio">
+          <Logo size={18} keyboard={false} />
+        </Link>
         <div className={styles.toma}>
           <strong>{take?.title ?? 'Sin pieza abierta'}</strong>
           <span className="ui-secundario">
@@ -221,11 +223,19 @@ export function Estudio() {
               />
             </button>
           )}
-          <Button icon={<Film />} disabled={!take} onClick={() => setExportOpen(true)}>
+          <Button
+            icon={<Film />}
+            disabled={!take}
+            className="ui-aparece-tecla"
+            style={{ '--retraso': '120ms' } as CSSProperties}
+            onClick={() => setExportOpen(true)}
+          >
             Exportar video
           </Button>
           <Button
             variant={device ? 'secondary' : 'primary'}
+            className="ui-aparece-tecla"
+            style={{ '--retraso': '190ms' } as CSSProperties}
             icon={<FileMusic />}
             onClick={() => fileInput.current?.click()}
           >
@@ -237,7 +247,13 @@ export function Estudio() {
                 Detener
               </Button>
             ) : (
-              <Button variant="primary" rec onClick={startRecording}>
+              <Button
+                variant="primary"
+                rec
+                className="ui-aparece-tecla"
+                style={{ '--retraso': '260ms' } as CSSProperties}
+                onClick={startRecording}
+              >
                 Grabar
               </Button>
             ))}
@@ -250,7 +266,7 @@ export function Estudio() {
         id="app-panel-estudio"
         aria-labelledby="app-tab-estudio"
       >
-        <aside className={styles.panel} aria-label="Fuentes y tomas">
+        <aside className={`${styles.panel} ui-aparece-izquierda`} aria-label="Fuentes y tomas">
           <KeyboardSection />
           <TakesSection />
           <AudioSection />
@@ -317,7 +333,10 @@ export function Estudio() {
           )}
         </aside>
 
-        <main className={styles.centro}>
+        <main
+          className={`${styles.centro} ui-aparece-texto`}
+          style={{ '--retraso': '120ms' } as CSSProperties}
+        >
           <Chips
             label="Formato"
             options={ASPECTS}
@@ -337,14 +356,20 @@ export function Estudio() {
           </div>
         </main>
 
-        <aside className={styles.panel} aria-label="Ajustes del visualizador">
+        <aside
+          className={`${styles.panel} ui-aparece-derecha`}
+          aria-label="Ajustes del visualizador"
+        >
           <SettingsPanel />
         </aside>
       </div>
 
       <ExportDialog open={exportOpen} onClose={() => setExportOpen(false)} />
       <Timeline playheadRef={playheadRef} />
-      <footer className={styles.transporte}>
+      <footer
+        className={`${styles.transporte} ui-aparece-sube`}
+        style={{ '--retraso': '160ms' } as CSSProperties}
+      >
         <IconButton
           label="Ir al inicio"
           icon={<SkipBack />}
@@ -363,12 +388,22 @@ export function Estudio() {
           aria-pressed={!audioEnabled}
           onClick={() => useAudio.getState().setEnabled(!audioEnabled)}
         />
-        <Lcd size="md" aria-label="Tiempo">
+        <Lcd
+          size="md"
+          aria-label="Tiempo"
+          className="ui-aparece-lcd"
+          style={{ '--retraso': '420ms' } as CSSProperties}
+        >
           <span ref={timeRef}>00:00.00</span>
           <span className={styles.duracion}>/ {formatTime(take?.duration ?? 0)}</span>
         </Lcd>
         {meter && (
-          <Lcd size="md" aria-label="Compás y tempo">
+          <Lcd
+            size="md"
+            aria-label="Compás y tempo"
+            className="ui-aparece-lcd"
+            style={{ '--retraso': '520ms' } as CSSProperties}
+          >
             <span ref={meterRef}>c.1 · 1</span>
             <span className={styles.duracion}>♩ {Math.round(meter.bpm)}</span>
           </Lcd>

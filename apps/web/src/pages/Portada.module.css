@@ -1,0 +1,183 @@
+.intro {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--carbon);
+  cursor: pointer;
+}
+
+.saltar {
+  position: absolute;
+  right: var(--e-6);
+  bottom: calc(var(--e-6) + env(safe-area-inset-bottom, 0px));
+  min-height: var(--toque);
+  padding: 0 var(--e-4);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: transparent;
+  color: var(--gris-texto);
+  font: 400 13px/1 var(--fuente-texto);
+  cursor: pointer;
+}
+
+.saltar:hover {
+  color: var(--chasis);
+}
+
+.portada {
+  min-height: 100dvh;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--e-10) var(--e-6) var(--e-12);
+  display: grid;
+  gap: var(--e-10);
+  align-content: start;
+}
+
+@media (max-width: 600px) {
+  .portada {
+    padding: var(--e-6) var(--e-4) var(--e-10);
+    gap: var(--e-8);
+  }
+}
+
+.cabecera {
+  display: grid;
+  gap: var(--e-3);
+  justify-items: start;
+}
+
+.cabecera > span:first-child > span[role='img'] {
+  padding-left: 0;
+}
+
+.lema {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 17px;
+  color: var(--chasis);
+}
+
+.trazo {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: var(--linea);
+}
+
+.contenido {
+  display: grid;
+  gap: var(--e-10);
+}
+
+.instrumentos,
+.como {
+  display: grid;
+  gap: var(--e-4);
+}
+
+.instrumentos h2,
+.como h2 {
+  margin: 0;
+}
+
+.tarjetas {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: var(--e-4);
+}
+
+@media (max-width: 900px) {
+  .tarjetas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tarjeta {
+  display: grid;
+  gap: var(--e-3);
+  align-content: start;
+  padding: var(--e-6);
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+}
+
+.tarjeta h3,
+.tarjeta p {
+  margin: 0;
+}
+
+.tarjeta[data-pronto='true'] {
+  color: var(--gris-texto);
+}
+
+.icono {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  color: var(--ambar);
+}
+
+.tarjeta[data-pronto='true'] .icono {
+  color: var(--gris-texto);
+}
+
+.icono svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.5;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  margin-top: var(--e-2);
+}
+
+.pronto {
+  justify-self: start;
+  padding: var(--e-1) var(--e-2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  font: 500 11px/1.2 var(--fuente-mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pasos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: var(--e-4);
+}
+
+.pasos li {
+  display: flex;
+  gap: var(--e-3);
+  align-items: start;
+}
+
+.pasos p {
+  margin: var(--e-1) 0 0;
+}
+
+.numero {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: var(--lcd);
+  border: 1px solid var(--lcd-borde);
+  border-radius: var(--radio-lcd);
+  color: var(--ambar);
+  font: 500 14px/1 var(--fuente-mono);
+}

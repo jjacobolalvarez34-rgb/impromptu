@@ -5,6 +5,7 @@
 @import '@fontsource/archivo/500.css';
 @import '@fontsource/archivo/600.css';
 @import './tokens.css';
+@import './motion.css';
 
 *,
 *::before,

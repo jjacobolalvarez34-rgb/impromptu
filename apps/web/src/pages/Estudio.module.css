@@ -21,7 +21,12 @@
   min-width: 0;
 }
 
-.barra > span[role='img'] {
+.inicio {
+  display: inline-flex;
+  border-radius: var(--radio);
+}
+
+.inicio > span[role='img'] {
   padding: 0;
 }
 

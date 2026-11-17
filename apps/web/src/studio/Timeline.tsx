@@ -153,7 +153,7 @@ export function Timeline({ playheadRef }: { playheadRef: RefObject<HTMLDivElemen
   const pct = (t: number) => (duration > 0 ? `${(t / duration) * 100}%` : '0%');
 
   return (
-    <div className={styles.linea}>
+    <div className={`${styles.linea} ui-aparece-texto`}>
       <ul className={styles.etiquetas} aria-hidden="true">
         {lanes.map((l) => (
           <li key={l.id}>{l.label}</li>
