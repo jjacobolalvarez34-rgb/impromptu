@@ -64,3 +64,12 @@ P1 (licencia del código), P2 (nombre en GitHub y dominio), P3 (marca en la SIC)
 - **Revisar si la app de celular gasta demasiada memoria RAM**: medir con el celular conectado (Chrome remoto o perfil de Android Studio). Sospechosos: el modelo de piano cargado, las muestras del piano y el visualizador.
 - **BUG-002**: al cancelar la conversión de una grabación, la app se queda "grabando" y se traba.
 - **BUG-003**: no hay un botón claro para volver, y el atrás de Android cierra la app.
+
+## Próxima sesión: app de Android NATIVA (decidido por Jacobo, 2026-11-17)
+- **Ya no Capacitor.** App totalmente nativa en Kotlin + Jetpack Compose (reemplaza `apps/mobile`; ADR-019 por escribir). La web queda como está por ahora (a Jacobo le gusta); la prioridad es que la app de celular funcione.
+- **Primera vez que se abre:** presentación (landing) y luego elegir qué descargar: **Piano** (todo: sonido y modelo de IA), **Batería** y **Guitarra** como "pronto". Después, la pantalla principal rediseñada (la actual le parece fea).
+- **Versión 1 trae todo:** grabar con el teclado (MIDI por OTG, con el piano sonando), ver y escuchar piezas (notas cayendo en horizontal, abrir y guardar MIDI), micrófono y MP3 a MIDI (Transkun con ONNX Runtime nativo), partitura (MusicXML generado en Kotlin y dibujado con OpenSheetMusicDisplay empaquetado) y exportar video (MediaCodec H.264 + AAC).
+- **Toolchain listo en D::** Java 21 (`D:\tools\jdk-21.0.13+9`), SDK (`D:\Android\sdk`), Gradle (`D:\.cache\gradle`, AGP 8.13.0, Gradle 8.14.3 ya en caché).
+- **Hay que resolver:** dónde se alojan los paquetes para descargarlos (P21, también las muestras P15).
+- **Estado sin commit** (de la app Capacitor, a descartar o reutilizar): ícono y pantalla de arranque de Impromptu en `apps/mobile/android/app/src/main/res` (reutilizables) y firma en `build.gradle`. La llave de firma (Mamut Herd) quedó en `D:\Android\keys\impromptu-release.jks` con su contraseña en `impromptu-release.properties`: **guardar copia, sin ella no se puede actualizar la app en Google Play.**
+- Bugs de la app Capacitor que la nativa debe evitar: BUG-002, BUG-003, BUG-004 (se cerró por memoria al convertir una grabación).
