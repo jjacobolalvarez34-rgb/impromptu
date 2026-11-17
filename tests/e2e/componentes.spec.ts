@@ -119,7 +119,7 @@ test.describe('/componentes', () => {
 
 test('la PWA declara su manifiesto e ícono', async ({ page, request }) => {
   await page.goto('/');
-  await expect(page.getByRole('img', { name: 'impromptu' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'impromptu' }).first()).toBeVisible();
   const href = await page.locator('link[rel="manifest"]').getAttribute('href');
   expect(href).toBeTruthy();
   const manifest = await (await request.get(href ?? '')).json();

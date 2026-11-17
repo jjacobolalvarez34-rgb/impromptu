@@ -3,9 +3,8 @@ name: Publicar en GitHub Pages
 # Publica la web (página principal y app) en https://jjacobolalvarez34-rgb.github.io/impromptu/
 # cada vez que main cambia. Requiere una sola vez: Settings → Pages → Source: "GitHub Actions".
 
+# Solo a mano: la web se publica en Vercel (vercel.json). Se deja como alternativa.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
