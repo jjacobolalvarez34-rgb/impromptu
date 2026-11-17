@@ -8,3 +8,9 @@ test-results
 fixtures
 # Documentos y comandos escritos a mano: no se reformatean.
 *.md
+
+# Compilados de las apps
+apps/desktop/release
+apps/desktop/modelos
+apps/mobile/www
+apps/mobile/android

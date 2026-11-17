@@ -12,6 +12,11 @@ export default tseslint.config(
       'graphify-out/**',
       'playwright-report/**',
       'test-results/**',
+      // Compilados de las apps (instalador, copia de la web y proyecto de Android).
+      'apps/desktop/release/**',
+      'apps/desktop/modelos/**',
+      'apps/mobile/www/**',
+      'apps/mobile/android/**',
     ],
   },
   js.configs.recommended,

@@ -5,3 +5,7 @@
 *.wav binary
 *.woff2 binary
 graphify-out/graph.json merge=graphify
+
+# Scripts de Windows (gradlew.bat): con CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
