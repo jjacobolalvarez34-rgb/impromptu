@@ -8,4 +8,4 @@ const run = (cmd, args, cwd) => {
 };
 run('node', ['scripts/sync.mjs']);
 run('gradlew.bat', ['assembleDebug', '--no-daemon'], 'android');
-console.log('APK: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk');
+process.stdout.write('APK: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk\n');
