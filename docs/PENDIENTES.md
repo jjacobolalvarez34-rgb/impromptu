@@ -56,3 +56,11 @@ Claude Code: si algo de esta lista bloquea tu tarea, usa el valor provisional, m
 ### Decisiones de Jacobo abiertas
 P1 (licencia del código), P2 (nombre en GitHub y dominio), P3 (marca en la SIC), P7 (donaciones), P11 (publicar sus grabaciones de prueba), P14 (logo y formatos del video de marca), P15 (dónde alojar las muestras del piano), P17 (prueba en OBS), P18 (sostenuto y una corda con testers), P19 (interruptor para reducir animaciones), P20 (web de Mamut Herd), P21 (dónde publicar el modelo de piano para la web), P22 (destacar "de MP3 a MIDI" en la página de inicio).
 
+### Pedidos de Jacobo después de probar las apps (2026-11-17), sin empezar
+- **Mejorar muchísimo las apps** ("toca mejorar supremamente la app").
+- **Agregar la página de presentación (landing)** también en las apps.
+- **Mejorar la pestaña principal** (el Estudio).
+- **La app de celular no tiene el logo**: falta el ícono de la app (sale el de Capacitor) y revisar el logo dentro de la app y la pantalla de arranque.
+- **Revisar si la app de celular gasta demasiada memoria RAM**: medir con el celular conectado (Chrome remoto o perfil de Android Studio). Sospechosos: el modelo de piano cargado, las muestras del piano y el visualizador.
+- **BUG-002**: al cancelar la conversión de una grabación, la app se queda "grabando" y se traba.
+- **BUG-003**: no hay un botón claro para volver, y el atrás de Android cierra la app.

@@ -38,3 +38,17 @@
 - Esperado / obtenido: esperado −0,39 s (el MP3 trae 0,39 s antes de la primera nota). Obtenido +0,39 s.
 - Causa: la app usa MediaRef.offset como "segundo de la toma = segundo del archivo + offset", pero la alineación devolvía "archivo − toma". Las pruebas unitarias tenían la misma convención invertida, así que no lo detectaron.
 - Arreglo y prueba que lo cubre: signo corregido en `align`, `alignNear` y el paso de cromagrama. `align.test.ts` ahora prueba la convención de la app (archivo con silencio al comienzo → offset negativo). Se confirmó con datos reales: al transcribir el MP3 de Consuelo, las notas de la IA calzan con el MIDI con −0,40 s, y no hay deriva en toda la pieza (±0,02 s por ventana de 20 s).
+
+### BUG-002 · Celular: al cancelar la conversión de una grabación, la app se queda "grabando" y se traba
+- Dónde: app de Android (Capacitor), pantalla Grabando (`apps/web/src/pages/Celular.tsx`, `studio/transcribeStore.ts`).
+- Cómo reproducir (Jacobo, 2026-11-17): Grabar, Detener, y Cancelar mientras la IA convierte lo grabado.
+- Esperado / obtenido: volver al inicio sin la grabación (o con el audio guardado). Obtenido: la pantalla sigue en "Grabando", la app se traba y no deja hacer nada.
+- Causa: pendiente de investigar. Probablemente la pantalla Grabando solo sale con un error o con la pieza abierta, y cancelar no hace ninguna de las dos cosas.
+- Arreglo y prueba que lo cubre: pendiente.
+
+### BUG-003 · Celular: no hay un botón claro para volver, y el "atrás" de Android cierra la app
+- Dónde: app de Android (Capacitor), todas las pantallas.
+- Cómo reproducir (Jacobo, 2026-11-17): estando en una pieza, grabando o en ajustes, buscar cómo volver; el botón atrás del sistema sale de la app.
+- Esperado / obtenido: un "volver" evidente en cada pantalla, y el atrás del sistema debe ir a la pantalla anterior. Obtenido: la app se cierra.
+- Causa: la app no maneja el botón atrás de Android (`@capacitor/app`, evento `backButton`), y el botón de volver de la pieza es solo un ícono pequeño.
+- Arreglo y prueba que lo cubre: pendiente.
