@@ -44,7 +44,9 @@ export const DEFAULT_SETTINGS: VisualSettings = {
   colors: { right: '#FF9F1C', left: '#E8E4DC', unassigned: '#9A968C' },
 };
 
-const MAX_SPARKS = 2500;
+const MAX_SPARKS = 4000;
+/** Borde (px) de la textura del halo que no se estira. */
+const HALO_EDGE = 24;
 const NOTE_RADIUS = 3;
 
 /** Grupo de objetos reutilizables: nada se crea ni se destruye por cuadro (BUGS B-013). */
@@ -92,6 +94,8 @@ export class Visualizer {
   private readonly active = new Map<number, NoteEvent>();
 
   private readonly guides = new Graphics();
+  private readonly beamLayer = new Container();
+  private readonly haloLayer = new Container();
   private readonly noteLayer = new Container();
   private readonly keys = new Graphics();
   private readonly glowLayer = new Container();
@@ -99,6 +103,10 @@ export class Visualizer {
   private readonly pedal = new Graphics();
   private readonly pedalLabel: Text;
   private readonly notePool: Pool<NineSliceSprite>;
+  private readonly haloPool: Pool<NineSliceSprite>;
+  private readonly beamPool: Pool<Sprite>;
+  private readonly noteTextures: Record<'flat' | 'glow', Texture>;
+  private readonly sparkTints: number[] = [];
   private readonly glowPool: Pool<Sprite>;
   private readonly sparkPool: Pool<Sprite>;
 
@@ -111,7 +119,10 @@ export class Visualizer {
     const noteTexture = app.renderer.generateTexture(
       new Graphics().roundRect(0, 0, 16, 16, NOTE_RADIUS).fill(0xffffff),
     );
+    this.noteTextures = { flat: noteTexture, glow: makeNoteTexture() };
     const glowTexture = makeGlowTexture();
+    const haloTexture = makeHaloTexture();
+    const beamTexture = makeBeamTexture();
 
     this.notePool = new Pool(
       this.noteLayer,
@@ -124,6 +135,23 @@ export class Visualizer {
           bottomHeight: NOTE_RADIUS + 1,
         }),
     );
+    this.haloPool = new Pool(this.haloLayer, () => {
+      const h = new NineSliceSprite({
+        texture: haloTexture,
+        leftWidth: HALO_EDGE,
+        rightWidth: HALO_EDGE,
+        topHeight: HALO_EDGE,
+        bottomHeight: HALO_EDGE,
+      });
+      h.blendMode = 'add';
+      return h;
+    });
+    this.beamPool = new Pool(this.beamLayer, () => {
+      const b = new Sprite(beamTexture);
+      b.anchor.set(0.5, 1);
+      b.blendMode = 'add';
+      return b;
+    });
     this.glowPool = new Pool(this.glowLayer, () => {
       const s = new Sprite(glowTexture);
       s.anchor.set(0.5, 0.5);
@@ -143,6 +171,8 @@ export class Visualizer {
 
     app.stage.addChild(
       this.guides,
+      this.beamLayer,
+      this.haloLayer,
       this.noteLayer,
       this.keys,
       this.glowLayer,
@@ -235,41 +265,73 @@ export class Visualizer {
 
     // Notas que caen
     this.notePool.begin();
+    this.haloPool.begin();
     this.active.clear();
+    const glowStyle = effects.noteStyle === 'glow';
+    const noteTexture = this.noteTextures[glowStyle ? 'glow' : 'flat'];
+    const halo = glowStyle ? effects.noteGlow / 100 : 0; // 0–2
     const span = L.keyLineY / L.pps;
     const [from, to] = this.direction === 'fall' ? [t, t + span] : [t - span, t];
     forEachNoteIn(this.index, from, to, (note) => {
       const rect = noteRect(note, t, L, this.keyboard, 3, this.direction);
       if (rect) {
+        const tint = this.color(noteColor(note, colors));
+        const v = note.velocity / 127;
+        if (halo > 0) {
+          // Halo aditivo del color de la nota (ADR-010).
+          const pad = (6 + 10 * halo) * scale;
+          const h = this.haloPool.next();
+          h.position.set(rect.x - pad, rect.y - pad);
+          h.width = rect.width + pad * 2;
+          h.height = rect.height + pad * 2;
+          h.tint = tint;
+          h.alpha = Math.min(1, 0.4 * halo) * (0.6 + 0.4 * v);
+        }
         const sprite = this.notePool.next();
+        sprite.texture = noteTexture;
         sprite.position.set(rect.x, rect.y);
         sprite.width = rect.width;
         sprite.height = rect.height;
-        sprite.tint = this.color(noteColor(note, colors));
-        sprite.alpha = 0.72 + 0.28 * (note.velocity / 127);
+        sprite.tint = tint;
+        sprite.alpha = 0.72 + 0.28 * v;
       }
       if (isSounding(note, t)) this.active.set(note.pitch, note);
     });
     this.notePool.end();
+    this.haloPool.end();
 
     this.drawKeyboard(colors);
 
     // Brillo sobre las teclas que suenan
     this.glowPool.begin();
-    if (effects.keyGlow > 0) {
+    this.beamPool.begin();
+    const k = effects.keyGlow / 100; // 0–2
+    if (k > 0) {
       for (const note of this.active.values()) {
         const key = this.keyboard.key(note.pitch);
         if (!key) continue;
         const w = key.width * L.width;
+        const cx = key.x * L.width + w / 2;
+        const tint = this.color(noteColor(note, colors));
+        const v = note.velocity / 127;
         const glow = this.glowPool.next();
-        glow.position.set(key.x * L.width + w / 2, L.keyLineY);
-        glow.width = w * 5;
-        glow.height = w * 3.2;
-        glow.tint = this.color(noteColor(note, colors));
-        glow.alpha = (effects.keyGlow / 100) * (0.45 + 0.55 * (note.velocity / 127));
+        glow.position.set(cx, L.keyLineY);
+        glow.width = w * (4 + 2 * k);
+        glow.height = w * (2.6 + 1.4 * k);
+        glow.tint = tint;
+        glow.alpha = Math.min(1, 0.6 * k * (0.45 + 0.55 * v));
+        // Haz de luz que sube desde la tecla; más fuerte justo en el ataque.
+        const attack = 1 + 1.2 * Math.max(0, 1 - (t - note.start) / 0.18);
+        const beam = this.beamPool.next();
+        beam.position.set(cx, L.keyLineY);
+        beam.width = w * (1.1 + 0.5 * k);
+        beam.height = L.keyLineY * Math.min(0.75, 0.2 + 0.25 * k);
+        beam.tint = tint;
+        beam.alpha = Math.min(1, 0.22 * k * attack * (0.5 + 0.5 * v));
       }
     }
     this.glowPool.end();
+    this.beamPool.end();
 
     // Chispas
     this.sparks.length = 0;
@@ -278,6 +340,8 @@ export class Visualizer {
         const key = this.keyboard.key(note.pitch);
         if (!key || this.sparks.length > MAX_SPARKS) return;
         const w = key.width * L.width;
+        const first = this.sparks.length;
+        const tint = lighten(this.color(noteColor(note, colors)), 0.55);
         noteSparks(
           note,
           t,
@@ -290,15 +354,19 @@ export class Visualizer {
           },
           this.sparks,
         );
+        for (let i = first; i < this.sparks.length; i++) this.sparkTints[i] = tint;
       });
     }
     this.sparkPool.begin();
-    for (const s of this.sparks.slice(0, MAX_SPARKS)) {
+    const grow = 0.8 + 0.35 * (effects.sparks / 100);
+    const count = Math.min(this.sparks.length, MAX_SPARKS);
+    for (let i = 0; i < count; i++) {
+      const spark = this.sparks[i]!;
       const sprite = this.sparkPool.next();
-      sprite.position.set(s.x, s.y);
-      sprite.width = sprite.height = s.size;
-      sprite.alpha = s.alpha;
-      sprite.tint = this.theme.keyLine === 0x7a1f1a ? this.theme.pedal : 0xffc56b;
+      sprite.position.set(spark.x, spark.y);
+      sprite.width = sprite.height = spark.size * grow;
+      sprite.alpha = spark.alpha;
+      sprite.tint = this.sparkTints[i] ?? 0xffc56b;
     }
     this.sparkPool.end();
 
@@ -399,5 +467,79 @@ function makeGlowTexture(): Texture {
   g.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
+  return Texture.from(canvas);
+}
+
+/** Mezcla un color con blanco (0 = igual, 1 = blanco): chispas del color de la nota pero claras. */
+function lighten(color: number, amount: number): number {
+  const mix = (c: number) => Math.round(c + (255 - c) * amount);
+  return (mix((color >> 16) & 255) << 16) | (mix((color >> 8) & 255) << 8) | mix(color & 255);
+}
+
+/** Cuerpo de nota "brillante": borde de luz y un leve degradado (el color sale del tinte). */
+function makeNoteTexture(): Texture {
+  const size = 32;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const r = NOTE_RADIUS + 1;
+  const body = ctx.createLinearGradient(0, 0, 0, size);
+  body.addColorStop(0, 'rgb(255,255,255)');
+  body.addColorStop(0.5, 'rgb(225,225,225)');
+  body.addColorStop(1, 'rgb(200,200,200)');
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.roundRect(0, 0, size, size, r);
+  ctx.fill();
+  ctx.strokeStyle = 'rgb(255,255,255)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(1, 1, size - 2, size - 2, r - 1);
+  ctx.stroke();
+  return Texture.from(canvas);
+}
+
+/** Halo suave alrededor de una nota (rectángulo redondeado desenfocado). */
+function makeHaloTexture(): Texture {
+  const size = HALO_EDGE * 2 + 8;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  ctx.filter = 'blur(' + HALO_EDGE / 3 + 'px)';
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.roundRect(
+    HALO_EDGE * 0.6,
+    HALO_EDGE * 0.6,
+    size - HALO_EDGE * 1.2,
+    size - HALO_EDGE * 1.2,
+    6,
+  );
+  ctx.fill();
+  return Texture.from(canvas);
+}
+
+/** Haz de luz vertical: brillante abajo (la tecla), transparente arriba y suave a los lados. */
+function makeBeamTexture(): Texture {
+  const w = 32;
+  const h = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d')!;
+  const vertical = ctx.createLinearGradient(0, h, 0, 0);
+  vertical.addColorStop(0, 'rgba(255,255,255,1)');
+  vertical.addColorStop(0.25, 'rgba(255,255,255,0.45)');
+  vertical.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = vertical;
+  ctx.fillRect(0, 0, w, h);
+  // Bordes laterales suaves.
+  ctx.globalCompositeOperation = 'destination-in';
+  const sides = ctx.createLinearGradient(0, 0, w, 0);
+  sides.addColorStop(0, 'rgba(0,0,0,0)');
+  sides.addColorStop(0.5, 'rgba(0,0,0,1)');
+  sides.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sides;
+  ctx.fillRect(0, 0, w, h);
   return Texture.from(canvas);
 }

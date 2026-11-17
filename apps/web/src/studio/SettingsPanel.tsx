@@ -13,6 +13,11 @@ const KEYBOARDS = [
   { value: '88', label: '88' },
 ] as const;
 
+const NOTE_STYLES = [
+  { value: 'glow', label: 'Brillante' },
+  { value: 'flat', label: 'Plano' },
+] as const;
+
 const PEDALS: { kind: PedalKind; label: string }[] = [
   { kind: 'sustain', label: 'Sustain' },
   { kind: 'sostenuto', label: 'Sostenuto' },
@@ -83,14 +88,31 @@ export function SettingsPanel() {
       />
 
       <h2 className="ui-etiqueta">Efectos</h2>
+      <Chips
+        label="Estilo de las notas"
+        options={NOTE_STYLES}
+        value={settings.effects.noteStyle}
+        onChange={(noteStyle) => setEffect({ noteStyle })}
+      />
+      {settings.effects.noteStyle === 'glow' && (
+        <Slider
+          label="Brillo de las notas"
+          max={200}
+          value={settings.effects.noteGlow}
+          onChange={(noteGlow) => setEffect({ noteGlow })}
+          format={(v) => `${v} %`}
+        />
+      )}
       <Slider
         label="Chispas al tocar"
+        max={200}
         value={settings.effects.sparks}
         onChange={(sparks) => setEffect({ sparks })}
         format={(v) => `${v} %`}
       />
       <Slider
         label="Brillo de la tecla"
+        max={200}
         value={settings.effects.keyGlow}
         onChange={(keyGlow) => setEffect({ keyGlow })}
         format={(v) => `${v} %`}

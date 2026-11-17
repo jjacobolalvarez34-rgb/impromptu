@@ -110,6 +110,23 @@ export const useStudio = create<StudioState>()(
       name: 'impromptu-estudio',
       version: 1,
       partialize: (s) => ({ settings: s.settings, aspect: s.aspect, keyboard: s.keyboard }),
+      // Ajustes guardados por una versión anterior: se completan con los valores por defecto
+      // (por ejemplo, el estilo y el brillo de las notas de ADR-010).
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<StudioState>;
+        const settings = saved.settings ?? current.settings;
+        return {
+          ...current,
+          ...saved,
+          settings: {
+            ...DEFAULT_SETTINGS,
+            ...settings,
+            effects: { ...DEFAULT_SETTINGS.effects, ...settings.effects },
+            show: { ...DEFAULT_SETTINGS.show, ...settings.show },
+            colors: { ...DEFAULT_SETTINGS.colors, ...settings.colors },
+          },
+        };
+      },
     },
   ),
 );
