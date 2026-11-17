@@ -1,6 +1,7 @@
 import { createNoteEvent, createTake, createTrack, fitKeyboardRange } from '@impromptu/core';
 import type { PedalEvent, Take } from '@impromptu/core';
 import { TranscriptionCancelled } from '../transcribe';
+import { trimPedalTails } from './pedalTails';
 import { PIANO_SAMPLE_RATE } from './postprocess';
 import type { PianoNote, PianoPedal } from './postprocess';
 import type { PianoWorkerMessage, PianoWorkerRequest } from './worker';
@@ -80,7 +81,8 @@ export function takeFromPiano(
   title: string,
   duration: number,
 ): Take {
-  const notes = result.notes
+  // Las notas que siguen sonando solo por el pedal se recortan (ver trimPedalTails).
+  const notes = trimPedalTails(result.notes, result.pedals)
     .filter((n) => n.end > n.start)
     .map((n) =>
       createNoteEvent({
