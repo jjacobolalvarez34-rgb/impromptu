@@ -102,7 +102,9 @@ function getBundle(baseUrl: string): Promise<Bundle> {
     const files = await loadFiles(baseUrl);
     const options: ort.InferenceSession.SessionOptions = {
       executionProviders: ['wasm'],
-      graphOptimizationLevel: 'all',
+      // 'extended': prepara en ~13 s y cada segmento tarda ~36 s en el portátil de Jacobo.
+      // 'all' tarda ~100 s en preparar (25 s por segmento); conviene solo en piezas largas.
+      graphOptimizationLevel: 'extended',
     };
     const [red, cabezas] = await Promise.all([
       ort.InferenceSession.create(new Uint8Array(files.red), options),
