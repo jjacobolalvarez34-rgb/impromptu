@@ -69,6 +69,11 @@ export class Piano {
     return this.buffers.size === SAMPLED_PITCHES.length * this.layers.length;
   }
 
+  /** Usa las muestras ya decodificadas de otro piano (por ejemplo, para exportar sin volver a descargar). */
+  shareSamplesFrom(other: Piano): void {
+    for (const [name, buffer] of other.buffers) this.buffers.set(name, buffer);
+  }
+
   /** Descarga (o lee de la caché) y decodifica todas las muestras. */
   async load(onProgress?: (p: LoadProgress) => void): Promise<void> {
     const names = SAMPLED_PITCHES.flatMap((p) => this.layers.map((l) => sampleName(p, l)));

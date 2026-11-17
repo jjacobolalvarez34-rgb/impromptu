@@ -43,6 +43,11 @@ class AudioEngine {
   private latency = 0;
   private livePlayer: LivePlayer<LiveVoiceHandle> | null = null;
 
+  /** Piano cargado (para exportar con sus muestras); null si aún no se descarga. */
+  get loadedPiano(): Piano | null {
+    return this.piano;
+  }
+
   /** Piano para tocar en vivo; null si aún no carga o si el sonido de la app está apagado. */
   get live(): LivePlayer<LiveVoiceHandle> | null {
     return useAudio.getState().enabled ? this.livePlayer : null;

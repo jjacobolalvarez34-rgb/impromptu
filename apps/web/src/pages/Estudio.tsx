@@ -1,6 +1,7 @@
 import { Button, Chips, DeviceIndicator, IconButton, Lcd, Logo, Tabs } from '@impromptu/ui';
 import {
   FileMusic,
+  Film,
   Gauge,
   Pause,
   Play,
@@ -18,6 +19,7 @@ import { LOCAL_PIECES, createDemoTake, openLocalPiece, openMidiFile } from '../s
 import type { OpenedTake } from '../studio/sources';
 import { engine, useAudio } from '../studio/audio';
 import { live, useLive } from '../studio/live';
+import { ExportDialog } from '../studio/ExportDialog';
 import { KeyboardSection, TakesSection } from '../studio/LivePanel';
 import { SettingsPanel } from '../studio/SettingsPanel';
 import { Timeline } from '../studio/Timeline';
@@ -89,6 +91,7 @@ export function Estudio() {
 
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLSpanElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
@@ -188,6 +191,9 @@ export function Estudio() {
               />
             </button>
           )}
+          <Button icon={<Film />} disabled={!take} onClick={() => setExportOpen(true)}>
+            Exportar video
+          </Button>
           <Button
             variant={device ? 'secondary' : 'primary'}
             icon={<FileMusic />}
@@ -305,6 +311,7 @@ export function Estudio() {
         </aside>
       </div>
 
+      <ExportDialog open={exportOpen} onClose={() => setExportOpen(false)} />
       <Timeline playheadRef={playheadRef} />
       <footer className={styles.transporte}>
         <IconButton

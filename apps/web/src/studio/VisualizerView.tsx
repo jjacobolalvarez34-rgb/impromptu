@@ -102,6 +102,10 @@ export function VisualizerView({
     // teclado queda limpio y listo). Vista de toma: sus notas caen.
     let showingLive = false;
     const loop = () => {
+      if (useStudio.getState().exporting) {
+        raf = requestAnimationFrame(loop);
+        return;
+      }
       const now = liveNow();
       if (useStudio.getState().view === 'live' && !transport.playing) {
         viz.setLive(live.notes, live.pedals, live.range());

@@ -13,6 +13,7 @@
   "dependencies": {
     "@impromptu/audio": "workspace:*",
     "@impromptu/core": "workspace:*",
+    "@impromptu/export": "workspace:*",
     "@impromptu/midi": "workspace:*",
     "@impromptu/render": "workspace:*",
     "@impromptu/ui": "workspace:*",

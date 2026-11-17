@@ -23,6 +23,8 @@ interface StudioState {
   /** Sección marcada en la línea de tiempo y si se está repitiendo. */
   loop: LoopRange | null;
   loopOn: boolean;
+  /** Mientras se exporta, el visualizador de la pantalla se pausa. */
+  exporting: boolean;
   playing: boolean;
   speed: number;
   open: (take: Take, notices?: string[]) => void;
@@ -50,6 +52,7 @@ export const useStudio = create<StudioState>()(
       view: 'take',
       loop: null,
       loopOn: false,
+      exporting: false,
       playing: false,
       speed: 1,
       open: (take, notices = []) => {

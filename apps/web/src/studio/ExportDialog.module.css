@@ -1,0 +1,73 @@
+.dialogo {
+  width: min(440px, calc(100vw - var(--e-8)));
+  padding: var(--e-6);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--panel);
+  color: var(--chasis);
+}
+
+.dialogo::backdrop {
+  background: rgb(14 14 13 / 0.7);
+}
+
+.dialogo h2 {
+  margin: 0 0 var(--e-1);
+}
+
+.dialogo p {
+  margin: 0;
+}
+
+.campos {
+  display: grid;
+  gap: var(--e-3);
+  margin-top: var(--e-5);
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--e-2);
+  margin-top: var(--e-2);
+}
+
+.barra {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--linea);
+  overflow: hidden;
+}
+
+.barra > span {
+  display: block;
+  height: 100%;
+  background: var(--ambar);
+  transition: width 120ms linear;
+}
+
+/* Descargar: es el botón principal de esta vista (tecla clara). */
+.descargar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  height: var(--toque);
+  padding: 0 var(--e-4);
+  border-bottom: 3px solid var(--gris-tecla);
+  border-radius: var(--radio);
+  background: var(--chasis);
+  color: var(--carbon);
+  font: 500 14px/1 var(--fuente-texto);
+  text-decoration: none;
+}
+
+.descargar svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+}
+
+.descargar:active {
+  border-bottom-width: 1px;
+  transform: translateY(2px);
+}

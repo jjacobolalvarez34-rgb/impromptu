@@ -2,15 +2,23 @@
   "name": "@impromptu/export",
   "version": "0.0.0",
   "private": true,
-  "description": "Exportación de video con WebCodecs y Mediabunny.",
+  "description": "Exportación de video: render offline cuadro por cuadro + WebCodecs + Mediabunny.",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@impromptu/audio": "workspace:*",
+    "@impromptu/core": "workspace:*",
+    "@impromptu/render": "workspace:*",
+    "mediabunny": "catalog:"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

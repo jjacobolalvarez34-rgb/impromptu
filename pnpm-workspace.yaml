@@ -31,6 +31,7 @@ catalog:
   zustand: ^5.0.0
   midi-file: ^1.2.4
   pixi.js: ^8.0.0
+  mediabunny: ^1.40.0
 
 minimumReleaseAgeExclude:
   - '@typescript-eslint/eslint-plugin@8.73.0'

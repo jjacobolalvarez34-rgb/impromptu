@@ -26,6 +26,8 @@ export interface VisualizerOptions {
   height: number;
   /** Densidad de píxeles; por defecto la de la pantalla. */
   resolution?: number;
+  /** Conservar la imagen tras dibujar, para que el codificador la lea (exportar). */
+  preserveDrawingBuffer?: boolean;
 }
 
 export const DEFAULT_SETTINGS: VisualSettings = {
@@ -156,6 +158,7 @@ export class Visualizer {
       backgroundColor: getTheme('ambar').background,
       backgroundAlpha: 1,
       preference: 'webgl',
+      preserveDrawingBuffer: opts.preserveDrawingBuffer ?? false,
     });
     app.ticker.stop();
     return new Visualizer(app, opts.width, opts.height);
