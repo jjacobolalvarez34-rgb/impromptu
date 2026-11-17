@@ -1,0 +1,70 @@
+.dialogo {
+  width: min(960px, calc(100vw - var(--e-8)));
+  padding: var(--e-6);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--panel);
+  color: var(--chasis);
+}
+
+.dialogo::backdrop {
+  background: rgb(14 14 13 / 0.7);
+}
+
+.dialogo h2 {
+  margin: 0;
+}
+
+.paso {
+  margin: var(--e-2) 0 var(--e-4);
+}
+
+.cuadro {
+  display: block;
+  width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border: 1px solid var(--linea);
+  border-radius: 2px;
+  cursor: crosshair;
+}
+
+.teclas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-6);
+  margin-top: var(--e-4);
+}
+
+.tecla {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+}
+
+.paso1 {
+  width: var(--toque);
+  height: var(--toque);
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-bottom: 3px solid var(--tecla-oscura-borde);
+  border-radius: var(--radio);
+  background: var(--panel-alto);
+  color: var(--chasis);
+  cursor: pointer;
+}
+
+.paso1 svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.5;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--e-2);
+  margin-top: var(--e-5);
+}

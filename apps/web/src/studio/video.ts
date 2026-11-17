@@ -1,5 +1,5 @@
 import { alignAudioToNotes, toMono } from '@impromptu/media';
-import type { NoteEvent } from '@impromptu/core';
+import type { KeyboardCalibration, NoteEvent } from '@impromptu/core';
 import { create } from 'zustand';
 
 /**
@@ -20,6 +20,8 @@ export interface CameraVideo {
   /** null si el video no tiene sonido: la sincronía es manual. */
   confidence: number | null;
   agree: boolean;
+  /** Teclas reales marcadas sobre el video (plantilla "Cámara arriba"). */
+  calibration?: KeyboardCalibration;
 }
 
 interface VideoState {

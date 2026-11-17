@@ -9,7 +9,8 @@ import {
   Texture,
 } from 'pixi.js';
 import { beatGrid } from '@impromptu/core';
-import type { Beat, NoteEvent, PedalEvent, Take } from '@impromptu/core';
+import type { Beat, KeyboardCalibration, NoteEvent, PedalEvent, Take } from '@impromptu/core';
+import { calibratedKeyLine, calibratedKeyboard, coverRect } from './calibration';
 import { layoutKeyboard } from './keyboard-layout';
 import type { KeyboardLayout } from './keyboard-layout';
 import {
@@ -132,6 +133,7 @@ export class Visualizer {
   private readonly videoBorder = new Graphics();
   private readonly videoBlur = new BlurFilter({ strength: 14, quality: 3 });
   private videoFrame: CanvasImageSource | null = null;
+  private calibration: KeyboardCalibration | null = null;
   private videoSize = { width: 0, height: 0 };
   private readonly barLabelPool: Pool<Text>;
   private readonly glowPool: Pool<Sprite>;
@@ -302,17 +304,62 @@ export class Visualizer {
    * Cuadro de video para el instante que se va a dibujar (o null si no hay video en ese
    * momento). En vivo es el <video> sincronizado; al exportar, el cuadro decodificado exacto.
    */
+  /** Teclas reales marcadas sobre el video (plantilla "Cámara arriba"). */
+  setCalibration(calibration: KeyboardCalibration | null): void {
+    this.calibration = calibration;
+  }
+
+  /** ¿Las notas caen sobre las teclas del video en este cuadro? */
+  private cameraTop(): boolean {
+    const { width, height } = this.videoSize;
+    return (
+      this.settings.layout === 'camera-top' &&
+      this.calibration !== null &&
+      this.videoFrame !== null &&
+      width > 0 &&
+      height > 0
+    );
+  }
+
   setVideoFrame(frame: CanvasImageSource | null, width = 0, height = 0): void {
     this.videoFrame = frame;
     if (frame) this.videoSize = { width, height };
   }
 
   render(t: number): void {
+    const virtualLayout = this.layout;
+    const virtualKeyboard = this.keyboard;
+    const camera = this.cameraTop();
+    if (camera) {
+      // Las notas caen sobre las teclas reales: el marco y el teclado salen de la calibración.
+      const rect = coverRect(
+        virtualLayout.width,
+        virtualLayout.height,
+        this.videoSize.width,
+        this.videoSize.height,
+      );
+      const keyLineY = calibratedKeyLine(this.calibration!, rect);
+      this.layout = {
+        ...virtualLayout,
+        keyLineY,
+        pps: (keyLineY / virtualLayout.keyLineY) * virtualLayout.pps,
+      };
+      this.keyboard = calibratedKeyboard(this.calibration!, rect, virtualLayout.width);
+    }
+    try {
+      this.renderFrame(t, camera);
+    } finally {
+      this.layout = virtualLayout;
+      this.keyboard = virtualKeyboard;
+    }
+  }
+
+  private renderFrame(t: number, camera: boolean): void {
     const L = this.layout;
     const { effects, colors } = this.settings;
     const scale = L.height / 1080;
 
-    this.drawVideo(scale);
+    this.drawVideo(scale, camera);
 
     this.drawGuides(t);
 
@@ -353,7 +400,8 @@ export class Visualizer {
     this.notePool.end();
     this.haloPool.end();
 
-    this.drawKeyboard(colors);
+    if (camera) this.keys.clear();
+    else this.drawKeyboard(colors);
 
     // Brillo sobre las teclas que suenan
     this.glowPool.begin();
@@ -423,7 +471,12 @@ export class Visualizer {
     }
     this.sparkPool.end();
 
-    this.drawPedal(t);
+    if (camera) {
+      this.pedal.clear();
+      this.pedalLabel.visible = false;
+    } else {
+      this.drawPedal(t);
+    }
     this.app.render();
   }
 
@@ -441,7 +494,7 @@ export class Visualizer {
   }
 
   /** Coloca el video según la plantilla: de fondo (oscurecido, con o sin desenfoque) o en recuadro. */
-  private drawVideo(scale: number): void {
+  private drawVideo(scale: number, camera = false): void {
     const L = this.layout;
     const { layout, background } = this.settings;
     const sprite = this.videoSprite;
@@ -459,6 +512,7 @@ export class Visualizer {
     const { width: fw, height: fh } = this.videoSize;
     if (!this.videoFrame || fw === 0 || fh === 0) return;
     const wantsVideo =
+      camera ||
       layout === 'camera-inset' ||
       (layout === 'background' && (background?.kind === 'video' || background?.kind === 'blur'));
     if (!wantsVideo) return;
@@ -473,6 +527,16 @@ export class Visualizer {
     }
     this.videoCanvas.getContext('2d')!.drawImage(this.videoFrame, 0, 0, cw, ch);
     this.videoTexture.source.update();
+
+    if (camera) {
+      // Cámara arriba: el video ocupa todo el cuadro, sin oscurecer, y las notas caen sobre él.
+      const r = coverRect(L.width, L.height, cw, ch);
+      sprite.scale.set(r.width / cw);
+      sprite.position.set(r.x, r.y);
+      sprite.filters = [];
+      this.bgLayer.addChild(sprite);
+      return;
+    }
 
     if (layout === 'background') {
       // Cubre todo el cuadro (recortando lo que sobre) y se oscurece para que las notas se lean.

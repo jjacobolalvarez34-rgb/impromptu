@@ -1,7 +1,8 @@
 import { Button, Slider } from '@impromptu/ui';
-import { Video, X } from 'lucide-react';
+import { Crosshair, Video, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { engine } from './audio';
+import { CalibrateDialog } from './CalibrateDialog';
 import { syncQuality } from './ownAudio';
 import { useStudio } from './store';
 import { openVideo, useVideo, videoOffset } from './video';
@@ -35,6 +36,7 @@ export function VideoSection() {
   const hasTake = useStudio((s) => s.take !== null);
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [calibrating, setCalibrating] = useState(false);
   const { patch, set } = useVideo.getState();
 
   const status = !video
@@ -92,6 +94,10 @@ export function VideoSection() {
           <p className="ui-secundario" role="status">
             {status} · desfase {fmt(videoOffset(video))}
           </p>
+          <Button icon={<Crosshair />} onClick={() => setCalibrating(true)}>
+            {video.calibration ? 'Calibrar de nuevo' : 'Calibrar teclas'}
+          </Button>
+          <CalibrateDialog open={calibrating} onClose={() => setCalibrating(false)} />
           <Slider
             label="Ajustar sincronía"
             min={-2000}

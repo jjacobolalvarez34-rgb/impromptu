@@ -5,4 +5,6 @@ export type { Theme } from './themes';
 export { layoutKeyboard, isBlack } from './keyboard-layout';
 export type { KeyboardLayout, KeyRect } from './keyboard-layout';
 export { frameLayout, BASE_LOOKAHEAD } from './scene';
+export { calibratedKeyboard, calibratedKeyLine, coverRect } from './calibration';
+export type { VideoRect } from './calibration';
 export type { Direction, VisualSettings } from './scene';

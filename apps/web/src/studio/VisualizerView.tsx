@@ -120,6 +120,7 @@ export function VisualizerView({
         }
         const t = transport.now();
         const video = useVideo.getState().video;
+        viz.setCalibration(video?.calibration ?? null);
         if (video && syncVideo(video, t, transport.playing)) {
           viz.setVideoFrame(video.element, video.width, video.height);
         } else {

@@ -21,6 +21,7 @@ const NOTE_STYLES = [
 const LAYOUTS = [
   { value: 'visualizer', label: 'Solo visualizador' },
   { value: 'camera-inset', label: 'Cámara en recuadro' },
+  { value: 'camera-top', label: 'Cámara arriba' },
   { value: 'background', label: 'Fondo' },
 ] as const;
 
@@ -65,7 +66,7 @@ export function SettingsPanel() {
       <Chips
         label="Plantilla"
         options={LAYOUTS}
-        value={settings.layout === 'camera-top' ? 'camera-inset' : settings.layout}
+        value={settings.layout}
         onChange={(layout) =>
           setSettings({
             layout,
