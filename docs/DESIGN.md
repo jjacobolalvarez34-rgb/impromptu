@@ -69,7 +69,12 @@ Ambas fuentes son de Google Fonts con licencia OFL. Empaquétalas con la app (si
   - Centro: formatos, plantillas y visualizador.
   - Panel derecho: tema, notas, efectos, pedales y cámara.
   - Abajo: transporte con LCD y la línea de tiempo con carriles de mano derecha, mano izquierda, pedal y video.
-- **Celular (Grabar):** logo, indicador del teclado, visualizador 4:5, botón circular de grabar o detener con tiempo en LCD, indicador de pedal, tomas recientes y barra inferior (Grabar, Tomas, Estudio, Ajustes).
+- **App de PC (elegida por Jacobo, 2026-11-17: "Estudio directo"):** la misma pantalla del Estudio con todas sus funciones, más un menú Archivo (Nuevo, Abrir MIDI o audio, Abrir reciente, Guardar MIDI, Exportar video, Exportar partitura, Abrir carpeta de proyectos, con atajos) y una bienvenida al abrir (Grabar, Abrir MIDI, De MP3 a MIDI y lo abierto hace poco).
+- **Celular (elegida por Jacobo, 2026-11-17: "Piezas primero", reemplaza la versión anterior de P16):**
+  - Inicio en vertical: botón grande Grabar, Abrir MIDI, De MP3 a MIDI y tus piezas en cuadrícula.
+  - Al abrir una pieza o grabar, la pantalla gira a **horizontal**: el piano y la partitura nunca van en vertical. Arriba, volver, título, modos Ver, Partitura, Practicar y Grabar, y Exportar; abajo, el transporte.
+- **Las dos apps** abren con la animación del logo (una vez por sesión).
+- Prototipo navegable: lienzo "Impromptu: apps de PC y celular" (https://claude.ai/code/artifact/dc619236-86c2-4e3c-863a-29c55fbfa2ec).
 
 ## 6. Reglas para que no parezca hecho con IA
 **Sí:**
