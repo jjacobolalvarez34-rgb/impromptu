@@ -1,5 +1,5 @@
 import type { RawNote } from './notes';
-import type { TranscribeParams, WorkerMessage } from './worker';
+import type { TranscribeParams, WorkerMessage, WorkerRequest } from './worker';
 
 /** Umbrales por defecto; se ajustaron con las grabaciones de Jacobo (BITÁCORA, fase 5). */
 export const DEFAULT_PARAMS: TranscribeParams = {
@@ -18,6 +18,9 @@ export class TranscriptionCancelled extends Error {
   }
 }
 
+/** En qué va: preparando la IA (solo la primera vez) o escuchando el audio. */
+export type TranscribeStage = 'preparing' | 'listening';
+
 /** Remuestrea a mono 22 050 Hz con un OfflineAudioContext (ARQUITECTURA, transcripción). */
 export async function toModelRate(buffer: AudioBuffer): Promise<Float32Array> {
   const length = Math.ceil(buffer.duration * MODEL_RATE);
@@ -30,42 +33,95 @@ export async function toModelRate(buffer: AudioBuffer): Promise<Float32Array> {
   return out.getChannelData(0);
 }
 
+/** Pico absoluto (0–1) de un audio: sirve para avisar si el micrófono no captó nada. */
+export function peakLevel(buffer: AudioBuffer): number {
+  let peak = 0;
+  for (let c = 0; c < buffer.numberOfChannels; c++) {
+    const data = buffer.getChannelData(c);
+    for (let i = 0; i < data.length; i++) {
+      const v = Math.abs(data[i]!);
+      if (v > peak) peak = v;
+    }
+  }
+  return peak;
+}
+
+/** Worker compartido: se prepara una vez y queda listo para las siguientes conversiones. */
+let shared: { worker: Worker; ready: boolean; listeners: Set<(m: WorkerMessage) => void> } | null =
+  null;
+
+function getWorker() {
+  if (shared) return shared;
+  const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
+  const state = { worker, ready: false, listeners: new Set<(m: WorkerMessage) => void>() };
+  worker.onmessage = (e: MessageEvent<WorkerMessage>) => {
+    if (e.data.type === 'ready') state.ready = true;
+    for (const l of state.listeners) l(e.data);
+  };
+  worker.onerror = (e) => {
+    for (const l of state.listeners) l({ type: 'error', message: e.message });
+    dropWorker();
+  };
+  shared = state;
+  return state;
+}
+
+function dropWorker() {
+  shared?.worker.terminate();
+  shared = null;
+}
+
+const send = (w: Worker, m: WorkerRequest, transfer: Transferable[] = []) =>
+  w.postMessage(m, transfer);
+
+/**
+ * Empieza a preparar la IA en segundo plano (por ejemplo mientras el usuario graba o elige
+ * un archivo). Es seguro llamarla varias veces.
+ */
+export function prepareTranscriber(): void {
+  const w = getWorker();
+  if (!w.ready) send(w.worker, { type: 'prepare' });
+}
+
 /**
  * Transcribe un audio a notas en un Web Worker. Cancelar termina el worker de inmediato
- * (no queda colgado consumiendo memoria; VERIFICACIONES §6).
+ * (no queda colgado consumiendo memoria; VERIFICACIONES §6); la próxima vez se prepara de nuevo.
  */
 export async function transcribe(
   buffer: AudioBuffer,
   options: {
     onProgress?: (value: number) => void;
+    onStage?: (stage: TranscribeStage) => void;
     signal?: AbortSignal;
     params?: Partial<TranscribeParams>;
   } = {},
 ): Promise<RawNote[]> {
   const samples = await toModelRate(buffer);
   if (options.signal?.aborted) throw new TranscriptionCancelled();
-  const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
+  const w = getWorker();
+  options.onStage?.(w.ready ? 'listening' : 'preparing');
   return new Promise<RawNote[]>((resolve, reject) => {
+    const finish = () => {
+      w.listeners.delete(listener);
+      options.signal?.removeEventListener('abort', stop);
+    };
     const stop = () => {
-      worker.terminate();
+      finish();
+      dropWorker();
       reject(new TranscriptionCancelled());
     };
-    options.signal?.addEventListener('abort', stop, { once: true });
-    worker.onmessage = (e: MessageEvent<WorkerMessage>) => {
-      const m = e.data;
-      if (m.type === 'progress') options.onProgress?.(m.value);
+    const listener = (m: WorkerMessage) => {
+      if (m.type === 'ready') options.onStage?.('listening');
+      else if (m.type === 'progress') options.onProgress?.(m.value);
       else {
-        worker.terminate();
-        options.signal?.removeEventListener('abort', stop);
+        finish();
         if (m.type === 'done') resolve(m.notes);
         else reject(new Error(m.message));
       }
     };
-    worker.onerror = (e) => {
-      worker.terminate();
-      reject(new Error(e.message));
-    };
+    w.listeners.add(listener);
+    options.signal?.addEventListener('abort', stop, { once: true });
     const params = { ...DEFAULT_PARAMS, ...options.params };
-    worker.postMessage({ samples, params }, [samples.buffer]);
+    send(w.worker, { type: 'run', samples, params }, [samples.buffer]);
   });
 }

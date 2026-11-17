@@ -6,5 +6,7 @@ export {
   TranscriptionCancelled,
   MODEL_RATE,
   DEFAULT_PARAMS,
+  prepareTranscriber,
+  peakLevel,
 } from './transcribe';
-export type { TranscribeParams } from './transcribe';
+export type { TranscribeParams, TranscribeStage } from './transcribe';
