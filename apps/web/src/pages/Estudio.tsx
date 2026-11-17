@@ -11,7 +11,17 @@ import {
 } from '@impromptu/ui';
 import { THEMES } from '@impromptu/render';
 import type { PedalKind } from '@impromptu/core';
-import { FileMusic, Gauge, Pause, Play, SkipBack, Square, Volume2, VolumeX } from 'lucide-react';
+import {
+  FileMusic,
+  Gauge,
+  Pause,
+  Play,
+  Repeat,
+  SkipBack,
+  Square,
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
 import { useSearchParams } from 'react-router';
@@ -22,6 +32,7 @@ import type { OpenedTake } from '../studio/sources';
 import { engine, useAudio } from '../studio/audio';
 import { live, useLive } from '../studio/live';
 import { KeyboardSection, TakesSection } from '../studio/LivePanel';
+import { Timeline } from '../studio/Timeline';
 import { transport, useStudio } from '../studio/store';
 import type { Aspect, KeyboardMode } from '../studio/store';
 import { formatTime } from '../studio/transport';
@@ -69,6 +80,8 @@ export function Estudio() {
   const keyboard = useStudio((s) => s.keyboard);
   const playing = useStudio((s) => s.playing);
   const view = useStudio((s) => s.view);
+  const loop = useStudio((s) => s.loop);
+  const loopOn = useStudio((s) => s.loopOn);
   const speed = useStudio((s) => s.speed);
   const {
     open,
@@ -76,6 +89,7 @@ export function Estudio() {
     setAspect,
     setKeyboard,
     setView,
+    toggleLoop,
     togglePlay: toggle,
     setSpeed,
   } = useStudio.getState();
@@ -106,7 +120,7 @@ export function Estudio() {
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLSpanElement>(null);
-  const seekRef = useRef<HTMLInputElement>(null);
+  const playheadRef = useRef<HTMLDivElement>(null);
   const [params] = useSearchParams();
 
   const load = async (promise: Promise<OpenedTake>) => {
@@ -140,8 +154,9 @@ export function Estudio() {
     // Grabando, el LCD muestra el tiempo de la toma nueva.
     const shown = useLive.getState().recording ? live.elapsed() : t;
     if (timeRef.current) timeRef.current.textContent = formatTime(shown);
-    if (seekRef.current && document.activeElement !== seekRef.current) {
-      seekRef.current.value = String(t);
+    const duration = useStudio.getState().take?.duration ?? 0;
+    if (playheadRef.current) {
+      playheadRef.current.style.left = `${duration > 0 ? (t / duration) * 100 : 0}%`;
     }
     // El transporte se detiene solo al final: refleja el estado en el botón.
     if (!transport.playing && useStudio.getState().playing) useStudio.setState({ playing: false });
@@ -400,6 +415,7 @@ export function Estudio() {
         </aside>
       </div>
 
+      <Timeline playheadRef={playheadRef} />
       <footer className={styles.transporte}>
         <IconButton
           label="Ir al inicio"
@@ -423,18 +439,15 @@ export function Estudio() {
           <span ref={timeRef}>00:00.00</span>
           <span className={styles.duracion}>/ {formatTime(take?.duration ?? 0)}</span>
         </Lcd>
-        <input
-          ref={seekRef}
-          type="range"
-          className={styles.buscar}
-          aria-label="Buscar en la pieza"
-          min={0}
-          max={take?.duration ?? 0}
-          step={0.01}
-          defaultValue={0}
-          disabled={!take}
-          onChange={(e) => transport.seek(Number(e.target.value))}
+        <IconButton
+          label={loopOn ? 'Dejar de repetir la sección' : 'Repetir la sección marcada'}
+          title="Arrastra sobre la línea de tiempo para marcar una sección"
+          icon={<Repeat />}
+          aria-pressed={loopOn}
+          disabled={!loop}
+          onClick={toggleLoop}
         />
+        <span className={styles.espacio} />
         {audioStatus === 'loading' && (
           <Lcd size="sm" aria-live="polite">
             Descargando piano {Math.round(audioProgress * 100)} %

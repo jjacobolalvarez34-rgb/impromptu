@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS } from '@impromptu/render';
 import type { VisualSettings } from '@impromptu/render';
 import { create } from 'zustand';
 import { Transport } from './transport';
+import type { LoopRange } from './transport';
 
 export type Aspect = '16:9' | '9:16' | '1:1';
 export type KeyboardMode = 'auto' | '61' | '76' | '88';
@@ -18,6 +19,9 @@ interface StudioState {
   aspect: Aspect;
   keyboard: KeyboardMode;
   view: View;
+  /** Sección marcada en la línea de tiempo y si se está repitiendo. */
+  loop: LoopRange | null;
+  loopOn: boolean;
   playing: boolean;
   speed: number;
   open: (take: Take, notices?: string[]) => void;
@@ -25,6 +29,8 @@ interface StudioState {
   setAspect: (aspect: Aspect) => void;
   setKeyboard: (mode: KeyboardMode) => void;
   setView: (view: View) => void;
+  setLoop: (loop: LoopRange | null) => void;
+  toggleLoop: () => void;
   togglePlay: () => void;
   setSpeed: (speed: number) => void;
 }
@@ -39,6 +45,8 @@ export const useStudio = create<StudioState>((set, get) => ({
   aspect: '16:9',
   keyboard: 'auto',
   view: 'take',
+  loop: null,
+  loopOn: false,
   playing: false,
   speed: 1,
   open: (take, notices = []) => {
@@ -46,13 +54,34 @@ export const useStudio = create<StudioState>((set, get) => ({
     transport.duration = take.duration;
     transport.loop = null;
     transport.seek(0);
-    set({ take: withKeyboard(take, get().keyboard), notices, playing: false, view: 'take' });
+    set({
+      take: withKeyboard(take, get().keyboard),
+      notices,
+      playing: false,
+      view: 'take',
+      loop: null,
+      loopOn: false,
+    });
   },
   setSettings: (patch) => set({ settings: { ...get().settings, ...patch } }),
   setAspect: (aspect) => set({ aspect }),
   setKeyboard: (keyboard) => {
     const take = get().take;
     set({ keyboard, take: take && withKeyboard(take, keyboard) });
+  },
+  setLoop: (loop) => {
+    const valid = loop && loop.end - loop.start > 0.05 ? loop : null;
+    transport.loop = valid;
+    set({ loop: valid, loopOn: valid !== null });
+  },
+  toggleLoop: () => {
+    const { loop, loopOn } = get();
+    if (!loop) return;
+    transport.loop = loopOn ? null : loop;
+    if (!loopOn && (transport.now() < loop.start || transport.now() > loop.end)) {
+      transport.seek(loop.start);
+    }
+    set({ loopOn: !loopOn });
   },
   setView: (view) => {
     if (view === 'live') transport.pause();

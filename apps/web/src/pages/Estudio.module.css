@@ -1,7 +1,7 @@
 .estudio {
   height: 100dvh;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   background: var(--carbon);
 }
 
@@ -295,4 +295,8 @@
 
 .dispositivo[aria-pressed='true'] > span {
   border-color: var(--ambar);
+}
+
+.espacio {
+  flex: 1;
 }
