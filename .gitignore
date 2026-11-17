@@ -35,3 +35,8 @@ exports/
 # Pruebas locales de Claude (no se suben)
 scripts/local/
 fixtures/local/
+
+# App de escritorio: compilado, instalador y modelos copiados
+apps/desktop/dist/
+apps/desktop/release/
+apps/desktop/modelos/

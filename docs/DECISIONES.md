@@ -217,6 +217,26 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
   - El modo espera necesita el teclado conectado por USB (Web MIDI).
   - Sin teclado se puede practicar mirando, con la mano silenciada y la velocidad baja.
 
+### ADR-018 · App de PC con Electron; Android con Capacitor solo para probar (después, nativa)
+- **Contexto:**
+  - ADR-008 y el ROADMAP proponían Tauri 2.
+  - En el equipo de Jacobo no hay Rust ni el compilador de C++ de Microsoft. El compilador y el SDK de Windows (unos 6 GB) se instalan en C: sí o sí, y C: no tiene espacio; además la regla del proyecto es todo en D:.
+  - Android System WebView no trae Web MIDI.
+- **Decisión (de Jacobo, 2026-11-17):**
+  - **PC: Electron 44**, empaquetado con electron-builder (instalador NSIS). Todo queda en D:: binario y cachés en `D:\.cache\electron` y `D:\.cache\electron-builder`.
+    - Web MIDI, cámara y micrófono funcionan como en Chrome.
+    - La app sirve la web compilada por un protocolo propio (`app://impromptu/`) con COOP/COEP, así el modelo de piano usa varios hilos.
+    - El modelo va dentro del instalador: funciona sin internet.
+    - Menú Archivo con atajos (DESIGN §5).
+    - El binario de Electron no se baja en `pnpm install` (el CI no lo necesita): lo baja el script de la app de escritorio.
+  - **Android: Capacitor, solo para probar** (pedido de Jacobo). La app definitiva será nativa.
+    - Java 17 y el SDK de Android en D:.
+    - Un puente propio a la API MIDI de Android para el teclado por OTG.
+- **Consecuencias:**
+  - El instalador de PC pesa más que con Tauri (~90 MB más el modelo).
+  - Más adelante, el modelo de piano puede correr nativo con `onnxruntime-node` (~2× tiempo real en el portátil de Jacobo, contra ~0,15× en el navegador).
+  - ADR-008 se mantiene en lo esencial (tres productos, una base de código); cambia la herramienta.
+
 ---
 ### Plantilla
 ```

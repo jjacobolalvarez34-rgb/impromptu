@@ -1,0 +1,59 @@
+{
+  "name": "@impromptu/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "description": "App de escritorio de Impromptu (Windows): la web empaquetada con Electron (ADR-018).",
+  "type": "module",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "compile": "tsc -p tsconfig.build.json",
+    "electron:get": "node scripts/get-electron.mjs",
+    "dev": "node scripts/dev.mjs",
+    "dist": "node scripts/dist.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "electron": "44.10.1",
+    "electron-builder": "26.18.1",
+    "typescript": "catalog:"
+  },
+  "build": {
+    "appId": "com.mamutherd.impromptu",
+    "productName": "Impromptu",
+    "copyright": "© 2026 Mamut Herd",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../web/dist",
+        "to": "web"
+      },
+      {
+        "from": "modelos",
+        "to": "modelos",
+        "filter": [
+          "transkun-*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "Impromptu",
+      "artifactName": "Impromptu-${version}-instalador.${ext}"
+    }
+  }
+}

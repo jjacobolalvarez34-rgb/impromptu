@@ -1,4 +1,13 @@
-import { Button, Chips, DeviceIndicator, IconButton, Lcd, Logo, Tabs } from '@impromptu/ui';
+import {
+  Button,
+  Chips,
+  DeviceIndicator,
+  IconButton,
+  Lcd,
+  Logo,
+  LogoIntro,
+  Tabs,
+} from '@impromptu/ui';
 import {
   Download,
   FileMusic,
@@ -28,6 +37,8 @@ import { EditBar, useEditShortcuts } from '../studio/EditBar';
 import { ExportDialog } from '../studio/ExportDialog';
 import { ConvertAudioButton, MicSection, TranscribeStatus } from '../studio/TranscribeSection';
 import { saveMidi } from '../studio/saveMidi';
+import { isDesktop, onMenuAction, requestConvertAudio } from '../desktop';
+import { Welcome } from '../studio/Welcome';
 import { practice } from '../studio/practice';
 import { TutorialPanel } from '../studio/TutorialPanel';
 
@@ -116,6 +127,41 @@ export function Estudio() {
   const [dragging, setDragging] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  // App de escritorio: animación del logo al abrir (una vez por sesión) y bienvenida.
+  const [intro, setIntro] = useState(() => {
+    try {
+      return (
+        new URLSearchParams(window.location.search).has('intro') &&
+        sessionStorage.getItem('impromptu-intro-vista') === null
+      );
+    } catch {
+      return false;
+    }
+  });
+  const endIntro = () => {
+    try {
+      sessionStorage.setItem('impromptu-intro-vista', '1');
+    } catch {
+      // Sin almacenamiento: la animación puede volver a salir.
+    }
+    setIntro(false);
+  };
+  const [welcome, setWelcome] = useState(() => isDesktop() && !useStudio.getState().take);
+  // Menú nativo de la app de escritorio.
+  useEffect(
+    () =>
+      onMenuAction((action) => {
+        const studio = useStudio.getState();
+        if (action === 'abrir-midi') fileInput.current?.click();
+        else if (action === 'guardar-midi' && studio.take) saveMidi(studio.take);
+        else if (action === 'exportar-video' && studio.take) setExportOpen(true);
+        else if (action === 'deshacer') studio.undo();
+        else if (action === 'rehacer') studio.redo();
+        else if (action === 'ver-estudio') setTab('estudio');
+        else if (action === 'ver-partitura') setTab('partitura');
+      }),
+    [],
+  );
   const timeRef = useRef<HTMLSpanElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
   const meterRef = useRef<HTMLSpanElement>(null);
@@ -129,10 +175,11 @@ export function Estudio() {
     };
   }, [take]);
   const meterLive = useRef(meter);
-  // Al entrar a una pantalla con sonido, el piano se descarga ya (no espera la intro).
+  // Al entrar a una pantalla con sonido, el piano se descarga ya; si está la animación del
+  // logo, cuando termina (decodificar las muestras a la vez la trababa).
   useEffect(() => {
-    void engine.preload();
-  }, []);
+    if (!intro) void engine.preload();
+  }, [intro]);
   useEffect(() => {
     meterLive.current = meter;
   }, [meter]);
@@ -202,6 +249,19 @@ export function Estudio() {
   };
 
   const noteCount = take?.tracks.reduce((n, t) => n + t.notes.length, 0) ?? 0;
+
+  // Mientras corre la animación del logo, solo ella: el estudio (visualizador WebGL, paneles)
+  // se monta después, para que la animación no se trabe en equipos modestos.
+  if (intro) {
+    return (
+      <div className={styles.intro} onClick={endIntro}>
+        <LogoIntro size="min(36vw, 32vh, 260px)" onDone={() => window.setTimeout(endIntro, 500)} />
+        <button type="button" className={styles.saltar} onClick={endIntro}>
+          Saltar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -451,6 +511,14 @@ export function Estudio() {
       </div>
 
       <ExportDialog open={exportOpen} onClose={() => setExportOpen(false)} />
+      {welcome && (
+        <Welcome
+          onClose={() => setWelcome(false)}
+          onOpenMidi={() => fileInput.current?.click()}
+          onConvertAudio={requestConvertAudio}
+        />
+      )}
+
       <Timeline playheadRef={playheadRef} />
       <footer
         className={`${styles.transporte} ui-aparece-sube`}

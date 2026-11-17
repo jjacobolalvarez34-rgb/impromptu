@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 import styles from './Button.module.css';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -12,6 +12,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   rec?: boolean;
   /** Ícono Lucide a la izquierda del texto. */
   icon?: ReactNode;
+  /** React 19 pasa `ref` como prop: llega al <button> (por ejemplo, para darle el foco). */
+  ref?: Ref<HTMLButtonElement>;
 }
 
 export function Button({

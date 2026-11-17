@@ -2,6 +2,7 @@ import { Button, Chips, Lcd } from '@impromptu/ui';
 import { FileAudio, Mic, Square, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { prepareTranscriber } from '@impromptu/transcribe';
+import { onMenuAction } from '../desktop';
 import { engine } from './audio';
 import { PIANO_MODEL_URL, micStream, useTranscribe } from './transcribeStore';
 import styles from './LivePanel.module.css';
@@ -101,6 +102,8 @@ function LevelMeter() {
 export function ConvertAudioButton() {
   const input = useRef<HTMLInputElement>(null);
   const busy = useTranscribe((s) => s.state.step === 'working' || s.state.step === 'recording');
+  // Menú de la app de escritorio: Archivo › Convertir un audio.
+  useEffect(() => onMenuAction((a) => a === 'convertir-audio' && input.current?.click()), []);
   return (
     <>
       <input

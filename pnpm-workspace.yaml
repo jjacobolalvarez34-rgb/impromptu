@@ -51,5 +51,9 @@ minimumReleaseAgeExclude:
 # compila WebGL para Node, que la app no usa.
 allowBuilds:
   core-js: false
+  # El binario de Electron lo baja apps/desktop (scripts/get-electron.mjs) con la caché en D:.
+  electron: false
+  # Instalador Squirrel; usamos NSIS.
+  electron-winstaller: false
   gl: false
   protobufjs: false
