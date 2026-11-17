@@ -1,5 +1,6 @@
 import { Button, Chips, DeviceIndicator, IconButton, Lcd, Logo, Tabs } from '@impromptu/ui';
 import {
+  Download,
   FileMusic,
   Film,
   Gauge,
@@ -26,6 +27,7 @@ import { AudioSection, openOwnAudio } from '../studio/AudioSection';
 import { EditBar, useEditShortcuts } from '../studio/EditBar';
 import { ExportDialog } from '../studio/ExportDialog';
 import { TranscribeSection } from '../studio/TranscribeSection';
+import { saveMidi } from '../studio/saveMidi';
 import { VideoSection, openCameraVideo } from '../studio/VideoSection';
 import { KeyboardSection, TakesSection } from '../studio/LivePanel';
 import { SettingsPanel } from '../studio/SettingsPanel';
@@ -237,6 +239,16 @@ export function Estudio() {
               />
             </button>
           )}
+          <Button
+            icon={<Download />}
+            disabled={!take}
+            className="ui-aparece-tecla"
+            style={{ '--retraso': '80ms' } as CSSProperties}
+            title="Descarga la pieza como .mid, con las manos en pistas separadas y los pedales"
+            onClick={() => take && saveMidi(take)}
+          >
+            Guardar MIDI
+          </Button>
           <Button
             icon={<Film />}
             disabled={!take}

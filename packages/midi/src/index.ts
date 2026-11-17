@@ -9,3 +9,4 @@ export { Recorder } from './live/recorder';
 export type { OpenNote } from './live/recorder';
 export { WebMidiInput, WebMidiError, isWebMidiSupported } from './live/webmidi';
 export type { MidiDevice, MidiAccessError } from './live/webmidi';
+export { exportMidi, secondsToTicks } from './export';

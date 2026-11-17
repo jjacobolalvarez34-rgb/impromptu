@@ -52,4 +52,12 @@ test('convierte un audio en notas y lo abre como pieza', async ({ page }, info) 
   await expect(seccion.getByRole('alert')).toHaveCount(0);
   await expect(seccion.getByRole('button', { name: 'Convertir un audio' })).toBeVisible();
   await page.screenshot({ path: `test-results/capturas/transcribir-${info.project.name}.png` });
+
+  // Y se guarda como MIDI estándar.
+  const descarga = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Guardar MIDI' }).click();
+  const archivo = await descarga;
+  expect(archivo.suggestedFilename()).toBe('acorde-prueba.mid');
+  const bytes = await (await archivo.createReadStream()).toArray();
+  expect(Buffer.concat(bytes).subarray(0, 4).toString('latin1')).toBe('MThd');
 });
