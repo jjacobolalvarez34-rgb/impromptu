@@ -14,6 +14,51 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-17 · Fase 3 · Cámara, plantillas, exportar y publicar (v0.1)
+- Hecho:
+  - `packages/export`: MP4 (H.264 + AAC, o WebM VP9 + Opus si falta H.264, B-011) cuadro por cuadro con Mediabunny.
+    - El piano se toca en un OfflineAudioContext por tramos de 5 s, con progreso y Cancelar inmediato.
+    - Se puede exportar con el audio propio en vez del piano.
+    - Se puede exportar con el video de la cámara: cada cuadro sale decodificado con `CanvasSink` en el instante exacto.
+  - `packages/media`: sincronía audio ↔ MIDI con cromagrama más el afinado por ataques y una segunda opinión. Los umbrales se midieron con las grabaciones de Jacobo.
+  - Audio propio (MP3/WAV): sincronía automática con aviso si no es la misma pieza, ajuste fino de ±500 ms, carril de onda, y reproducción y exportación con ese audio.
+  - Video de las manos:
+    - Importarlo, con sincronía por su sonido o ajuste manual de ±2 s.
+    - Cámara en vivo con getUserMedia: se ve al tocar y se graba con la toma (MediaRecorder VP8). El desfase sale de performance.now y el video queda guardado con la toma en OPFS (MediaRef).
+    - Calibración de teclas (primera, última y línea) sobre el video o sobre la cámara.
+    - Plantillas: solo visualizador, cámara en recuadro, cámara arriba (las notas caen sobre las teclas reales) y fondo (video, desenfoque o color).
+  - Visualizador:
+    - Notas brillantes (degradado, borde y halo), haz de luz desde la tecla, chispas del color de la nota; brillo y chispas hasta 200 % (ADR-010).
+    - Líneas de compás y pulso que caen, y LCD de compás y tempo (ADR-011).
+  - Página principal (`/`):
+    - Presentación con el visualizador en vivo de fondo y el título que cae letra por letra.
+    - Qué es, cómo funciona, descargas (web activa; PC y Android en "Próximamente") y donaciones (P7 provisional).
+    - Intro del logo una vez por sesión.
+    - La app pasa a `/app` y el estudio a `/estudio`.
+  - Apariciones animadas por tipo de elemento, visibles aunque el sistema tenga las animaciones apagadas (P19).
+  - Publicación: `vercel.json` (Jacobo publica en Vercel); GitHub Pages queda como flujo manual. README para usuarios.
+  - Arreglos encontrados en las pruebas:
+    - El visualizador se congelaba al terminar la pieza (recursión en `Transport.now`).
+    - Exportar fallaba con un pedal que nunca se suelta (release infinito).
+    - El sonido se cortaba con 2.000 notas: polifonía de 64 voces.
+    - La intro se trababa por la descarga del piano; el piano ahora se descarga después.
+    - La cámara grababa vacío en VP9; se cambió a VP8.
+- Pruebas:
+  - Vitest: core 32, midi 22, render 26, audio 18, media 6, export 4 y web 5 (113 en total).
+  - Lint y typecheck en verde; CI en verde.
+  - Exportaciones de prueba con video (recuadro y cámara arriba), verificadas cuadro por cuadro.
+  - Cámara simulada: graba y guarda en OPFS.
+- Probado por Jacobo:
+  - Exportó *Sorry I filed you* (3:35) en unos 2 minutos, más rápido que el tiempo real.
+  - La sincronía MIDI + MP3 se probó con sus archivos: Consuelo +0,39 s y Still learning −0,89 s coinciden por dos métodos.
+- Pendiente de Jacobo:
+  - Publicar en Vercel.
+  - Grabar un video de sus manos y probar la calibración y "Cámara arriba".
+  - Probar en el celular Android con OTG una vez publicado (https).
+  - Revisar la deriva de la sincronía de oído al final de una pieza.
+  - P16 (rediseño de celular), P17 (OBS), P14 (logo).
+- Pedidos del usuario no atendidos: ninguno de esta fase. El teclado realista sigue para el final, por decisión de Jacobo.
+
 ### 2026-11-16 · Fase 2 · Teclado en vivo, pedales y modo en vivo
 - Hecho:
   - `packages/midi`, en vivo:
