@@ -175,6 +175,31 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
   - En equipos nuevos y en la app de PC (nativo) será mucho más rápido.
 - **Consecuencias:** el paquete del modelo pesa ~58 MB y se descarga una vez. Dónde se publica sigue en P21.
 
+### ADR-016 · Partitura propia (tempo, cuantización, MusicXML) y OpenSheetMusicDisplay para dibujarla
+- **Contexto:**
+  - La fase 6 pide partitura desde cualquier toma: MIDI de un DAW, grabación del teclado o audio transcrito.
+  - Jacobo pidió que la duración de las notas salga del ritmo y no del sonido, sobre todo con pedal.
+  - Sus MIDI son de dos tipos:
+    - Con metrónomo: Still learning a 134 BPM, Sorry a 140.
+    - Tocados libres, que quedaron con el 120 por defecto de Cakewalk: Consuelo y Nostalgia.
+- **Decisión:**
+  - `packages/notation`, sin dependencias, con algoritmos conocidos:
+    - Tempo por autocorrelación de los ataques y pulsos por programación dinámica (Ellis 2007). Rigidez 30: sigue algo del rubato sin deformar los compases.
+    - El tempo del archivo se usa solo si sus notas caen en su cuadrícula. Si la cuadrícula viene corrida (Still learning: 1/4 de pulso), se realinea.
+    - Cuantización por pulso a semicorcheas o tresillos (los tresillos solo si encajan claramente mejor).
+    - Duración escrita: hasta la siguiente nota de la mano si el hueco es menor que una negra, o hasta soltar el pedal.
+    - Figuras sin cruzar el pulso salvo desde uno, ligaduras entre compases, silencios y silencio de compás completo.
+    - Dos pentagramas por mano y armadura por los perfiles de Krumhansl-Kessler.
+    - Pedal con línea, con "Ped." al pisar, una muesca en cada cambio y un gancho al soltar.
+  - Exportar MusicXML 4.0 y MIDI cuantizado. El PDF sale de imprimir la hoja (el navegador ofrece "Guardar como PDF"); no hacen falta dependencias.
+  - Dibujo con OpenSheetMusicDisplay 2.2.1 (BSD-3), que se carga solo al abrir la pestaña. El cursor sigue la reproducción.
+  - Metrónomo al grabar con el teclado: la toma guarda su tempo y su compás exactos. Es la forma fiable de tener una partitura limpia de lo que se toca.
+  - beat_this (detección de pulsos con IA) queda para después: el método clásico basta con metrónomo o con MIDI de DAW, y en el rubato fuerte ningún método lo resuelve del todo.
+- **Consecuencias:**
+  - Una sola voz por pentagrama: en un acorde con notas de distinta duración, todas duran lo mismo.
+  - Con rubato fuerte (Consuelo), el ritmo escrito sale aproximado. Tempo y compás se pueden corregir en la pestaña.
+  - Jacobo valida la legibilidad.
+
 ---
 ### Plantilla
 ```

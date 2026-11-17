@@ -14,6 +14,39 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-17 · Fase 6 · Partitura
+- Hecho:
+  - `packages/notation` (ADR-016): tempo y pulsos, cuantización con tresillos, figuras, ligaduras, silencios, dos pentagramas por mano, armadura, pedal con línea, MusicXML 4.0 y MIDI cuantizado.
+  - Pestaña **Partitura**:
+    - OpenSheetMusicDisplay 2.2.1, con el cursor siguiendo la reproducción.
+    - Tempo editable (detectado o del archivo) y compás 4/4, 3/4, 2/4 o 6/8.
+    - Exportar MusicXML, MIDI cuantizado e imprimir o guardar PDF.
+  - **Metrónomo al grabar** con el teclado (tempo y compás; el primer compás es de cuenta).
+  - Cuadrícula del archivo realineada cuando viene corrida: Still learning pasó de tresillos falsos a negras y corcheas.
+- Pruebas:
+  - 13 pruebas de `notation`:
+    - Tempo a ±3 %.
+    - Tresillos solo donde encajan.
+    - Ligadura en la barra.
+    - El pedal alarga la nota escrita.
+    - Cambio de pedal.
+    - Armaduras de re mayor y la menor.
+    - MusicXML bien formado.
+    - Cuadrícula corrida.
+    - Compases vacíos del comienzo.
+  - Playwright `partitura.spec.ts`: un MIDI de 5 notas se escribe y el MusicXML trae las 5.
+  - Local: Consuelo y Still learning se dibujan en 2 a 9 s, y el cursor avanza al reproducir (`scripts/local/score-check.mjs`, `cursor-check.mjs`).
+- Probado por Jacobo: pendiente. Tiene que juzgar si la partitura se ve como una que él tocaría.
+  - Still learning: negras y acordes en 3/4, con pedal.
+  - Consuelo: tocada con rubato; el ritmo sale aproximado.
+  - Grabar algo nuevo con el metrónomo y mirar su partitura.
+- Pendiente para la próxima: fase 7 (tutoriales y práctica).
+- Pedidos del usuario no atendidos:
+  - Varias voces por pentagrama: hoy, una sola voz.
+  - beat_this: se dejó para después (ADR-016).
+
+---
+
 ### 2026-11-17 · Fase 5 (continuación) · Piano con pedal, micrófono en vivo y Mamut Herd
 - Hecho:
   - **Transkun V2 como "Piano con pedal" (ADR-015).**
