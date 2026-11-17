@@ -40,12 +40,7 @@ export function EnVivo() {
   useEffect(() => {
     useStudio.getState().setView('live');
     // Si el permiso MIDI ya se dio antes, se conecta solo (útil al reabrir en OBS).
-    void navigator.permissions
-      ?.query({ name: 'midi' as PermissionName })
-      .then((p) => {
-        if (p.state === 'granted' && useLive.getState().status === 'off') void live.connect();
-      })
-      .catch(() => undefined);
+    void live.autoConnect();
   }, []);
 
   // Con fondo transparente, también la página debe serlo (fuente de navegador de OBS).

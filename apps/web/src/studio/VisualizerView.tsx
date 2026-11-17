@@ -14,6 +14,8 @@ interface Props {
   showFps?: boolean;
   /** Ocupar todo el espacio, sin la proporción del formato (ruta /en-vivo). */
   fill?: boolean;
+  /** Proporción fija (ancho/alto) que reemplaza al formato elegido; 4/5 en el celular. */
+  ratio?: number;
   background?: Background;
 }
 
@@ -22,6 +24,7 @@ export function VisualizerView({
   onFrame,
   showFps = false,
   fill = false,
+  ratio: fixedRatio,
   background = 'theme',
 }: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -74,7 +77,7 @@ export function VisualizerView({
     if (!viz || !stage) return;
     const fit = () => {
       const { width, height } = stage.getBoundingClientRect();
-      const ratio = fill ? width / Math.max(1, height) : RATIO[aspect];
+      const ratio = fill ? width / Math.max(1, height) : (fixedRatio ?? RATIO[aspect]);
       let w = width;
       let h = width / ratio;
       if (h > height) {
@@ -87,7 +90,7 @@ export function VisualizerView({
     const observer = new ResizeObserver(fit);
     observer.observe(stage);
     return () => observer.disconnect();
-  }, [viz, aspect, fill]);
+  }, [viz, aspect, fill, fixedRatio]);
 
   // Bucle de dibujo.
   useEffect(() => {

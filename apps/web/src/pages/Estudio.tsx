@@ -1,16 +1,4 @@
-import {
-  Button,
-  Chips,
-  DeviceIndicator,
-  IconButton,
-  Lcd,
-  Logo,
-  Slider,
-  Switch,
-  Tabs,
-} from '@impromptu/ui';
-import { THEMES } from '@impromptu/render';
-import type { PedalKind } from '@impromptu/core';
+import { Button, Chips, DeviceIndicator, IconButton, Lcd, Logo, Tabs } from '@impromptu/ui';
 import {
   FileMusic,
   Gauge,
@@ -25,16 +13,16 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { ColorField } from '../studio/ColorField';
 import { VisualizerView } from '../studio/VisualizerView';
 import { LOCAL_PIECES, createDemoTake, openLocalPiece, openMidiFile } from '../studio/sources';
 import type { OpenedTake } from '../studio/sources';
 import { engine, useAudio } from '../studio/audio';
 import { live, useLive } from '../studio/live';
 import { KeyboardSection, TakesSection } from '../studio/LivePanel';
+import { SettingsPanel } from '../studio/SettingsPanel';
 import { Timeline } from '../studio/Timeline';
 import { transport, useStudio } from '../studio/store';
-import type { Aspect, KeyboardMode } from '../studio/store';
+import type { Aspect } from '../studio/store';
 import { formatTime } from '../studio/transport';
 import styles from './Estudio.module.css';
 
@@ -42,13 +30,6 @@ const ASPECTS = [
   { value: '16:9', label: 'Horizontal 16:9' },
   { value: '9:16', label: 'Vertical 9:16' },
   { value: '1:1', label: 'Cuadrado 1:1' },
-] as const;
-
-const KEYBOARDS = [
-  { value: 'auto', label: 'Auto' },
-  { value: '61', label: '61' },
-  { value: '76', label: '76' },
-  { value: '88', label: '88' },
 ] as const;
 
 const SPEEDS = [
@@ -66,18 +47,10 @@ const TABS = [
   { id: 'en-vivo', label: 'En vivo' },
 ] as const;
 
-const PEDALS: { kind: PedalKind; label: string }[] = [
-  { kind: 'sustain', label: 'Sustain' },
-  { kind: 'sostenuto', label: 'Sostenuto' },
-  { kind: 'soft', label: 'Una corda' },
-];
-
 export function Estudio() {
   const take = useStudio((s) => s.take);
   const notices = useStudio((s) => s.notices);
-  const settings = useStudio((s) => s.settings);
   const aspect = useStudio((s) => s.aspect);
-  const keyboard = useStudio((s) => s.keyboard);
   const playing = useStudio((s) => s.playing);
   const view = useStudio((s) => s.view);
   const loop = useStudio((s) => s.loop);
@@ -85,9 +58,7 @@ export function Estudio() {
   const speed = useStudio((s) => s.speed);
   const {
     open,
-    setSettings,
     setAspect,
-    setKeyboard,
     setView,
     toggleLoop,
     togglePlay: toggle,
@@ -170,22 +141,6 @@ export function Estudio() {
     if (file) void load(openMidiFile(file));
   };
 
-  const setEffect = (patch: Partial<typeof settings.effects>) =>
-    setSettings({ effects: { ...settings.effects, ...patch } });
-  // Lee los colores del estado al aplicar, no del render: así no se pierde un cambio.
-  const setColor = (hand: keyof typeof settings.colors) => (hex: string) => {
-    const current = useStudio.getState().settings.colors;
-    setSettings({ colors: { ...current, [hand]: hex } });
-  };
-  const togglePedal = (kind: PedalKind) => (on: boolean) =>
-    setSettings({
-      show: {
-        ...settings.show,
-        pedals: on
-          ? [...settings.show.pedals, kind]
-          : settings.show.pedals.filter((k) => k !== kind),
-      },
-    });
   const noteCount = take?.tracks.reduce((n, t) => n + t.notes.length, 0) ?? 0;
 
   return (
@@ -346,81 +301,7 @@ export function Estudio() {
         </main>
 
         <aside className={styles.panel} aria-label="Ajustes del visualizador">
-          <h2 className="ui-etiqueta">Tema</h2>
-          <Chips
-            label="Tema"
-            options={Object.values(THEMES).map((t) => ({ value: t.id, label: t.name }))}
-            value={settings.themeId}
-            onChange={(themeId) => {
-              const theme = THEMES[themeId];
-              setSettings({ themeId, ...(theme ? { colors: { ...theme.notes } } : {}) });
-            }}
-          />
-
-          <h2 className="ui-etiqueta">Notas</h2>
-          <div className={styles.colores}>
-            <ColorField
-              label="Mano derecha"
-              value={settings.colors.right}
-              onChange={setColor('right')}
-            />
-            <ColorField
-              label="Mano izquierda"
-              value={settings.colors.left}
-              onChange={setColor('left')}
-            />
-            <ColorField
-              label="Sin asignar"
-              value={settings.colors.unassigned}
-              onChange={setColor('unassigned')}
-            />
-          </div>
-
-          <h2 className="ui-etiqueta">Teclado</h2>
-          <Chips
-            label="Teclado"
-            options={KEYBOARDS}
-            value={keyboard}
-            onChange={(v) => setKeyboard(v as KeyboardMode)}
-          />
-
-          <h2 className="ui-etiqueta">Efectos</h2>
-          <Slider
-            label="Chispas al tocar"
-            value={settings.effects.sparks}
-            onChange={(sparks) => setEffect({ sparks })}
-            format={(v) => `${v} %`}
-          />
-          <Slider
-            label="Brillo de la tecla"
-            value={settings.effects.keyGlow}
-            onChange={(keyGlow) => setEffect({ keyGlow })}
-            format={(v) => `${v} %`}
-          />
-          <Slider
-            label="Velocidad de caída"
-            value={settings.effects.fallSpeed}
-            min={0.5}
-            max={2}
-            step={0.1}
-            onChange={(fallSpeed) => setEffect({ fallSpeed })}
-            format={(v) => `${v.toFixed(1)}×`}
-          />
-          <Switch
-            label="Guías de octava"
-            checked={settings.effects.octaveGuides}
-            onChange={(octaveGuides) => setEffect({ octaveGuides })}
-          />
-
-          <h2 className="ui-etiqueta">Pedales</h2>
-          {PEDALS.map((p) => (
-            <Switch
-              key={p.kind}
-              label={p.label}
-              checked={settings.show.pedals.includes(p.kind)}
-              onChange={togglePedal(p.kind)}
-            />
-          ))}
+          <SettingsPanel />
         </aside>
       </div>
 

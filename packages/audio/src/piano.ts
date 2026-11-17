@@ -23,6 +23,8 @@ const MASTER_GAIN = 0.55;
  */
 export const MAX_VOICES = 64;
 const STEAL_FADE = 0.008;
+/** Entrada de una nota que se retoma por la mitad. */
+const CHASE_FADE = 0.012;
 
 interface ActiveVoice {
   source: AudioBufferSourceNode;
@@ -96,10 +98,11 @@ export class Piano {
   }
 
   /**
-   * Programa una voz. `at` y `releaseAt` están en el reloj del contexto; `rate` es la
-   * velocidad de reproducción de la toma (las notas se acortan, el tono no cambia).
+   * Programa una voz. `at` y `releaseAt` están en el reloj del contexto. `offset` (s) hace
+   * sonar una nota que ya había empezado desde su punto medio, con una entrada corta para
+   * que no suene un clic (al buscar o al repetir una sección).
    */
-  play(voice: Voice, at: number, releaseAt: number): void {
+  play(voice: Voice, at: number, releaseAt: number, offset = 0): void {
     const { note } = voice;
     const sample = nearestSample(note.pitch);
     const layer = layerFor(note.velocity, this.layers);
@@ -108,15 +111,23 @@ export class Piano {
 
     const source = this.context.createBufferSource();
     source.buffer = buffer;
-    source.playbackRate.value = Math.pow(2, (note.pitch - sample) / 12);
+    const rate = Math.pow(2, (note.pitch - sample) / 12);
+    source.playbackRate.value = rate;
     const gain = this.context.createGain();
     const level = layerGain(note.velocity, layer) * voice.gain;
-    gain.gain.setValueAtTime(level, at);
+    if (offset > 0) {
+      gain.gain.setValueAtTime(0, at);
+      gain.gain.linearRampToValueAtTime(level, at + CHASE_FADE);
+    } else {
+      gain.gain.setValueAtTime(level, at);
+    }
     gain.gain.setValueAtTime(level, releaseAt);
     gain.gain.setTargetAtTime(0, releaseAt, DAMPER / 3);
     this.admit(at);
     source.connect(gain).connect(this.output);
-    source.start(at);
+    const sampleOffset = offset * rate;
+    if (sampleOffset >= buffer.duration) return;
+    source.start(at, sampleOffset);
     source.stop(releaseAt + DAMPER * 4);
     this.track({ source, gain, end: releaseAt + DAMPER * 4 });
   }

@@ -22,6 +22,9 @@ export function KeyboardSection() {
   const devices = useLive((s) => s.devices);
   const device = useLive((s) => s.device);
   const message = STATUS_TEXT[status];
+  useEffect(() => {
+    void live.autoConnect();
+  }, []);
 
   return (
     <section className={styles.seccion} aria-labelledby="teclado-titulo">

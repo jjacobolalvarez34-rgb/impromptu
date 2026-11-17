@@ -75,6 +75,13 @@ class AudioEngine {
     }
   }
 
+  /** Apaga el audio por completo (al recargar este módulo en desarrollo). */
+  dispose(): void {
+    window.clearInterval(this.timer);
+    this.piano?.stopAll();
+    void this.context?.close();
+  }
+
   setTake(take: Take | null): void {
     this.voices = take ? takeVoices(take) : [];
     this.reschedule();
@@ -84,10 +91,34 @@ class AudioEngine {
   reschedule(): void {
     this.piano?.stopAll();
     window.clearInterval(this.timer);
-    this.cursor = lowerBound(this.voices, transport.now());
+    const t = transport.now();
+    this.cursor = lowerBound(this.voices, t);
     if (!transport.playing || !this.piano || !useAudio.getState().enabled) return;
+    this.chase(t);
     this.tick();
     this.timer = window.setInterval(() => this.tick(), TICK_MS);
+  }
+
+  /**
+   * Notas que ya sonaban en t (empezaron antes y su apagador aún no cae): se tocan desde
+   * su punto medio para que al buscar o repetir una sección se oiga lo que se ve.
+   */
+  private chase(t: number): void {
+    const piano = this.piano;
+    if (!piano) return;
+    const loopEnd = transport.loop?.end ?? Infinity;
+    for (let i = lowerBound(this.voices, t - CHASE_WINDOW); i < this.cursor; i++) {
+      const v = this.voices[i]!;
+      if (v.start >= t || v.release <= t + 0.02) continue;
+      const release = Math.min(v.release, loopEnd);
+      const elapsed = (t - v.start) / transport.speed;
+      piano.play(
+        v,
+        transport.toClock(t) + this.latency,
+        transport.toClock(release) + this.latency,
+        elapsed,
+      );
+    }
   }
 
   private tick(): void {
@@ -97,6 +128,7 @@ class AudioEngine {
     if (transport.wrapped(t)) {
       piano.stopAll();
       this.cursor = lowerBound(this.voices, t);
+      this.chase(t);
     }
     const horizon = t + HORIZON * transport.speed;
     const loopEnd = transport.loop?.end ?? Infinity;
@@ -115,6 +147,9 @@ class AudioEngine {
   }
 }
 
+/** Duración máxima que se considera al buscar notas que ya sonaban (s). */
+const CHASE_WINDOW = 30;
+
 function lowerBound(voices: readonly Voice[], t: number): number {
   let lo = 0;
   let hi = voices.length;
@@ -127,3 +162,5 @@ function lowerBound(voices: readonly Voice[], t: number): number {
 }
 
 export const engine = new AudioEngine();
+
+import.meta.hot?.dispose(() => engine.dispose());

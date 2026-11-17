@@ -16,6 +16,8 @@ interface LiveState {
   device: MidiDevice | null;
   recording: boolean;
   takes: TakeSummary[];
+  /** Valor actual del sustain (0–127), para el indicador de pedal. */
+  sustain: number;
 }
 
 export const useLive = create<LiveState>(() => ({
@@ -24,6 +26,7 @@ export const useLive = create<LiveState>(() => ({
   device: null,
   recording: false,
   takes: [],
+  sustain: 0,
 }));
 
 /** Reloj en vivo: el mismo de MIDIMessageEvent.timeStamp (BUGS B-007). */
@@ -45,9 +48,24 @@ class LiveSession {
   private readonly open = new Map<number, NoteEvent>();
   lastActivity = -Infinity;
   private recordStart = 0;
+  private wakeLock: WakeLockSentinel | null = null;
+
+  /** La pantalla no se apaga mientras se graba (BUGS B-017). */
+  private async keepScreenOn(on: boolean): Promise<void> {
+    try {
+      if (on && 'wakeLock' in navigator) this.wakeLock = await navigator.wakeLock.request('screen');
+      if (!on) {
+        await this.wakeLock?.release();
+        this.wakeLock = null;
+      }
+    } catch {
+      // Sin Wake Lock (navegador o batería baja): se graba igual.
+    }
+  }
 
   /** El usuario pidió conectar: se pide permiso y se conecta el primer teclado. */
   async connect(): Promise<void> {
+    if (useLive.getState().status === 'asking') return;
     void engine.start(); // el clic también permite crear el audio (B-008)
     useLive.setState({ status: 'asking' });
     try {
@@ -59,6 +77,23 @@ class LiveSession {
     this.input.onDevicesChange((devices) => this.onDevices(devices));
     useLive.setState({ status: 'ready' });
     this.onDevices(this.input.devices());
+  }
+
+  /** Si el permiso MIDI ya se dio antes, conecta sin preguntar (al abrir o recargar la app). */
+  async autoConnect(): Promise<void> {
+    if (useLive.getState().status !== 'off') return;
+    try {
+      const permission = await navigator.permissions?.query({ name: 'midi' as PermissionName });
+      if (permission?.state === 'granted') await this.connect();
+    } catch {
+      // El navegador no deja consultar el permiso: el usuario conecta con el botón.
+    }
+  }
+
+  /** Suelta el teclado y apaga lo que suene (al recargar este módulo en desarrollo). */
+  dispose(): void {
+    this.input?.disconnect();
+    engine.live?.reset();
   }
 
   choose(id: string): void {
@@ -121,6 +156,7 @@ class LiveSession {
       case 'pedal':
         engine.live?.pedal(e.kind, e.value);
         this.pedals.push({ kind: e.kind, time: e.time, value: e.value });
+        if (e.kind === 'sustain') useLive.setState({ sustain: e.value });
         break;
     }
     this.prune(e.time);
@@ -147,6 +183,7 @@ class LiveSession {
     this.recordStart = liveNow();
     this.recorder.start(this.recordStart);
     useStudio.getState().setView('live');
+    void this.keepScreenOn(true);
     useLive.setState({ recording: true });
   }
 
@@ -158,6 +195,7 @@ class LiveSession {
   async stopRecording(): Promise<Take | null> {
     if (!useLive.getState().recording) return null;
     useLive.setState({ recording: false });
+    void this.keepScreenOn(false);
     const device = useLive.getState().device;
     const count = useLive.getState().takes.length + 1;
     const take = this.recorder.stop(
@@ -186,3 +224,7 @@ export async function refreshTakes(): Promise<void> {
 }
 
 export const live = new LiveSession();
+
+// Desarrollo: al recargar este módulo, la conexión vieja se cierra para que no quede
+// sonando un teclado "fantasma" mientras la interfaz pide conectar de nuevo.
+import.meta.hot?.dispose(() => live.dispose());
