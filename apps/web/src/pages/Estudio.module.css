@@ -307,3 +307,15 @@
 .espacio {
   flex: 1;
 }
+
+/* Bloques del panel izquierdo: Grabar, Abrir, Con esta pieza (Tus grabaciones va entre ellos). */
+.bloque {
+  display: grid;
+  gap: var(--e-3);
+  padding-bottom: var(--e-4);
+  border-bottom: 1px solid var(--linea);
+}
+
+.bloque > h2 {
+  margin: var(--e-2) 0 0;
+}

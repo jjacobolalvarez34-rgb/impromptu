@@ -55,9 +55,9 @@ export function VideoSection() {
 
   return (
     <section className={styles.seccion} aria-labelledby="video-titulo">
-      <h2 id="video-titulo" className="ui-etiqueta">
+      <h3 id="video-titulo" className="ui-etiqueta">
         Video
-      </h2>
+      </h3>
       <input
         ref={input}
         type="file"

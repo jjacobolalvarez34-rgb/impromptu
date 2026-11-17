@@ -1,5 +1,7 @@
 import { alignAudioToNotes, toMono, waveformPeaks } from '@impromptu/media';
+import type { Take } from '@impromptu/core';
 import { create } from 'zustand';
+import { loadMedia } from './mediaStore';
 
 /**
  * Audio propio (MP3, WAV…) de la misma pieza que el MIDI abierto: se sincroniza solo y
@@ -77,4 +79,35 @@ export async function analyzeAudio(
     agree,
     use: syncQuality(confidence, agree) !== 'mismatch',
   };
+}
+
+/**
+ * Si la toma tiene un audio guardado (OPFS; por ejemplo una grabación del micrófono), lo abre
+ * como "mi audio" con su desfase guardado, sin volver a sincronizar.
+ */
+export async function attachTakeAudio(
+  take: Take,
+  isCurrent: (id: string) => boolean,
+): Promise<void> {
+  const ref = take.media.find((m) => m.kind === 'audio');
+  if (!ref) return;
+  const file = await loadMedia(ref.storageKey);
+  if (!file) return;
+  // Se decodifica a 48 kHz; el reproductor remuestrea si el contexto usa otra frecuencia.
+  const decoder = new OfflineAudioContext(1, 1, 48_000);
+  const buffer = await decoder.decodeAudioData(await file.arrayBuffer());
+  const mono = toMono(
+    Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i)),
+  );
+  if (!isCurrent(take.id)) return;
+  useOwnAudio.getState().set({
+    name: take.title,
+    buffer,
+    peaks: waveformPeaks(mono, PEAK_COLUMNS),
+    autoOffset: ref.offset,
+    nudge: 0,
+    confidence: 2,
+    agree: true,
+    use: true,
+  });
 }

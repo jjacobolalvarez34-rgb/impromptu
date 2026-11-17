@@ -44,9 +44,9 @@ export function AudioSection() {
 
   return (
     <section className={styles.seccion} aria-labelledby="audio-titulo">
-      <h2 id="audio-titulo" className="ui-etiqueta">
+      <h3 id="audio-titulo" className="ui-etiqueta">
         Audio
-      </h2>
+      </h3>
       <input
         ref={input}
         type="file"

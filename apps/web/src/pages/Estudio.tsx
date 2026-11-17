@@ -26,7 +26,7 @@ import { live, useLive } from '../studio/live';
 import { AudioSection, openOwnAudio } from '../studio/AudioSection';
 import { EditBar, useEditShortcuts } from '../studio/EditBar';
 import { ExportDialog } from '../studio/ExportDialog';
-import { TranscribeSection } from '../studio/TranscribeSection';
+import { ConvertAudioButton, MicSection, TranscribeStatus } from '../studio/TranscribeSection';
 import { saveMidi } from '../studio/saveMidi';
 import { VideoSection, openCameraVideo } from '../studio/VideoSection';
 import { KeyboardSection, TakesSection } from '../studio/LivePanel';
@@ -293,59 +293,82 @@ export function Estudio() {
         aria-labelledby="app-tab-estudio"
       >
         <aside className={`${styles.panel} ui-aparece-izquierda`} aria-label="Fuentes y tomas">
-          <KeyboardSection />
+          <TranscribeStatus />
+
+          <section className={styles.bloque} aria-labelledby="bloque-grabar">
+            <h2 id="bloque-grabar" className="ui-etiqueta">
+              Grabar
+            </h2>
+            <KeyboardSection />
+            <MicSection />
+          </section>
+
           <TakesSection />
-          <AudioSection />
-          <VideoSection />
-          <TranscribeSection />
-          <h2 className="ui-etiqueta">Archivos MIDI</h2>
-          <input
-            ref={fileInput}
-            type="file"
-            accept=".mid,.midi,audio/midi"
-            className="ui-oculto"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void load(openMidiFile(file));
-              e.target.value = '';
-            }}
-          />
-          <p className="ui-secundario">
-            Arrastra un archivo .mid (o su audio) a cualquier parte de la pantalla.
-          </p>
 
-          {LOCAL_PIECES.length > 0 && (
-            <>
-              <h3 className="ui-etiqueta">Tus piezas</h3>
-              <ul className={styles.lista}>
-                {LOCAL_PIECES.map((p) => (
-                  <li key={p.path}>
-                    <button
-                      type="button"
-                      className={styles.fila}
-                      aria-current={take?.title.toLowerCase() === p.name.toLowerCase()}
-                      onClick={() => void load(openLocalPiece(p.path))}
-                    >
-                      {p.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
+          <section className={styles.bloque} aria-labelledby="bloque-abrir">
+            <h2 id="bloque-abrir" className="ui-etiqueta">
+              Abrir
+            </h2>
+            <Button icon={<FileMusic />} onClick={() => fileInput.current?.click()}>
+              Abrir un MIDI
+            </Button>
+            <ConvertAudioButton />
+            <input
+              ref={fileInput}
+              type="file"
+              accept=".mid,.midi,audio/midi"
+              className="ui-oculto"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void load(openMidiFile(file));
+                e.target.value = '';
+              }}
+            />
+            <p className="ui-secundario">
+              Arrastra un archivo .mid (o su audio) a cualquier parte de la pantalla.
+            </p>
 
-          <h3 className="ui-etiqueta">Pruebas</h3>
-          <ul className={styles.lista}>
-            <li>
-              <button
-                type="button"
-                className={styles.fila}
-                onClick={() => open(createDemoTake(), [])}
-              >
-                <Gauge aria-hidden="true" /> 2.000 notas en pantalla
-              </button>
-            </li>
-          </ul>
+            {LOCAL_PIECES.length > 0 && (
+              <>
+                <h3 className="ui-etiqueta">Tus piezas</h3>
+                <ul className={styles.lista}>
+                  {LOCAL_PIECES.map((p) => (
+                    <li key={p.path}>
+                      <button
+                        type="button"
+                        className={styles.fila}
+                        aria-current={take?.title.toLowerCase() === p.name.toLowerCase()}
+                        onClick={() => void load(openLocalPiece(p.path))}
+                      >
+                        {p.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            <h3 className="ui-etiqueta">Pruebas</h3>
+            <ul className={styles.lista}>
+              <li>
+                <button
+                  type="button"
+                  className={styles.fila}
+                  onClick={() => open(createDemoTake(), [])}
+                >
+                  <Gauge aria-hidden="true" /> 2.000 notas en pantalla
+                </button>
+              </li>
+            </ul>
+          </section>
+
+          <section className={styles.bloque} aria-labelledby="bloque-pieza">
+            <h2 id="bloque-pieza" className="ui-etiqueta">
+              Con esta pieza
+            </h2>
+            <AudioSection />
+            <VideoSection />
+          </section>
 
           {error && (
             <p role="alert" className={styles.error}>

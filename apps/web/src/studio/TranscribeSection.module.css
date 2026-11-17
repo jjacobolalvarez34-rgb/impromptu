@@ -56,3 +56,21 @@
     opacity: 0.5;
   }
 }
+
+/* Aviso de avance de la IA: queda fijo arriba del panel aunque se haga scroll. */
+.aviso {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  gap: var(--e-2);
+  margin: calc(var(--e-2) * -1) calc(var(--e-2) * -1) 0;
+  padding: var(--e-3);
+  border: 1px solid var(--ambar);
+  border-radius: var(--radio);
+  background: var(--panel);
+}
+
+.aviso p {
+  margin: 0;
+}

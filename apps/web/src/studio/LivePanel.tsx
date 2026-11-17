@@ -1,5 +1,5 @@
 import { Button, IconButton } from '@impromptu/ui';
-import { Cable, Check, Pencil, Trash2, X } from 'lucide-react';
+import { Cable, Check, FileAudio, Mic, Pencil, Piano, Trash2, Video, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { live, refreshTakes, useLive } from './live';
 import { useStudio } from './store';
@@ -16,7 +16,7 @@ const STATUS_TEXT: Partial<Record<ReturnType<typeof useLive.getState>['status'],
   failed: 'No pudimos acceder al teclado. Revisa el cable USB y vuelve a intentar.',
 };
 
-/** Sección "Teclado": permiso explicado, conexión y elección de dispositivo. */
+/** Teclado: permiso explicado, conexión y elección de dispositivo (bloque "Grabar"). */
 export function KeyboardSection() {
   const status = useLive((s) => s.status);
   const devices = useLive((s) => s.devices);
@@ -27,10 +27,7 @@ export function KeyboardSection() {
   }, []);
 
   return (
-    <section className={styles.seccion} aria-labelledby="teclado-titulo">
-      <h2 id="teclado-titulo" className="ui-etiqueta">
-        Teclado
-      </h2>
+    <div className={styles.seccion}>
       {(status === 'off' || status === 'asking') && (
         <>
           <p className="ui-secundario">
@@ -77,29 +74,53 @@ export function KeyboardSection() {
           {message}
         </p>
       )}
-    </section>
+    </div>
   );
 }
 
-/** Sección "Tomas": las grabaciones guardadas en el equipo. */
+/** Cuántas grabaciones se ven antes de "Ver todas". */
+const VISIBLE = 6;
+
+const SOURCE_ICON = {
+  teclado: <Piano aria-hidden="true" />,
+  microfono: <Mic aria-hidden="true" />,
+  archivo: <FileAudio aria-hidden="true" />,
+} as const;
+
+const SOURCE_TEXT = { teclado: 'teclado', microfono: 'micrófono', archivo: 'archivo de audio' };
+
+/** "Tus grabaciones": todo lo grabado o convertido, guardado en el equipo, lo más nuevo arriba. */
 export function TakesSection() {
   const takes = useLive((s) => s.takes);
   const current = useStudio((s) => s.take?.id);
+  const [all, setAll] = useState(false);
   useEffect(() => {
     void refreshTakes();
   }, []);
 
-  if (takes.length === 0) return null;
+  const shown = all ? takes : takes.slice(0, VISIBLE);
   return (
-    <section className={styles.seccion} aria-labelledby="tomas-titulo">
-      <h2 id="tomas-titulo" className="ui-etiqueta">
-        Tomas
+    <section className={styles.seccion} aria-labelledby="grabaciones-titulo">
+      <h2 id="grabaciones-titulo" className="ui-etiqueta">
+        Tus grabaciones
       </h2>
-      <ul className={styles.lista}>
-        {takes.map((t) => (
-          <TakeRow key={t.id} take={t} current={t.id === current} />
-        ))}
-      </ul>
+      {takes.length === 0 ? (
+        <p className="ui-secundario">
+          Lo que grabes con el teclado o el micrófono, o conviertas desde un audio, queda aquí,
+          guardado en tu equipo.
+        </p>
+      ) : (
+        <ul className={styles.lista}>
+          {shown.map((t) => (
+            <TakeRow key={t.id} take={t} current={t.id === current} />
+          ))}
+        </ul>
+      )}
+      {takes.length > VISIBLE && (
+        <button type="button" className={styles.mas} onClick={() => setAll(!all)}>
+          {all ? 'Ver menos' : `Ver todas (${takes.length})`}
+        </button>
+      )}
     </section>
   );
 }
@@ -163,24 +184,34 @@ function TakeRow({ take, current }: { take: TakeSummary; current: boolean }) {
         aria-current={current}
         onClick={() => void open()}
       >
-        <span className={styles.nombre}>{take.title}</span>
+        <span className={styles.origen}>{SOURCE_ICON[take.source]}</span>
+        <span className={styles.nombre}>
+          {take.title}
+          <span className="ui-oculto">, desde el {SOURCE_TEXT[take.source]}</span>
+        </span>
+        {take.video && <Video className={styles.extra} aria-label="con video" />}
         <span className="ui-secundario ui-mono">{formatTime(take.duration).slice(0, 5)}</span>
       </button>
-      <IconButton
-        label={`Renombrar ${take.title}`}
-        icon={<Pencil />}
-        onClick={() => setEditing(true)}
-      />
-      {confirmDelete ? (
-        <Button variant="stop" onClick={() => void remove()}>
-          Borrar
-        </Button>
-      ) : (
-        <IconButton
-          label={`Borrar ${take.title}`}
-          icon={<Trash2 />}
-          onClick={() => setConfirmDelete(true)}
-        />
+      {/* Renombrar y borrar solo en la grabación abierta: así el nombre de cada fila se lee completo. */}
+      {current && (
+        <div className={styles.acciones}>
+          <IconButton
+            label={`Renombrar ${take.title}`}
+            icon={<Pencil />}
+            onClick={() => setEditing(true)}
+          />
+          {confirmDelete ? (
+            <Button variant="stop" onClick={() => void remove()}>
+              Borrar
+            </Button>
+          ) : (
+            <IconButton
+              label={`Borrar ${take.title}`}
+              icon={<Trash2 />}
+              onClick={() => setConfirmDelete(true)}
+            />
+          )}
+        </div>
       )}
     </li>
   );

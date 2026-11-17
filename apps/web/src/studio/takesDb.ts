@@ -15,6 +15,15 @@ export interface TakeSummary {
   createdAt: string;
   duration: number;
   notes: number;
+  /** De dónde salió: el teclado (MIDI en vivo), el micrófono o un archivo de audio. */
+  source: 'teclado' | 'microfono' | 'archivo';
+  /** Trae video de la cámara. */
+  video: boolean;
+}
+
+function sourceOf(t: Take): TakeSummary['source'] {
+  if (!t.media.some((m) => m.kind === 'audio')) return 'teclado';
+  return /^Grabación de audio \d+$/.test(t.title) ? 'microfono' : 'archivo';
 }
 
 let opening: Promise<IDBDatabase> | null = null;
@@ -64,6 +73,8 @@ export async function listTakes(): Promise<TakeSummary[]> {
       createdAt: t.createdAt,
       duration: t.duration,
       notes: t.tracks.reduce((n, tr) => n + tr.notes.length, 0),
+      source: sourceOf(t),
+      video: t.media.some((m) => m.kind === 'video'),
     }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }

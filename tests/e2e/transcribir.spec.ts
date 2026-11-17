@@ -36,21 +36,25 @@ test('convierte un audio en notas y lo abre como pieza', async ({ page }, info) 
   test.skip(info.project.name === 'celular', 'La conversión está en el estudio de escritorio');
   test.setTimeout(180_000);
   await page.goto('/estudio');
-  const seccion = page.getByRole('region', { name: 'Audio a notas' });
-  await expect(seccion.getByRole('button', { name: 'Convertir un audio' })).toBeVisible();
+  const panel = page.getByRole('complementary', { name: 'Fuentes y tomas' });
+  await expect(panel.getByRole('button', { name: 'Convertir un audio' })).toBeVisible();
 
-  await seccion.locator('input[type=file]').setInputFiles({
+  await panel.getByLabel('Archivo de audio para convertir en notas').setInputFiles({
     name: 'acorde-prueba.wav',
     mimeType: 'audio/wav',
     buffer: wavDeAcorde(),
   });
 
-  // Termina sin error, el estudio abre la pieza transcrita y la sección vuelve a su estado inicial.
+  // Termina sin error, el estudio abre la pieza transcrita y queda en "Tus grabaciones".
   await expect(page.getByRole('strong').filter({ hasText: 'acorde-prueba' })).toBeVisible({
     timeout: 150_000,
   });
-  await expect(seccion.getByRole('alert')).toHaveCount(0);
-  await expect(seccion.getByRole('button', { name: 'Convertir un audio' })).toBeVisible();
+  await expect(panel.getByRole('alert')).toHaveCount(0);
+  const grabaciones = panel.getByRole('region', { name: 'Tus grabaciones' });
+  await expect(
+    grabaciones.getByRole('listitem').filter({ hasText: 'acorde-prueba' }),
+  ).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Convertir un audio' })).toBeEnabled();
   await page.screenshot({ path: `test-results/capturas/transcribir-${info.project.name}.png` });
 
   // Y se guarda como MIDI estándar.

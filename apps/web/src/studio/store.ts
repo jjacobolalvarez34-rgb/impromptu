@@ -6,7 +6,7 @@ import { DEFAULT_SETTINGS } from '@impromptu/render';
 import type { VisualSettings } from '@impromptu/render';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { useOwnAudio } from './ownAudio';
+import { attachTakeAudio, useOwnAudio } from './ownAudio';
 import { attachTakeVideo, setTakeIdGetter, useVideo } from './video';
 import { Transport } from './transport';
 import type { LoopRange } from './transport';
@@ -108,6 +108,7 @@ export const useStudio = create<StudioState>()(
         useOwnAudio.getState().set(null);
         useVideo.getState().set(null);
         void attachTakeVideo(take);
+        void attachTakeAudio(take, (id) => get().take?.id === id);
         transport.pause();
         transport.duration = take.duration;
         transport.loop = null;

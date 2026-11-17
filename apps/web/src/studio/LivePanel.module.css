@@ -75,6 +75,8 @@
   display: flex;
   align-items: center;
   gap: var(--e-1);
+  /* Dentro de la grilla de la lista: sin esto la fila crece con el nombre y se sale del panel. */
+  min-width: 0;
 }
 
 .toma > button[aria-label] {
@@ -123,4 +125,54 @@
   width: 16px;
   height: 16px;
   stroke-width: 1.5;
+}
+
+/* Ícono de origen de una grabación (teclado, micrófono, archivo) y del video. */
+.origen,
+.extra {
+  flex: none;
+  display: inline-flex;
+  color: var(--gris-texto);
+}
+
+.origen svg,
+.extra {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.5;
+}
+
+.fila[aria-current='true'] .origen {
+  color: var(--ambar);
+}
+
+/* "Ver todas": enlace discreto, con área de toque de 44 px. */
+.mas {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 var(--e-2);
+  border: 0;
+  background: none;
+  color: var(--chasis);
+  font: 400 13px/1 var(--fuente-texto);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.mas:focus-visible {
+  outline: 2px solid var(--ambar);
+  outline-offset: 2px;
+}
+
+/* Una grabación: la fila ocupa todo el ancho; sus acciones van debajo cuando está abierta. */
+.toma:has(.acciones) {
+  flex-wrap: wrap;
+}
+
+.acciones {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--e-1);
 }
