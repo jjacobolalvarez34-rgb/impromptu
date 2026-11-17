@@ -2,6 +2,7 @@ import { Visualizer } from '@impromptu/render';
 import type { Background } from '@impromptu/render';
 import { useEffect, useRef, useState } from 'react';
 import { live, liveNow } from './live';
+import { syncVideo, useVideo } from './video';
 import { transport, useStudio } from './store';
 import type { Aspect } from './store';
 import styles from './VisualizerView.module.css';
@@ -110,13 +111,21 @@ export function VisualizerView({
       if (useStudio.getState().view === 'live' && !transport.playing) {
         viz.setLive(live.notes, live.pedals, live.range());
         showingLive = true;
+        viz.setVideoFrame(null);
         viz.render(now);
       } else {
         if (showingLive) {
           viz.setTake(useStudio.getState().take);
           showingLive = false;
         }
-        viz.render(transport.now());
+        const t = transport.now();
+        const video = useVideo.getState().video;
+        if (video && syncVideo(video, t, transport.playing)) {
+          viz.setVideoFrame(video.element, video.width, video.height);
+        } else {
+          viz.setVideoFrame(null);
+        }
+        viz.render(t);
       }
       onFrameRef.current?.(transport.now());
       frames++;

@@ -1,4 +1,13 @@
-import { Application, Container, Graphics, NineSliceSprite, Sprite, Text, Texture } from 'pixi.js';
+import {
+  Application,
+  BlurFilter,
+  Container,
+  Graphics,
+  NineSliceSprite,
+  Sprite,
+  Text,
+  Texture,
+} from 'pixi.js';
 import { beatGrid } from '@impromptu/core';
 import type { Beat, NoteEvent, PedalEvent, Take } from '@impromptu/core';
 import { layoutKeyboard } from './keyboard-layout';
@@ -42,6 +51,7 @@ export const DEFAULT_SETTINGS: VisualSettings = {
     noteStyle: 'glow',
     beatGuides: true,
   },
+  layout: 'visualizer',
   show: { fingers: false, noteNames: false, pedals: ['sustain', 'sostenuto', 'soft'] },
   colors: { right: '#FF9F1C', left: '#E8E4DC', unassigned: '#9A968C' },
 };
@@ -112,6 +122,17 @@ export class Visualizer {
   /** Pulsos y compases de la toma (vacío si no tiene tempo). */
   private beats: Beat[] = [];
   private readonly barLabels = new Container();
+  /** Video de la cámara o importado (plantillas de ARQUITECTURA: recuadro y fondo). */
+  private readonly bgLayer = new Container();
+  private readonly insetLayer = new Container();
+  private readonly videoCanvas = document.createElement('canvas');
+  private readonly videoTexture: Texture;
+  private readonly videoSprite: Sprite;
+  private readonly videoDim = new Graphics();
+  private readonly videoBorder = new Graphics();
+  private readonly videoBlur = new BlurFilter({ strength: 14, quality: 3 });
+  private videoFrame: CanvasImageSource | null = null;
+  private videoSize = { width: 0, height: 0 };
   private readonly barLabelPool: Pool<Text>;
   private readonly glowPool: Pool<Sprite>;
   private readonly sparkPool: Pool<Sprite>;
@@ -170,6 +191,9 @@ export class Visualizer {
       s.blendMode = 'add';
       return s;
     });
+    this.videoCanvas.width = this.videoCanvas.height = 2;
+    this.videoTexture = Texture.from(this.videoCanvas);
+    this.videoSprite = new Sprite(this.videoTexture);
     this.barLabelPool = new Pool(
       this.barLabels,
       () =>
@@ -184,6 +208,7 @@ export class Visualizer {
     });
 
     app.stage.addChild(
+      this.bgLayer,
       this.guides,
       this.barLabels,
       this.beamLayer,
@@ -194,6 +219,7 @@ export class Visualizer {
       this.sparkLayer,
       this.pedal,
       this.pedalLabel,
+      this.insetLayer,
     );
   }
 
@@ -272,10 +298,21 @@ export class Visualizer {
   }
 
   /** Dibuja el instante t. Determinista: mismo t, mismo cuadro. */
+  /**
+   * Cuadro de video para el instante que se va a dibujar (o null si no hay video en ese
+   * momento). En vivo es el <video> sincronizado; al exportar, el cuadro decodificado exacto.
+   */
+  setVideoFrame(frame: CanvasImageSource | null, width = 0, height = 0): void {
+    this.videoFrame = frame;
+    if (frame) this.videoSize = { width, height };
+  }
+
   render(t: number): void {
     const L = this.layout;
     const { effects, colors } = this.settings;
     const scale = L.height / 1080;
+
+    this.drawVideo(scale);
 
     this.drawGuides(t);
 
@@ -401,6 +438,66 @@ export class Visualizer {
       this.colorCache.set(hex, c);
     }
     return c;
+  }
+
+  /** Coloca el video según la plantilla: de fondo (oscurecido, con o sin desenfoque) o en recuadro. */
+  private drawVideo(scale: number): void {
+    const L = this.layout;
+    const { layout, background } = this.settings;
+    const sprite = this.videoSprite;
+    this.videoDim.clear();
+    this.videoBorder.clear();
+    sprite.removeFromParent();
+    this.videoDim.removeFromParent();
+    this.videoBorder.removeFromParent();
+
+    if (layout === 'background' && background?.kind === 'color') {
+      this.videoDim.rect(0, 0, L.width, L.height).fill(hexToNumber(background.value));
+      this.bgLayer.addChild(this.videoDim);
+      return;
+    }
+    const { width: fw, height: fh } = this.videoSize;
+    if (!this.videoFrame || fw === 0 || fh === 0) return;
+    const wantsVideo =
+      layout === 'camera-inset' ||
+      (layout === 'background' && (background?.kind === 'video' || background?.kind === 'blur'));
+    if (!wantsVideo) return;
+
+    // Copiar el cuadro a un lienzo propio (hasta 1920 px de ancho) y subirlo a la GPU.
+    const cw = Math.min(1920, fw);
+    const ch = Math.round((fh * cw) / fw);
+    if (this.videoCanvas.width !== cw || this.videoCanvas.height !== ch) {
+      this.videoCanvas.width = cw;
+      this.videoCanvas.height = ch;
+      this.videoTexture.source.resize(cw, ch);
+    }
+    this.videoCanvas.getContext('2d')!.drawImage(this.videoFrame, 0, 0, cw, ch);
+    this.videoTexture.source.update();
+
+    if (layout === 'background') {
+      // Cubre todo el cuadro (recortando lo que sobre) y se oscurece para que las notas se lean.
+      const s = Math.max(L.width / cw, L.height / ch);
+      sprite.scale.set(s);
+      sprite.position.set((L.width - cw * s) / 2, (L.height - ch * s) / 2);
+      sprite.filters = background?.kind === 'blur' ? [this.videoBlur] : [];
+      this.videoDim
+        .rect(0, 0, L.width, L.height)
+        .fill({ color: this.theme.background, alpha: 0.45 });
+      this.bgLayer.addChild(sprite, this.videoDim);
+      return;
+    }
+
+    // Recuadro arriba a la derecha.
+    const w = L.width * 0.3;
+    const h = (w * ch) / cw;
+    const margin = 16 * scale;
+    sprite.filters = [];
+    sprite.scale.set(w / cw);
+    sprite.position.set(L.width - w - margin, margin);
+    this.videoBorder
+      .rect(sprite.x - 1, sprite.y - 1, w + 2, h + 2)
+      .stroke({ width: Math.max(1, scale), color: this.theme.guide });
+    this.insetLayer.addChild(sprite, this.videoBorder);
   }
 
   private drawGuides(t: number): void {

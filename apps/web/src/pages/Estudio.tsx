@@ -22,6 +22,7 @@ import { engine, useAudio } from '../studio/audio';
 import { live, useLive } from '../studio/live';
 import { AudioSection, openOwnAudio } from '../studio/AudioSection';
 import { ExportDialog } from '../studio/ExportDialog';
+import { VideoSection, openCameraVideo } from '../studio/VideoSection';
 import { KeyboardSection, TakesSection } from '../studio/LivePanel';
 import { SettingsPanel } from '../studio/SettingsPanel';
 import { Timeline } from '../studio/Timeline';
@@ -171,7 +172,9 @@ export function Estudio() {
     const file = e.dataTransfer.files[0];
     if (!file) return;
     // Un audio se sincroniza con el MIDI abierto; cualquier otro archivo se lee como MIDI.
-    if (file.type.startsWith('audio/') && !/midi/i.test(file.type)) {
+    if (file.type.startsWith('video/')) {
+      void openCameraVideo(file).then((msg) => setError(msg));
+    } else if (file.type.startsWith('audio/') && !/midi/i.test(file.type)) {
       void openOwnAudio(file).then((msg) => setError(msg));
     } else {
       void load(openMidiFile(file));
@@ -274,6 +277,7 @@ export function Estudio() {
           <KeyboardSection />
           <TakesSection />
           <AudioSection />
+          <VideoSection />
           <h2 className="ui-etiqueta">Archivos MIDI</h2>
           <input
             ref={fileInput}

@@ -5,6 +5,7 @@ import type { VisualSettings } from '@impromptu/render';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useOwnAudio } from './ownAudio';
+import { useVideo } from './video';
 import { Transport } from './transport';
 import type { LoopRange } from './transport';
 
@@ -58,6 +59,7 @@ export const useStudio = create<StudioState>()(
       speed: 1,
       open: (take, notices = []) => {
         useOwnAudio.getState().set(null);
+        useVideo.getState().set(null);
         transport.pause();
         transport.duration = take.duration;
         transport.loop = null;

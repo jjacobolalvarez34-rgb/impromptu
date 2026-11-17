@@ -4,7 +4,10 @@ import type { KeyboardLayout } from './keyboard-layout';
 import { BLACK_LENGTH } from './keyboard-layout';
 
 /** Lo que el visualizador necesita de un VisualProject. */
-export type VisualSettings = Pick<VisualProject, 'themeId' | 'effects' | 'show' | 'colors'>;
+export type VisualSettings = Pick<
+  VisualProject,
+  'themeId' | 'effects' | 'show' | 'colors' | 'layout' | 'background'
+>;
 
 /** Segundos que tarda una nota en caer de arriba a la línea con fallSpeed = 1. */
 export const BASE_LOOKAHEAD = 3;
