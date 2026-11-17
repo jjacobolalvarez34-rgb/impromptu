@@ -9,6 +9,9 @@ export const desktopEnv = {
   ELECTRON_CACHE: process.env.ELECTRON_CACHE ?? 'D:/.cache/electron',
   electron_config_cache: process.env.electron_config_cache ?? 'D:/.cache/electron',
   ELECTRON_BUILDER_CACHE: process.env.ELECTRON_BUILDER_CACHE ?? 'D:/.cache/electron-builder',
+  // Los temporales del armado del instalador también en D: (si no, van a C:\...\Temp).
+  TEMP: 'D:/.cache/electron-builder/tmp',
+  TMP: 'D:/.cache/electron-builder/tmp',
   // La web compilada para la app busca el modelo de piano en app://impromptu/modelos/.
   VITE_PIANO_MODEL_URL: '/modelos/',
 };
