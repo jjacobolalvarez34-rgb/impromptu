@@ -2,10 +2,10 @@ import {
   TranscriptionCancelled,
   peakLevel,
   prepareTranscriber,
-  takeFromPiano,
   takeFromTranscription,
+  takeFromTranskun,
   transcribe,
-  transcribePiano,
+  transcribeTranskun,
 } from '@impromptu/transcribe';
 import type { Take } from '@impromptu/core';
 import { create } from 'zustand';
@@ -32,12 +32,12 @@ export type TranscribeState =
   | { step: 'error'; message: string };
 
 /**
- * Modelo de piano con pedal. En desarrollo se sirve desde la carpeta local de modelos; para la
- * web publicada hace falta VITE_PIANO_MODEL_URL. PROVISIONAL(P21).
+ * Carpeta del modelo de piano con pedal (Transkun, ADR-015). En desarrollo se sirve desde la
+ * carpeta local de modelos; para la web publicada hace falta VITE_PIANO_MODEL_URL. PROVISIONAL(P21).
  */
 export const PIANO_MODEL_URL: string | null =
   (import.meta.env.VITE_PIANO_MODEL_URL as string | undefined) ??
-  (import.meta.env.DEV ? `${import.meta.env.BASE_URL}modelos/kong-note-pedal.onnx` : null);
+  (import.meta.env.DEV ? `${import.meta.env.BASE_URL}modelos/` : null);
 
 /** Por debajo de esto (unos −50 dB) el audio se considera silencio. */
 const SILENCE = 0.003;
@@ -95,13 +95,13 @@ export const useTranscribe = create<Store>((set, get) => {
       }
       let take: Take;
       if (get().model === 'piano' && PIANO_MODEL_URL) {
-        const result = await transcribePiano(buffer, {
-          modelUrl: PIANO_MODEL_URL,
+        const result = await transcribeTranskun(buffer, {
+          baseUrl: PIANO_MODEL_URL,
           signal: controller.signal,
           onStage: (st) => {
             if (st.stage === 'downloading')
               show(
-                `Descargando el modelo de piano (${mb(st.total || 154e6)} MB, solo la primera vez)…`,
+                `Descargando el modelo de piano (${mb(st.total || 58e6)} MB, solo la primera vez)…`,
                 st.total ? st.loaded / st.total : null,
               );
             else if (st.stage === 'preparing') show('Preparando el modelo de piano…', null);
@@ -112,7 +112,7 @@ export const useTranscribe = create<Store>((set, get) => {
               );
           },
         });
-        take = takeFromPiano(result, name, buffer.duration);
+        take = takeFromTranskun(result, name, buffer.duration);
       } else {
         const raw = await transcribe(buffer, {
           signal: controller.signal,

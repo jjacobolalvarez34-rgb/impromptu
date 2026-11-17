@@ -145,6 +145,36 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
     - En desarrollo se sirve desde `D:\.cache\models` (`/modelos/`).
     - Para publicarlo hace falta un lugar (P21).
 
+### ADR-015 · Transkun V2 reemplaza al modelo de Kong para "Piano con pedal"
+- **Contexto:** Jacobo probó el modelo de Kong (ADR-014). Encuentra casi todas las notas, pero agrega muchas que no se tocaron. Él pidió buscar uno mejor, porque de esto depende la partitura.
+- **Medida** (primeros 30 s de Consuelo, contra su MIDI, misma tecla y ±50 ms):
+
+  | Modelo | Precisión | Exhaustividad | F1 |
+  |---|---|---|---|
+  | Basic Pitch | 45 % | 69 % | 54 % |
+  | Kong et al. | 49 % | 97 % | 65 % |
+  | Transkun V2 (Python) | 100 % | 97 % | 99 % |
+  | **Transkun V2 en el navegador (este port)** | **99 %** | **98 %** | **99 %** |
+
+  Transkun no confunde el reverb ni el sustain de Cakewalk con notas repetidas, y no inventa pedal: 2 eventos donde Kong veía 142.
+- **Decisión:**
+  - "Piano con pedal" pasa a ser Transkun V2. Viene del paquete de pip `transkun` 2.0.1, licencia MIT, © 2021 Yujia Yan, y los pesos vienen dentro del paquete.
+  - Se exporta a ONNX en dos partes, con un script local en D:. El exportador nuevo de PyTorch necesitó pasar la atención de 5D a 4D; es el mismo cálculo.
+    - Red: de las características a los puntajes del semi-CRF y el contexto (52,6 MB).
+    - Cabezas: fuerza y ajuste fino de inicio y fin (3,4 MB).
+  - El espectro (6 ventanas, FFT de 4096, banco mel de 229) y la decodificación se portaron a TypeScript:
+    - Viterbi del semi-CRF.
+    - Bernoulli continua para el ajuste fino.
+    - Unión de segmentos de 16 s que avanzan de a 8 s.
+  - Pruebas contra el Python original: misma ruta de Viterbi en los 90 símbolos, y espectro con error menor a 0,001. En el navegador da la misma F1 que el original.
+  - Transkun se entrenó sin alargar las notas por el pedal: el final de cada nota es el soltar de la tecla, así que no hace falta el recorte que se usaba con Kong.
+  - Se quitó el código de Kong.
+- **Velocidad en el portátil de Jacobo** (i5-4300M):
+  - ONNX nativo: 2,3× tiempo real.
+  - Navegador (WASM, 4 hilos): unos 25 s por cada 8 s de audio, más ~100 s de preparación la primera vez.
+  - En equipos nuevos y en la app de PC (nativo) será mucho más rápido.
+- **Consecuencias:** el paquete del modelo pesa ~58 MB y se descarga una vez. Dónde se publica sigue en P21.
+
 ---
 ### Plantilla
 ```

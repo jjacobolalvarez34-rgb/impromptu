@@ -9,10 +9,7 @@ import styles from './Acerca.module.css';
 const CREDITOS: [string, string][] = [
   ['Sonido de piano', 'Salamander Grand Piano, de Alexander Holm (CC BY 3.0).'],
   ['Audio a notas', 'Basic Pitch, de Spotify (Apache-2.0), con TensorFlow.js (Apache-2.0).'],
-  [
-    'Piano con pedal',
-    'Modelo de Kong, Li, Song, Wan y Wang (ByteDance, 2021), CC BY 4.0, con ONNX Runtime (MIT).',
-  ],
+  ['Piano con pedal', 'Transkun V2, © 2021 Yujia Yan (MIT), con ONNX Runtime (MIT).'],
   ['Video', 'Mediabunny (MPL-2.0).'],
   ['Visualizador', 'PixiJS (MIT).'],
   ['Íconos', 'Lucide (ISC).'],

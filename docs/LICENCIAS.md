@@ -31,8 +31,8 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 | TensorFlow.js 3.21 | Ejecutar Basic Pitch | Apache-2.0 (verificado) | Aviso de licencia |
 | `@spotify/basic-pitch` 1.0.1 (código y modelo) | Audio a notas (fase 5) | Apache-2.0 (verificado) | Aviso de licencia; crédito en "Acerca de" |
 | `onnxruntime-web` 1.31.1 | Correr el modelo de piano (ADR-014) | MIT (verificado) | Aviso de copyright |
-| Modelo de piano de Kong et al. (pesos `note_F1=0.9677_pedal_F1=0.9186`, Zenodo 4034264) | Piano con pedal (ADR-014) | CC BY 4.0 (verificado en Zenodo) | Dar crédito en "Acerca de": Kong, Li, Song, Wan, Wang (ByteDance), 2021 |
-| `piano_transcription_inference` (posprocesado portado a TS) | Notas y pedal desde el modelo | MIT (Qiuqiang Kong) | Aviso de copyright en el archivo portado |
+| Transkun V2 (paquete de pip `transkun` 2.0.1: código y pesos `pretrained/2.0.pt`) | Piano con pedal (ADR-015); espectro y decodificación portados a TS | MIT, © 2021 Yujia Yan (verificado: LICENSE y clasificador del paquete; los pesos vienen dentro del paquete) | Aviso de copyright; crédito en "Acerca de" |
+| Modelo de piano de Kong et al. | Se evaluó y se dejó (ADR-014, ADR-015) | CC BY 4.0 | Ya no se usa |
 | Dexie (IndexedDB) | Almacenamiento | [VERIFICAR] | |
 | Tauri 2 | Escritorio | MIT o Apache-2.0 [VERIFICAR] | |
 | `tauri-plugin-midi` | MIDI en escritorio | MIT | |

@@ -58,7 +58,7 @@ function localModels(): Plugin {
           modelsDir,
           basename(decodeURIComponent(req.url ?? '').split('?')[0] ?? ''),
         );
-        if (!file.endsWith('.onnx') || !existsSync(file)) return next();
+        if (!/\.(onnx|f32|json)$/.test(file) || !existsSync(file)) return next();
         res.setHeader('Content-Type', 'application/octet-stream');
         res.setHeader('Content-Length', String(statSync(file).size));
         createReadStream(file).pipe(res);

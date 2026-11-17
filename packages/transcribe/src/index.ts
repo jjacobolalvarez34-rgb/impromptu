@@ -12,7 +12,6 @@ export {
   peakLevel,
 } from './transcribe';
 export type { TranscribeParams, TranscribeStage, TranscribeOptions } from './transcribe';
-export { transcribePiano, takeFromPiano } from './piano/transcribe';
-export type { PianoStage } from './piano/transcribe';
-export { outputsToEvents } from './piano/postprocess';
-export type { PianoNote, PianoPedal } from './piano/postprocess';
+export { transcribeTranskun, takeFromTranskun, TRANSKUN_RATE } from './transkun/transcribe';
+export type { TranskunStage } from './transkun/transcribe';
+export type { TkNote } from './transkun/decode';
