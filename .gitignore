@@ -27,3 +27,6 @@ graphify-out/.pending_full
 
 # Videos exportados (marketing)
 exports/
+
+# Permisos locales de Claude Code (no se suben)
+.claude/settings.local.json
