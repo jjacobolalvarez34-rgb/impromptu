@@ -26,3 +26,33 @@ Claude Code: si algo de esta lista bloquea tu tarea, usa el valor provisional, m
 | P21 | **Dónde se publica el modelo de piano con pedal** (154 MB) para la web y las apps: Hugging Face (gratis, permite descarga desde el navegador), un release de GitHub (no permite descarga directa desde el navegador por CORS) u otro. Se descarga una sola vez y queda guardado | Solo en desarrollo, desde `D:\.cache\models` | Abierto |
 | P22 | **Destacar "de MP3 a MIDI" en la página de inicio**: para quien no sabe de dónde sacar partituras o MIDI, Impromptu saca el MIDI de un audio (Convertir un audio → Guardar MIDI). Texto y lugar en la página | Sin destacar | Abierto |
 | P20 | **Impromptu es un producto de Mamut Herd** (la empresa de Jacobo; kit de marca en `mamut-herd-kit-de-marca.zip`). Falta: (1) visto bueno de dónde va el sello "Un producto de Mamut Herd"; (2) la web de Mamut Herd (`MAMUT_HERD_URL` del kit), que da Jacobo; (3) P1 sigue abierta: el código puede ser abierto y la marca de Mamut Herd | Sello en el pie de la página de inicio y en "Acerca de"; © 2026 Mamut Herd | Decidido el dueño 2026-11-17; ubicación en espera de Jacobo |
+
+## Lo que queda (resumen al 2026-11-17)
+
+### Para que pruebe Jacobo
+1. **App de Android** (`apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk`): instalarla, conectar el Yamaha por cable OTG, grabar con el teclado y con el micrófono, abrir una pieza (debe girar a horizontal) y probar sin internet.
+2. **App de PC** (`apps/desktop/release/Impromptu-0.0.0-instalador.exe`): instalarla, conectar el Yamaha, probar el menú Archivo y convertir un audio sin internet. Windows avisará que el instalador no está firmado.
+3. **Piano con pedal (Transkun)** con su piano: grabar con "Grabar también el sonido" y "Guardar para pruebas", para medirlo contra lo que tocó.
+4. **Micrófono en vivo** (las notas suben al tocar) y **sustain sin pedal**.
+5. **Metrónomo al grabar**: grabar algo con clic y mirar su partitura.
+6. **"Mi audio" sincronizado** con Consuelo y Still learning (BUG-001).
+7. **Partitura**: que la revise alguien que lea partitura seguido.
+8. **Tutorial** (modo espera con el teclado): más adelante, como pidió Jacobo.
+
+### Por construir
+- **Fase 8 (apps), lo que falta:**
+  - El sonido del piano (Salamander) todavía se baja de internet la primera vez: meterlo en las apps para que funcionen 100 % sin conexión (P15).
+  - En la app de PC, el modelo de piano corriendo nativo (`onnxruntime-node`): de ~0,15× a ~2× tiempo real en el portátil de Jacobo.
+  - Ícono, pantalla de arranque y firma del APK; firma del instalador de Windows (sin firma, Windows avisa).
+  - Actualizaciones automáticas de las apps.
+  - App de Android **nativa** (la de Capacitor es para probar, ADR-018).
+- **Fase 9:** guitarra (tablatura) y batería.
+- **Fase 10:** editor de partitura, video de la partitura y grabar directo en la partitura.
+- **Al final:** teclado realista por niveles (sombras y teclas que bajan según la fuerza).
+- **Mejoras conocidas:**
+  - Partitura: varias voces por pentagrama; ritmo más fino con rubato (evaluar beat_this).
+  - Transcripción: más rápida en el navegador (WebGPU en equipos nuevos).
+
+### Decisiones de Jacobo abiertas
+P1 (licencia del código), P2 (nombre en GitHub y dominio), P3 (marca en la SIC), P7 (donaciones), P11 (publicar sus grabaciones de prueba), P14 (logo y formatos del video de marca), P15 (dónde alojar las muestras del piano), P17 (prueba en OBS), P18 (sostenuto y una corda con testers), P19 (interruptor para reducir animaciones), P20 (web de Mamut Herd), P21 (dónde publicar el modelo de piano para la web), P22 (destacar "de MP3 a MIDI" en la página de inicio).
+

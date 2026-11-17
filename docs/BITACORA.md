@@ -14,6 +14,31 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-17 · Fase 8 · Apps de PC y Android
+- Hecho (ADR-018):
+  - **Diseño:** cuatro propuestas navegables en un lienzo. Jacobo eligió PC "Estudio directo" y celular "Piezas primero", con la pieza en horizontal (DESIGN §5).
+  - **App de PC con Electron**, todo en D:: protocolo propio con COOP/COEP, MIDI, micrófono y cámara permitidos, modelo de piano adentro, menú Archivo/Editar/Ver/Ayuda con atajos, bienvenida al abrir e instalador NSIS (175 MB).
+  - **Animación del logo sin trabas:** el resto espera a que termine (57 cuadros por segundo) y la app usa la GPU aunque esté en la lista de bloqueo.
+  - **App de Android de prueba con Capacitor**, todo en D: (Java 21, SDK, Gradle): puente MIDI nativo (`ImpromptuMidi`) con relleno de `navigator.requestMIDIAccess` y APK de 62 MB con el modelo de piano.
+  - **Interfaz de celular "Piezas primero"**: inicio en vertical; pieza y grabación en horizontal (Ver, Partitura, Practicar, Exportar).
+  - Exportar deja 4 s de cola con desvanecido. La sección marcada se quita con un clic fuera o con Esc.
+  - El remoto de git quedó fijo con la cuenta jjacobolalvarez34-rgb.
+- Pruebas:
+  - lint, typecheck y pruebas unitarias en verde (separador de mensajes MIDI incluido).
+  - App de PC con Playwright: aislada, MIDI disponible, modelo servido, animación y bienvenida.
+  - Celular con Playwright: inicio, aviso de girar, pieza, partitura y práctica en horizontal.
+  - APK: Gradle BUILD SUCCESSFUL.
+- Errores en el camino (corregidos):
+  - VS Code deja `ELECTRON_RUN_AS_NODE=1`, y con eso Electron arrancaba como Node.
+  - Una ruta mal escrita dejó la caché de Electron dentro del proyecto; se movió a D:.
+  - Capacitor 8 pide Java 21, no 17.
+  - Hay que llamar a `.\gradlew.bat` con su ruta.
+- Probado por Jacobo: pendiente (APK e instalador de PC). Ver "Lo que queda" en PENDIENTES.
+- Pendiente para la próxima: lo que diga Jacobo de las apps; sonido del piano dentro de las apps; modelo nativo en la PC.
+- Pedidos del usuario no atendidos: ninguno de esta fase.
+
+---
+
 ### 2026-11-17 · Fase 7 · Tutoriales y práctica
 - Hecho (ADR-017):
   - Pestaña **Tutorial**:
