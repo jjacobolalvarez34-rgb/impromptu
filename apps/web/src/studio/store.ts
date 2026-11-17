@@ -5,7 +5,7 @@ import type { VisualSettings } from '@impromptu/render';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useOwnAudio } from './ownAudio';
-import { useVideo } from './video';
+import { attachTakeVideo, setTakeIdGetter, useVideo } from './video';
 import { Transport } from './transport';
 import type { LoopRange } from './transport';
 
@@ -60,6 +60,7 @@ export const useStudio = create<StudioState>()(
       open: (take, notices = []) => {
         useOwnAudio.getState().set(null);
         useVideo.getState().set(null);
+        void attachTakeVideo(take);
         transport.pause();
         transport.duration = take.duration;
         transport.loop = null;
@@ -143,3 +144,5 @@ function withKeyboard(take: Take, mode: KeyboardMode): Take {
       : { ...KEYBOARD_PRESETS[Number(mode) as 61 | 76 | 88] };
   return { ...take, keyboardRange };
 }
+
+setTakeIdGetter(() => useStudio.getState().take?.id);

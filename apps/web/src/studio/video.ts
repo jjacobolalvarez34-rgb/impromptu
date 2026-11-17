@@ -1,5 +1,6 @@
 import { alignAudioToNotes, toMono } from '@impromptu/media';
-import type { KeyboardCalibration, NoteEvent } from '@impromptu/core';
+import type { KeyboardCalibration, NoteEvent, Take } from '@impromptu/core';
+import { loadMedia } from './mediaStore';
 import { create } from 'zustand';
 
 /**
@@ -47,6 +48,49 @@ export const useVideo = create<VideoState>((set, get) => ({
     if (video) set({ video: { ...video, ...patch } });
   },
 }));
+
+/** Video con desfase ya conocido (grabado con la toma): no hace falta sincronizar. */
+export async function videoFromFile(
+  file: File,
+  offset: number,
+  name: string,
+  calibration?: KeyboardCalibration,
+): Promise<CameraVideo> {
+  const url = URL.createObjectURL(file);
+  const element = await loadElement(url);
+  return {
+    name,
+    file,
+    url,
+    element,
+    width: element.videoWidth,
+    height: element.videoHeight,
+    duration: element.duration,
+    autoOffset: offset,
+    nudge: 0,
+    confidence: null,
+    agree: true,
+    ...(calibration ? { calibration } : {}),
+  };
+}
+
+/** Si la toma tiene un video guardado (OPFS), lo abre con su desfase y su calibración. */
+export async function attachTakeVideo(take: Take): Promise<void> {
+  const ref = take.media.find((m) => m.kind === 'video');
+  if (!ref) return;
+  const file = await loadMedia(ref.storageKey);
+  if (!file) return;
+  const video = await videoFromFile(file, ref.offset, 'Cámara', ref.calibration);
+  // Si mientras tanto se abrió otra toma, no se pisa.
+  if (useStudioTakeId() === take.id) useVideo.getState().set(video);
+}
+
+let currentTakeId: () => string | undefined = () => undefined;
+const useStudioTakeId = () => currentTakeId();
+/** El store del estudio indica qué toma está abierta (evita una importación circular). */
+export function setTakeIdGetter(getter: () => string | undefined): void {
+  currentTakeId = getter;
+}
 
 /** Segundo de la toma en que se ve el segundo 0 del video. */
 export const videoOffset = (v: CameraVideo) => v.autoOffset + v.nudge;

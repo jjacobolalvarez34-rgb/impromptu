@@ -1,4 +1,5 @@
 import type { Take } from '@impromptu/core';
+import { deleteMedia } from './mediaStore';
 
 /**
  * Tomas guardadas en IndexedDB del navegador (ARQUITECTURA: almacenamiento).
@@ -48,7 +49,11 @@ function run<T>(
 
 export const saveTake = (take: Take) => run('readwrite', (s) => s.put(take)).then(() => undefined);
 export const loadTake = (id: string) => run<Take | undefined>('readonly', (s) => s.get(id));
-export const deleteTake = (id: string) => run('readwrite', (s) => s.delete(id));
+export async function deleteTake(id: string): Promise<void> {
+  const take = await loadTake(id);
+  for (const media of take?.media ?? []) await deleteMedia(media.storageKey);
+  await run('readwrite', (s) => s.delete(id));
+}
 
 export async function listTakes(): Promise<TakeSummary[]> {
   const takes = await run<Take[]>('readonly', (s) => s.getAll());

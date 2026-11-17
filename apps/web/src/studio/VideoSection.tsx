@@ -1,8 +1,9 @@
 import { Button, Slider } from '@impromptu/ui';
-import { Crosshair, Video, X } from 'lucide-react';
+import { Camera, CameraOff, Crosshair, Video, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { engine } from './audio';
 import { CalibrateDialog } from './CalibrateDialog';
+import { startCamera, stopCamera, useCamera } from './camera';
 import { syncQuality } from './ownAudio';
 import { useStudio } from './store';
 import { openVideo, useVideo, videoOffset } from './video';
@@ -37,6 +38,11 @@ export function VideoSection() {
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [calibrating, setCalibrating] = useState(false);
+  const [calibratingCamera, setCalibratingCamera] = useState(false);
+  const cameraActive = useCamera((s) => s.active);
+  const cameraStarting = useCamera((s) => s.starting);
+  const cameraError = useCamera((s) => s.error);
+  const cameraCalibrated = useCamera((s) => s.calibration !== undefined);
   const { patch, set } = useVideo.getState();
 
   const status = !video
@@ -63,6 +69,39 @@ export function VideoSection() {
           if (file) setError(await openCameraVideo(file));
         }}
       />
+      <div className={styles.toma}>
+        <Button
+          icon={cameraActive ? <CameraOff /> : <Camera />}
+          disabled={cameraStarting}
+          onClick={() => (cameraActive ? stopCamera() : void startCamera())}
+        >
+          {cameraActive
+            ? 'Apagar la cámara'
+            : cameraStarting
+              ? 'Abriendo cámara'
+              : 'Usar la cámara'}
+        </Button>
+      </div>
+      {cameraActive && (
+        <>
+          <p className="ui-secundario">
+            La cámara se ve en vivo y se graba junto con la toma al apretar Grabar.
+          </p>
+          <Button icon={<Crosshair />} onClick={() => setCalibratingCamera(true)}>
+            {cameraCalibrated ? 'Calibrar de nuevo la cámara' : 'Calibrar teclas en la cámara'}
+          </Button>
+          <CalibrateDialog
+            open={calibratingCamera}
+            target="camera"
+            onClose={() => setCalibratingCamera(false)}
+          />
+        </>
+      )}
+      {cameraError && (
+        <p role="alert" className={styles.alerta}>
+          {cameraError}
+        </p>
+      )}
       {!video && (
         <>
           <p className="ui-secundario">

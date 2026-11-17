@@ -1,9 +1,10 @@
 import type { KeyboardCalibration } from '@impromptu/core';
 import { Button, Lcd } from '@impromptu/ui';
 import { Minus, Plus } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { useStudio } from './store';
+import { useCamera } from './camera';
 import { useVideo } from './video';
 import styles from './CalibrateDialog.module.css';
 
@@ -22,10 +23,31 @@ const noteName = (p: number) => `${NAMES[p % 12]}${Math.floor(p / 12) - 1}`;
  * Calibración de teclas sobre el video (ROADMAP fase 3): el usuario marca la primera y la
  * última tecla y la línea de aterrizaje, en coordenadas 0–1 del video (KeyboardCalibration).
  */
-export function CalibrateDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function CalibrateDialog({
+  open,
+  onClose,
+  target = 'video',
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** Calibrar sobre el video abierto o sobre la cámara en vivo. */
+  target?: 'video' | 'camera';
+}) {
   const ref = useRef<HTMLDialogElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const video = useVideo((s) => s.video);
+  const imported = useVideo((s) => s.video);
+  const camElement = useCamera((s) => (s.active ? s.element : null));
+  const camWidth = useCamera((s) => s.width);
+  const camHeight = useCamera((s) => s.height);
+  const video = useMemo(
+    () =>
+      target === 'camera'
+        ? camElement
+          ? { element: camElement, width: camWidth, height: camHeight }
+          : null
+        : imported,
+    [target, camElement, camWidth, camHeight, imported],
+  );
   const range = useStudio((s) => s.take?.keyboardRange ?? { low: 36, high: 96 });
   const [step, setStep] = useState<Step>('low');
   const [lowPitch, setLowPitch] = useState(range.low);
@@ -43,12 +65,15 @@ export function CalibrateDialog({ open, onClose }: { open: boolean; onClose: () 
       dialog.showModal();
       setStep('low');
       setPoints({});
-      const cal = useVideo.getState().video?.calibration;
+      const cal =
+        target === 'camera'
+          ? useCamera.getState().calibration
+          : useVideo.getState().video?.calibration;
       setLowPitch(cal?.lowKey.pitch ?? range.low);
       setHighPitch(cal?.highKey.pitch ?? range.high);
     }
     if (!open && dialog.open) dialog.close();
-  }, [open, range.low, range.high]);
+  }, [open, range.low, range.high, target]);
 
   // Dibuja el cuadro actual del video con las marcas.
   useEffect(() => {
@@ -97,7 +122,8 @@ export function CalibrateDialog({ open, onClose }: { open: boolean; onClose: () 
       highKey: { pitch: highPitch, x: points.high![0], y: points.high![1] },
       keyLineY: points.line!,
     };
-    useVideo.getState().patch({ calibration });
+    if (target === 'camera') useCamera.setState({ calibration });
+    else useVideo.getState().patch({ calibration });
     useStudio.getState().setSettings({ layout: 'camera-top' });
     onClose();
   };

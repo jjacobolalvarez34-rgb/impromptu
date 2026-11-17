@@ -2,6 +2,7 @@ import { Visualizer } from '@impromptu/render';
 import type { Background } from '@impromptu/render';
 import { useEffect, useRef, useState } from 'react';
 import { live, liveNow } from './live';
+import { useCamera } from './camera';
 import { syncVideo, useVideo } from './video';
 import { transport, useStudio } from './store';
 import type { Aspect } from './store';
@@ -111,7 +112,9 @@ export function VisualizerView({
       if (useStudio.getState().view === 'live' && !transport.playing) {
         viz.setLive(live.notes, live.pedals, live.range());
         showingLive = true;
-        viz.setVideoFrame(null);
+        const cam = useCamera.getState();
+        viz.setCalibration(cam.calibration ?? null);
+        viz.setVideoFrame(cam.active ? cam.element : null, cam.width, cam.height);
         viz.render(now);
       } else {
         if (showingLive) {

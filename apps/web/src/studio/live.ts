@@ -4,6 +4,8 @@ import { KEYBOARD_PRESETS, createNoteEvent } from '@impromptu/core';
 import type { KeyboardRange, NoteEvent, PedalEvent, Take } from '@impromptu/core';
 import { create } from 'zustand';
 import { engine } from './audio';
+import { startCameraRecording, stopCameraRecording, useCamera } from './camera';
+import { saveMedia } from './mediaStore';
 import { transport, useStudio } from './store';
 import { listTakes, saveTake } from './takesDb';
 import type { TakeSummary } from './takesDb';
@@ -182,6 +184,7 @@ class LiveSession {
   startRecording(): void {
     this.recordStart = liveNow();
     this.recorder.start(this.recordStart);
+    startCameraRecording();
     useStudio.getState().setView('live');
     void this.keepScreenOn(true);
     useLive.setState({ recording: true });
@@ -208,7 +211,20 @@ class LiveSession {
           }
         : undefined,
     );
+    const camera = await stopCameraRecording();
     if (take.tracks.every((t) => t.notes.length === 0)) return null;
+    if (camera) {
+      const key = `${take.id}.${camera.file.type.includes('mp4') ? 'mp4' : 'webm'}`;
+      await saveMedia(camera.file, key);
+      const calibration = useCamera.getState().calibration;
+      take.media.push({
+        kind: 'video',
+        storageKey: key,
+        // Segundo de la toma en que empezó la cámara (mismo reloj: performance.now).
+        offset: Math.round((camera.startedAt - this.recordStart) * 1000) / 1000,
+        ...(calibration ? { calibration } : {}),
+      });
+    }
     await saveTake(take);
     await refreshTakes();
     return take;
