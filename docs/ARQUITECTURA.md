@@ -119,7 +119,7 @@ interface VisualProject {
   effects: { sparks: number; keyGlow: number; fallSpeed: number; octaveGuides: boolean;
              noteGlow: number; noteStyle: 'flat' | 'glow';     // ADR-010
              beatGuides: boolean };                            // ADR-011
-  show: { fingers: boolean; noteNames: boolean; pedals: PedalKind[] };
+  show: { fingers: boolean; noteNames: boolean; pedals: PedalKind[]; bigPedal?: boolean }; // bigPedal: ADR-017
   colors: { right: string; left: string; unassigned: string };
   background?: { kind: 'color' | 'image' | 'video' | 'blur'; value: string };
 }

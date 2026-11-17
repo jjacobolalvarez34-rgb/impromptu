@@ -329,3 +329,7 @@
 .cuerpo[hidden] {
   display: none;
 }
+
+.panel[hidden] {
+  display: none;
+}

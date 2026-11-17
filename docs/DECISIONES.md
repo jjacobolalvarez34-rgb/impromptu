@@ -200,6 +200,23 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
   - Con rubato fuerte (Consuelo), el ritmo escrito sale aproximado. Tempo y compás se pueden corregir en la pestaña.
   - Jacobo valida la legibilidad.
 
+### ADR-017 · Tutorial: modo espera, mano que se practica y pedal grande
+- **Contexto:** la fase 7 pide practicar con la app: que espere a que se toque bien, manos por separado, repetir una sección, velocidad, dedos y pedal grandes, precisión sin juegos y video tutorial.
+- **Decisión:**
+  - `WaitMode` en `packages/practice`:
+    - La pieza se agrupa en acordes (notas a menos de 40 ms) de la mano elegida.
+    - La reproducción se detiene en cada acorde y sigue cuando se tocaron todas sus teclas, en cualquier orden.
+    - Una tecla equivocada solo cuenta como error.
+    - Precisión: acordes tocados sin errores sobre acordes tocados.
+  - El audio deja de tocar la mano que se practica (o las dos). "La otra mano la toca la app" es un interruptor.
+  - Mientras el tutorial está activo, tocar el teclado no lleva a la vista en vivo: la pieza se queda a la vista.
+  - Repetir una sección y la velocidad usan lo que ya había (repetición de la línea de tiempo y velocidad del transporte).
+  - `show.bigPedal` (opcional) en el modelo visual: la franja del pedal pasa de 3 % a 7 % del alto. Cambio de modelo compatible: si falta, es falso.
+  - Video tutorial: opción del diálogo de exportar que activa números de dedo y pedal grande solo para ese video.
+- **Consecuencias:**
+  - El modo espera necesita el teclado conectado por USB (Web MIDI).
+  - Sin teclado se puede practicar mirando, con la mano silenciada y la velocidad baja.
+
 ---
 ### Plantilla
 ```

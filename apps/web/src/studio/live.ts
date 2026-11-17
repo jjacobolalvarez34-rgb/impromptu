@@ -71,6 +71,8 @@ class LiveSession {
   readonly pedals: PedalEvent[] = [];
   private readonly open = new Map<number, NoteEvent>();
   lastActivity = -Infinity;
+  /** Tutorial (modo espera): recibe cada tecla tocada. */
+  onPractice: ((pitch: number) => void) | null = null;
   private recordStart = 0;
   private wakeLock: WakeLockSentinel | null = null;
 
@@ -149,14 +151,21 @@ class LiveSession {
 
   private onEvent(e: LiveEvent): void {
     this.lastActivity = e.time;
-    // Tocar sin estar reproduciendo lleva a la vista en vivo (y ahí se queda).
-    if (e.type === 'noteon' && !transport.playing && useStudio.getState().view !== 'live') {
+    // Tocar sin estar reproduciendo lleva a la vista en vivo (y ahí se queda), salvo en el
+    // tutorial: ahí la reproducción se detiene esperando la nota y la pieza debe seguir visible.
+    if (
+      e.type === 'noteon' &&
+      !this.onPractice &&
+      !transport.playing &&
+      useStudio.getState().view !== 'live'
+    ) {
       useStudio.getState().setView('live');
     }
     if (useLive.getState().recording) this.recorder.push(e);
     switch (e.type) {
       case 'noteon': {
         engine.live?.noteOn(e.pitch, e.velocity);
+        this.onPractice?.(e.pitch);
         const prev = this.open.get(e.pitch);
         if (prev) prev.end = e.time;
         const note = createNoteEvent({

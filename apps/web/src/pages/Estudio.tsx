@@ -28,6 +28,8 @@ import { EditBar, useEditShortcuts } from '../studio/EditBar';
 import { ExportDialog } from '../studio/ExportDialog';
 import { ConvertAudioButton, MicSection, TranscribeStatus } from '../studio/TranscribeSection';
 import { saveMidi } from '../studio/saveMidi';
+import { practice } from '../studio/practice';
+import { TutorialPanel } from '../studio/TutorialPanel';
 
 // La partitura (y OpenSheetMusicDisplay) se carga solo al abrir su pestaña.
 const ScoreTab = lazy(() => import('../score/ScoreTab').then((m) => ({ default: m.ScoreTab })));
@@ -63,7 +65,12 @@ const TABS = [
 
 export function Estudio() {
   const take = useStudio((s) => s.take);
-  const [tab, setTab] = useState<'estudio' | 'partitura'>('estudio');
+  const [tab, setTab] = useState<'estudio' | 'tutorial' | 'partitura'>('estudio');
+  // El tutorial (modo espera, mano que se practica) solo está activo en su pestaña.
+  useEffect(() => {
+    practice.setActive(tab === 'tutorial');
+    return () => practice.setActive(false);
+  }, [tab]);
   const notices = useStudio((s) => s.notices);
   const aspect = useStudio((s) => s.aspect);
   const playing = useStudio((s) => s.playing);
@@ -226,8 +233,7 @@ export function Estudio() {
           value={tab}
           onChange={(id) => {
             if (id === 'en-vivo') void navigate('/en-vivo');
-            // PROVISIONAL: Tutorial llega en la fase 7.
-            if (id === 'estudio' || id === 'partitura') setTab(id);
+            if (id === 'estudio' || id === 'tutorial' || id === 'partitura') setTab(id);
           }}
         />
         <div className={styles.acciones}>
@@ -307,11 +313,20 @@ export function Estudio() {
       <div
         className={styles.cuerpo}
         role="tabpanel"
-        id="app-panel-estudio"
-        aria-labelledby="app-tab-estudio"
-        hidden={tab !== 'estudio'}
+        id={tab === 'tutorial' ? 'app-panel-tutorial' : 'app-panel-estudio'}
+        aria-labelledby={tab === 'tutorial' ? 'app-tab-tutorial' : 'app-tab-estudio'}
+        hidden={tab === 'partitura'}
       >
-        <aside className={`${styles.panel} ui-aparece-izquierda`} aria-label="Fuentes y tomas">
+        {tab === 'tutorial' && (
+          <aside className={`${styles.panel} ui-aparece-izquierda`} aria-label="Tutorial">
+            <TutorialPanel />
+          </aside>
+        )}
+        <aside
+          className={`${styles.panel} ui-aparece-izquierda`}
+          aria-label="Fuentes y tomas"
+          hidden={tab === 'tutorial'}
+        >
           <TranscribeStatus />
 
           <section className={styles.bloque} aria-labelledby="bloque-grabar">

@@ -26,8 +26,14 @@ export interface FrameLayout {
   pps: number;
 }
 
-export function frameLayout(width: number, height: number, fallSpeed: number): FrameLayout {
-  const pedalHeight = Math.round(Math.max(14, height * 0.03));
+export function frameLayout(
+  width: number,
+  height: number,
+  fallSpeed: number,
+  /** Pedal grande (tutoriales): la franja del pedal ocupa más del doble. */
+  bigPedal = false,
+): FrameLayout {
+  const pedalHeight = Math.round(Math.max(bigPedal ? 32 : 14, height * (bigPedal ? 0.07 : 0.03)));
   const keyboardHeight = Math.round(Math.min(Math.max(height * 0.15, 48), width * 0.12));
   const keyLineY = height - pedalHeight - keyboardHeight;
   const lookahead = BASE_LOOKAHEAD / Math.max(0.1, fallSpeed);

@@ -28,6 +28,10 @@ describe('marco', () => {
     expect(layout.keyLineY + layout.keyboardHeight + layout.pedalHeight).toBe(1080);
     expect(layout.keyLineY / layout.pps).toBeCloseTo(BASE_LOOKAHEAD, 10);
     expect(frameLayout(1920, 1080, 2).pps).toBeCloseTo(layout.pps * 2, 10);
+    // Pedal grande (tutoriales): más del doble de alto, y el teclado sigue llegando abajo.
+    const big = frameLayout(1920, 1080, 1, true);
+    expect(big.pedalHeight).toBeGreaterThan(layout.pedalHeight * 2);
+    expect(big.keyLineY + big.keyboardHeight + big.pedalHeight).toBe(1080);
   });
 });
 

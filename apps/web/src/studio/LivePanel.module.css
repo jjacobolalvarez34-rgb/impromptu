@@ -198,3 +198,17 @@
   outline: 2px solid var(--ambar);
   outline-offset: 2px;
 }
+
+/* Tutorial: lo que hay que tocar y la precisión. */
+.espera {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  flex-wrap: wrap;
+}
+
+.precision {
+  display: grid;
+  gap: var(--e-2);
+  justify-items: start;
+}

@@ -85,7 +85,12 @@ export interface VisualProject {
     noteStyle: 'flat' | 'glow'; // ADR-010
     beatGuides: boolean; // líneas de compás y pulso (ADR-011)
   };
-  show: { fingers: boolean; noteNames: boolean; pedals: PedalKind[] };
+  show: {
+    fingers: boolean;
+    noteNames: boolean;
+    pedals: PedalKind[];
+    bigPedal?: boolean; // pedal grande, para tutoriales (ADR-017)
+  };
   colors: { right: string; left: string; unassigned: string };
   background?: { kind: 'color' | 'image' | 'video' | 'blur'; value: string };
 }

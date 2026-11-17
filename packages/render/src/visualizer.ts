@@ -288,7 +288,12 @@ export class Visualizer {
     this.settings = settings;
     this.theme = getTheme(settings.themeId);
     this.applyBackground();
-    this.layout = frameLayout(this.layout.width, this.layout.height, settings.effects.fallSpeed);
+    this.layout = frameLayout(
+      this.layout.width,
+      this.layout.height,
+      settings.effects.fallSpeed,
+      settings.show.bigPedal === true,
+    );
   }
 
   /**
@@ -312,7 +317,12 @@ export class Visualizer {
 
   resize(width: number, height: number): void {
     this.app.renderer.resize(width, height);
-    this.layout = frameLayout(width, height, this.settings.effects.fallSpeed);
+    this.layout = frameLayout(
+      width,
+      height,
+      this.settings.effects.fallSpeed,
+      this.settings.show.bigPedal === true,
+    );
   }
 
   /** Dibuja el instante t. Determinista: mismo t, mismo cuadro. */

@@ -14,6 +14,28 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-17 · Fase 7 · Tutoriales y práctica
+- Hecho (ADR-017):
+  - Pestaña **Tutorial**:
+    - Mano que se practica (las dos, derecha o izquierda) y si la otra la toca la app.
+    - **Modo espera**: se detiene en cada acorde y sigue al tocarlo bien. Muestra qué notas faltan, con su nombre en español.
+    - Precisión discreta ("Precisión 92 % · 24 acordes · 2 teclas equivocadas") y "Empezar de nuevo".
+    - Accesos a números de dedo, nombres de nota y **pedal grande**.
+  - Exportar: opción **Video tutorial** (dedos y pedal grande).
+  - ROADMAP: **fase 10**, editor de partitura y video de la partitura, pedidos por Jacobo.
+- Pruebas:
+  - 3 pruebas nuevas de `WaitMode` (acordes por mano, avanza en cualquier orden, errores, reubicar al repetir).
+  - Pedal grande en `frameLayout`.
+  - Local (`scripts/local/tutorial-check.mjs`): con Still learning y mano derecha, la reproducción se detiene en el primer acorde y pide "La♯3"; el pedal grande y los dedos se ven.
+- Probado por Jacobo: pendiente.
+  - Modo espera con el Yamaha: que avance al tocar el acorde correcto y cuente bien los errores.
+  - Practicar una mano con la otra sonando.
+  - Exportar un video tutorial.
+- Pendiente para la próxima: fase 8 (escritorio y Android).
+- Pedidos del usuario no atendidos: ninguno de la fase.
+
+---
+
 ### 2026-11-17 · Fase 6 · Partitura
 - Hecho:
   - `packages/notation` (ADR-016): tempo y pulsos, cuantización con tresillos, figuras, ligaduras, silencios, dos pentagramas por mano, armadura, pedal con línea, MusicXML 4.0 y MIDI cuantizado.

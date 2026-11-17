@@ -47,6 +47,8 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
   const [resolution, setResolution] = useState<Resolution>('1080p');
   const [fps, setFps] = useState<FrameRate>(60);
   const [withPiano, setWithPiano] = useState(true);
+  // Video tutorial (fase 7): con números de dedo y pedal grande, sin cambiar los ajustes.
+  const [tutorial, setTutorial] = useState(false);
   const [state, setState] = useState<State>({ step: 'form' });
   const abort = useRef<AbortController | null>(null);
 
@@ -89,7 +91,13 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
     if (controller.signal.aborted) return;
     useStudio.setState({ exporting: true });
     try {
-      const { settings } = useStudio.getState();
+      const studioSettings = useStudio.getState().settings;
+      const settings = tutorial
+        ? {
+            ...studioSettings,
+            show: { ...studioSettings.show, fingers: true, bigPedal: true },
+          }
+        : studioSettings;
       const own = useOwnAudio.getState().audio;
       const ownAudio = own?.use ? { buffer: own.buffer, offset: audioOffset(own) } : null;
       // Con audio propio, el video dura hasta que termina el más largo de los dos.
@@ -196,6 +204,11 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
               onChange={setWithPiano}
             />
           )}
+          <Switch
+            label="Video tutorial: números de dedo y pedal grande"
+            checked={tutorial}
+            onChange={setTutorial}
+          />
           <p className="ui-secundario ui-mono">
             {size.width} × {size.height} · {fps} fps
           </p>

@@ -1,6 +1,6 @@
 import { LivePlayer, Piano, takeVoices } from '@impromptu/audio';
 import type { LiveVoiceHandle, Voice } from '@impromptu/audio';
-import type { Take } from '@impromptu/core';
+import type { Hand, Take } from '@impromptu/core';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { audioOffset, useOwnAudio } from './ownAudio';
@@ -149,9 +149,23 @@ class AudioEngine {
     void this.context?.close();
   }
 
+  private take: Take | null = null;
+  /** Manos que la app no toca (tutorial: la mano que practica el usuario). */
+  private muted = new Set<Hand>();
+
   setTake(take: Take | null): void {
-    this.voices = take ? takeVoices(take) : [];
+    this.take = take;
+    const voices = take ? takeVoices(take) : [];
+    // Sin mano asignada cuenta como derecha (igual que en el modo espera).
+    this.voices =
+      this.muted.size === 0 ? voices : voices.filter((v) => !this.muted.has(v.note.hand ?? 'R'));
     this.reschedule();
+  }
+
+  /** Tutorial: la app deja de tocar estas manos (las toca el usuario). */
+  setMutedHands(hands: readonly Hand[]): void {
+    this.muted = new Set(hands);
+    this.setTake(this.take);
   }
 
   /** Corta lo programado y vuelve a programar desde el instante actual. */
