@@ -40,7 +40,7 @@ export function AudioSection() {
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const { patch, set } = useOwnAudio.getState();
-  const quality = audio ? syncQuality(audio.confidence) : null;
+  const quality = audio ? syncQuality(audio.confidence, audio.agree) : null;
 
   return (
     <section className={styles.seccion} aria-labelledby="audio-titulo">

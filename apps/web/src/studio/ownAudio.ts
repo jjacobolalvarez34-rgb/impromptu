@@ -15,16 +15,22 @@ export interface OwnAudio {
   /** Corrección manual del usuario (s, ±0,5). */
   nudge: number;
   confidence: number;
+  /** Los dos métodos de sincronía dieron el mismo desfase. */
+  agree: boolean;
   /** Sonar con este audio en lugar del piano de la app. */
   use: boolean;
 }
 
 export type SyncQuality = 'good' | 'doubtful' | 'mismatch';
 
-/** Umbrales medidos con las grabaciones de Jacobo (misma pieza 1,78–3,58; distinta 1,19–1,25). */
-export function syncQuality(confidence: number): SyncQuality {
-  if (confidence < 1.45) return 'mismatch';
-  if (confidence < 2) return 'doubtful';
+/**
+ * Umbrales medidos con las grabaciones de Jacobo (parecido de notas):
+ * misma pieza 1,09–1,24; piezas distintas 1,01–1,02. Si los dos métodos no coinciden
+ * en el desfase (como Sorry, cuyo MP3 es otra versión), la sincronía es dudosa.
+ */
+export function syncQuality(confidence: number, agree = true): SyncQuality {
+  if (confidence < 1.05) return 'mismatch';
+  if (!agree || confidence < 1.08) return 'doubtful';
   return 'good';
 }
 
@@ -60,7 +66,7 @@ export async function analyzeAudio(
     buffer.getChannelData(i),
   );
   const mono = toMono(channels);
-  const { offset, confidence } = alignAudioToNotes(mono, buffer.sampleRate, notes);
+  const { offset, confidence, agree } = alignAudioToNotes(mono, buffer.sampleRate, notes);
   return {
     name: file.name.replace(/\.[^.]+$/, ''),
     buffer,
@@ -68,6 +74,7 @@ export async function analyzeAudio(
     autoOffset: offset,
     nudge: 0,
     confidence,
-    use: syncQuality(confidence) !== 'mismatch',
+    agree,
+    use: syncQuality(confidence, agree) !== 'mismatch',
   };
 }
