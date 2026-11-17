@@ -59,6 +59,12 @@ Fixtures: usa fixtures/ (si está vacío, genera MIDIs de prueba y anótalo en P
 ```
 **Prueba de Jacobo:** cargar un MIDI que grabó en Cakewalk y ver que se ve y suena bien.
 
+**Pedido de Jacobo (2026-11-16), entra en esta fase:** teclado con **nivel de realismo** elegible:
+- **Plano:** el actual, liviano para celulares.
+- **Realista:** teclas con relieve y sombras. Al tocar, la tecla baja suave y sube al soltar, y lo hondo y lo rápido dependen de la fuerza (velocity).
+
+Todo se calcula a partir de t, para que el video exportado se vea igual (ADR-004).
+
 ## Fase 2 — Teclado en vivo, pedales y modo en vivo
 **Prompt:**
 ```
