@@ -14,6 +14,42 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-16 · Fase 2 · Teclado en vivo, pedales y modo en vivo
+- Hecho:
+  - `packages/midi`, en vivo:
+    - Adaptador Web MIDI: permiso explicado, lista de dispositivos y conexión y desconexión en caliente. Si Safari no tiene MIDI, se avisa (B-006).
+    - Normalizador: B-001, B-003, B-004, B-005 y B-007.
+    - Perfil del PSR-E343, que Windows muestra como "Digital Keyboard-1".
+    - `Recorder`, que cierra las notas abiertas al parar (B-002).
+  - `packages/audio`:
+    - `LivePlayer`: sustain, sostenuto, una corda y repetición de tecla en vivo.
+    - Polifonía máxima de 64 voces con robo de la voz más vieja; la prueba de 2.000 notas cortaba el sonido.
+    - Al buscar o repetir una sección, se oyen las notas que ya sonaban (pedido de Jacobo).
+  - `packages/render`:
+    - Modo `rise`: en vivo, las notas nacen en la tecla y suben.
+    - Fondo del tema, de color o transparente.
+  - Estudio:
+    - Conexión del teclado, que se reconecta sola si ya hay permiso.
+    - Vista en vivo explícita: el indicador del teclado muestra el teclado limpio (pedido de Jacobo).
+    - Grabar y Detener; tomas en IndexedDB que se pueden abrir, renombrar y borrar con confirmación.
+    - Línea de tiempo con carriles (notas por mano y pedal): clic para buscar y arrastrar para repetir una sección. Estos dos puntos venían pendientes de la fase 1.
+    - Botón de bocina para silenciar el piano de la app (B-009).
+    - Ajustes visuales guardados entre sesiones.
+  - `/en-vivo`: pantalla completa para OBS, con fondo verde, transparente o del tema y controles que se esconden solos.
+  - `/celular`: vista Grabar de DESIGN §5, con Wake Lock al grabar (B-017). A la pantalla `/` se llega en el celular por el ancho.
+- Pruebas: vitest core 27, midi 22, render 23 y audio 17 (89 en total); lint y typecheck en verde; CI verde en cada push.
+- Probado por Jacobo (PSR-E343 por USB, Chrome en Windows, sin el controlador de Yamaha):
+  - Lo reconoció de inmediato. Retraso tecla → luz "muy poco". El sonido no se siente con retraso.
+  - Grabó, reprodujo y repitió secciones.
+  - Pedal: no lo había encontrado; solo tiene sustain.
+- Pendiente:
+  - Prueba del sustain con el FC4/FC5.
+  - P16: rediseñar la vista de celular, que a Jacobo no le gustó; se retoma al final.
+  - P17: prueba en OBS.
+  - P18: sostenuto y una corda con testers.
+  - Probar en un celular Android real necesita https (fase 3, despliegue).
+- Pedidos del usuario no atendidos: ninguno. Lo que pidió dejar para después está anotado en P16, P17 y P18.
+
 ### 2026-11-16 · Fase 1 · Visualizador desde un MIDI
 - Hecho:
   - `packages/midi`: lector de .mid con `midi-file`. Maneja velocity 0, notas sin cerrar, repeticiones FIFO, tempo variable en cualquier pista, SMPTE, compás y armadura, y canal 10 como batería. Aplica a la pista del piano el pedal que viene en una pista aparte, y quita pistas duplicadas aunque una esté cuantizada (caso Nostalgia).

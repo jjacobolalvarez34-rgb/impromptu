@@ -152,7 +152,7 @@ audio: OfflineAudioContext (sampler o audio importado) → AudioEncoder
 
 ### En vivo y OBS
 - Ruta `/en-vivo` con fondo transparente o verde. En el navegador: captura de ventana en OBS.
-- **[VERIFICAR]** si la fuente de navegador de OBS puede usar Web MIDI. Si no, en escritorio la app levanta un servidor local que reenvía los eventos a la fuente de OBS por WebSocket.
+- **[VERIFICAR, P17]** si la fuente de navegador de OBS puede usar Web MIDI. Mientras tanto: captura de ventana de `/en-vivo?fondo=verde` con clave de croma. Si no, en escritorio la app levanta un servidor local que reenvía los eventos a la fuente de OBS por WebSocket.
 
 ### Transcripción (fase 5)
 ```
