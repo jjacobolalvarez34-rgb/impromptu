@@ -14,6 +14,30 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-17 · Fase 4 · Manos y dedos
+- Hecho:
+  - `packages/practice`, con algoritmo propio (ADR-012):
+    - Separación de manos por acordes, con costo de registro, continuidad, apertura máxima y cruce. Respeta lo que fija el usuario.
+    - Digitación con Viterbi y las distancias de Parncutt et al. (1997), con reglas de pulgar y meñique en tecla negra, paso del pulgar y acordes. Tiene tamaño de mano (pequeña, mediana, grande) y los dedos fijados actúan como anclas.
+  - Al abrir una toma sin manos (un MIDI de una pista o una toma en vivo), se asignan solas manos y dedos. "Deshacer" recupera la original.
+  - Visualizador:
+    - Número de dedo y nombre de la nota (Do, Re, Mi…) sobre cada nota, en texto de mapa de bits, con contraste automático.
+    - Selección con borde ámbar y búsqueda de la nota bajo el cursor según el último cuadro.
+  - Editor:
+    - Con la pieza pausada, clic en una nota (Shift suma).
+    - Barra con mano, dedo (o automático), mover, alargar o acortar, subir o bajar un semitono y borrar.
+    - Atajos: I/D, 1–5, 0, flechas, Supr, Esc, Ctrl+Z y Ctrl+Y.
+    - Deshacer y rehacer (50 pasos). Las ediciones de una toma guardada se guardan solas.
+  - Ajustes, sección "Manos y dedos": interruptores de dedos y nombres, tamaño de mano y "Recalcular manos y dedos".
+- Pruebas:
+  - Practice 13, con las piezas de Jacobo: todas las notas con mano y dedo en menos de 1 s.
+  - Edición: 9 pruebas. En total hay 135.
+  - Captura con *Consuelo*: dedos y nombres visibles, selección y barra funcionando.
+- Pendiente de Jacobo (prueba de la fase):
+  - Revisar la digitación sugerida en 3 piezas que conozca y anotar aquí el porcentaje de notas que cambiaría.
+  - Revisar si la separación de manos de *Consuelo* tiene sentido.
+- Pedidos del usuario no atendidos: ninguno.
+
 ### 2026-11-17 · Fase 3 · Cámara, plantillas, exportar y publicar (v0.1)
 - Hecho:
   - `packages/export`: MP4 (H.264 + AAC, o WebM VP9 + Opus si falta H.264, B-011) cuadro por cuadro con Mediabunny.
