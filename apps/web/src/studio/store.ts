@@ -7,6 +7,8 @@ import { Transport } from './transport';
 
 export type Aspect = '16:9' | '9:16' | '1:1';
 export type KeyboardMode = 'auto' | '61' | '76' | '88';
+/** Qué muestra el visualizador: la toma abierta o lo que se toca en vivo. */
+export type View = 'take' | 'live';
 
 interface StudioState {
   take: Take | null;
@@ -15,12 +17,14 @@ interface StudioState {
   settings: VisualSettings;
   aspect: Aspect;
   keyboard: KeyboardMode;
+  view: View;
   playing: boolean;
   speed: number;
   open: (take: Take, notices?: string[]) => void;
   setSettings: (patch: Partial<VisualSettings>) => void;
   setAspect: (aspect: Aspect) => void;
   setKeyboard: (mode: KeyboardMode) => void;
+  setView: (view: View) => void;
   togglePlay: () => void;
   setSpeed: (speed: number) => void;
 }
@@ -34,6 +38,7 @@ export const useStudio = create<StudioState>((set, get) => ({
   settings: DEFAULT_SETTINGS,
   aspect: '16:9',
   keyboard: 'auto',
+  view: 'take',
   playing: false,
   speed: 1,
   open: (take, notices = []) => {
@@ -41,7 +46,7 @@ export const useStudio = create<StudioState>((set, get) => ({
     transport.duration = take.duration;
     transport.loop = null;
     transport.seek(0);
-    set({ take: withKeyboard(take, get().keyboard), notices, playing: false });
+    set({ take: withKeyboard(take, get().keyboard), notices, playing: false, view: 'take' });
   },
   setSettings: (patch) => set({ settings: { ...get().settings, ...patch } }),
   setAspect: (aspect) => set({ aspect }),
@@ -49,11 +54,15 @@ export const useStudio = create<StudioState>((set, get) => ({
     const take = get().take;
     set({ keyboard, take: take && withKeyboard(take, keyboard) });
   },
+  setView: (view) => {
+    if (view === 'live') transport.pause();
+    set({ view, playing: transport.playing });
+  },
   togglePlay: () => {
     if (!get().take) return;
     if (transport.playing) transport.pause();
     else transport.play();
-    set({ playing: transport.playing });
+    set({ playing: transport.playing, view: 'take' });
   },
   setSpeed: (speed) => {
     transport.setSpeed(speed);

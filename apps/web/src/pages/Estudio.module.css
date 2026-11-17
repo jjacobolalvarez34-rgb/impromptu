@@ -283,3 +283,16 @@
   font-size: 13px;
   color: var(--chasis);
 }
+
+/* El indicador del teclado es un botón: lleva a la vista en vivo. */
+.dispositivo {
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio);
+  background: none;
+  cursor: pointer;
+}
+
+.dispositivo[aria-pressed='true'] > span {
+  border-color: var(--ambar);
+}

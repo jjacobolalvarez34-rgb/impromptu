@@ -4,6 +4,7 @@ import { KEYBOARD_PRESETS, createNoteEvent } from '@impromptu/core';
 import type { KeyboardRange, NoteEvent, PedalEvent, Take } from '@impromptu/core';
 import { create } from 'zustand';
 import { engine } from './audio';
+import { transport, useStudio } from './store';
 import { listTakes, saveTake } from './takesDb';
 import type { TakeSummary } from './takesDb';
 
@@ -63,6 +64,7 @@ class LiveSession {
   choose(id: string): void {
     const device = this.input?.connect(id, (e) => this.onEvent(e)) ?? null;
     useLive.setState({ device });
+    if (device) useStudio.getState().setView('live');
   }
 
   private onDevices(devices: MidiDevice[]): void {
@@ -88,6 +90,10 @@ class LiveSession {
 
   private onEvent(e: LiveEvent): void {
     this.lastActivity = e.time;
+    // Tocar sin estar reproduciendo lleva a la vista en vivo (y ahí se queda).
+    if (e.type === 'noteon' && !transport.playing && useStudio.getState().view !== 'live') {
+      useStudio.getState().setView('live');
+    }
     if (useLive.getState().recording) this.recorder.push(e);
     switch (e.type) {
       case 'noteon': {
@@ -140,6 +146,7 @@ class LiveSession {
   startRecording(): void {
     this.recordStart = liveNow();
     this.recorder.start(this.recordStart);
+    useStudio.getState().setView('live');
     useLive.setState({ recording: true });
   }
 

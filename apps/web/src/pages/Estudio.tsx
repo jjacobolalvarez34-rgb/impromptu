@@ -68,12 +68,14 @@ export function Estudio() {
   const aspect = useStudio((s) => s.aspect);
   const keyboard = useStudio((s) => s.keyboard);
   const playing = useStudio((s) => s.playing);
+  const view = useStudio((s) => s.view);
   const speed = useStudio((s) => s.speed);
   const {
     open,
     setSettings,
     setAspect,
     setKeyboard,
+    setView,
     togglePlay: toggle,
     setSpeed,
   } = useStudio.getState();
@@ -194,10 +196,18 @@ export function Estudio() {
         <Tabs label="Secciones" idPrefix="app" tabs={TABS} value="estudio" onChange={() => {}} />
         <div className={styles.acciones}>
           {device && (
-            <DeviceIndicator
-              name={device.profile.id === 'generic' ? device.name : device.profile.label}
-              connected
-            />
+            <button
+              type="button"
+              className={styles.dispositivo}
+              aria-pressed={view === 'live'}
+              title="Ver el teclado en vivo"
+              onClick={() => setView('live')}
+            >
+              <DeviceIndicator
+                name={device.profile.id === 'generic' ? device.name : device.profile.label}
+                connected
+              />
+            </button>
           )}
           <Button
             variant={device ? 'secondary' : 'primary'}

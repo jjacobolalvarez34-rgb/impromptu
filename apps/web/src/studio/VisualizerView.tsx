@@ -85,12 +85,12 @@ export function VisualizerView({ onFrame, showFps = false }: Props) {
     let raf = 0;
     let frames = 0;
     let since = performance.now();
-    // Si no se está reproduciendo y se toca el teclado, se muestra lo que se toca (las
-    // notas suben); si no, la toma con sus notas cayendo.
+    // Vista en vivo: lo que se toca sube desde las teclas (aunque no haya notas, el
+    // teclado queda limpio y listo). Vista de toma: sus notas caen.
     let showingLive = false;
     const loop = () => {
       const now = liveNow();
-      if (!transport.playing && live.active(now)) {
+      if (useStudio.getState().view === 'live' && !transport.playing) {
         viz.setLive(live.notes, live.pedals, live.range());
         showingLive = true;
         viz.render(now);
