@@ -22,3 +22,4 @@ Claude Code: si algo de esta lista bloquea tu tarea, usa el valor provisional, m
 | P16 | **Rediseñar la interfaz de celular**: a Jacobo no le gustó la primera versión (`/celular`). Se retoma al final, cuando todo lo demás esté listo | Versión actual | En espera de Jacobo |
 | P17 | Probar `/en-vivo` en OBS (captura de ventana con fondo verde y clave de croma; fuente de navegador con fondo transparente) y resolver el [VERIFICAR] de ARQUITECTURA | — | En espera de Jacobo |
 | P18 | Probar el sostenuto y la una corda con un teclado que los tenga (Jacobo solo tiene sustain): testers | Pruebas automáticas | Abierto |
+| P19 | Interruptor "Reducir animaciones" dentro de la app, para quien se marea con el movimiento. Hoy las animaciones se ven siempre, aunque el sistema las tenga apagadas (Jacobo lo pidió así) | Animaciones siempre | Abierto |

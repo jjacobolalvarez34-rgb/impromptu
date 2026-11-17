@@ -3,6 +3,8 @@ import type { AnimationEvent, CSSProperties } from 'react';
 import styles from './LogoIntro.module.css';
 
 export interface LogoIntroProps {
+  /** Respetar "reducir movimiento" del sistema (muestra el ícono quieto). Por defecto no. */
+  respectReducedMotion?: boolean;
   /**
    * Se llama cuando queda el ícono final. Con `loop`, en cada vuelta.
    * Con movimiento reducido, enseguida.
@@ -211,8 +213,11 @@ export function LogoIntro({
   size = 160,
   playing = true,
   edge = true,
+  respectReducedMotion = false,
 }: LogoIntroProps) {
-  const reduced = useReducedMotion();
+  // Por defecto se anima aunque el sistema pida menos movimiento (decisión de Jacobo, P19).
+  const systemReduced = useReducedMotion();
+  const reduced = respectReducedMotion && systemReduced;
   const fontReady = useFontReady();
   const [run, setRun] = useState(0);
   const [finished, setFinished] = useState(false);

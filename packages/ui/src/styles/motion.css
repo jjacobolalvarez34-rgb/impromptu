@@ -2,6 +2,7 @@
  * Apariciones (pedido de Jacobo): cada tipo de elemento entra con su propio movimiento,
  * seco y físico como el resto de la identidad. Sin rebotes ni brillos (DESIGN §6).
  * Uso: class="ui-aparece-tecla" y, para escalonar, style="--retraso: 120ms".
+ * Se ven aunque el sistema tenga las animaciones apagadas (decisión de Jacobo; ver P19).
  */
 :root {
   --aparece-duracion: 360ms;
@@ -98,11 +99,5 @@
 @keyframes ui-texto {
   from {
     opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [class*='ui-aparece-'] {
-    animation: none !important;
   }
 }
