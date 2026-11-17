@@ -1,4 +1,12 @@
-import { copyFileSync, createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
+import {
+  copyFileSync,
+  createReadStream,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
@@ -60,6 +68,35 @@ function localModels(): Plugin {
 }
 
 /**
+ * Solo en desarrollo: la app guarda parejas MIDI + audio de tomas del teclado en
+ * fixtures/jacobo/pares/ (fuera de git), para medir los modelos de audio a notas.
+ */
+function devPairs(): Plugin {
+  const dir = fileURLToPath(new URL('../../fixtures/jacobo/pares', import.meta.url));
+  return {
+    name: 'impromptu-pares-de-prueba',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/dev/guardar-par', (req, res) => {
+        const name = new URL(req.url ?? '', 'http://x').searchParams.get('archivo') ?? '';
+        if (req.method !== 'POST' || !/^[\p{L}\p{N} _.-]+$/u.test(name) || name.startsWith('.')) {
+          res.statusCode = 400;
+          res.end();
+          return;
+        }
+        mkdirSync(dir, { recursive: true });
+        const chunks: Buffer[] = [];
+        req.on('data', (c: Buffer) => chunks.push(c));
+        req.on('end', () => {
+          writeFileSync(join(dir, name), Buffer.concat(chunks));
+          res.end('ok');
+        });
+      });
+    },
+  };
+}
+
+/**
  * Aislamiento entre orígenes: el modelo de piano usa varios hilos del procesador
  * (SharedArrayBuffer), que el navegador solo permite con estas cabeceras. "credentialless"
  * deja seguir bajando recursos de otros sitios (las muestras del piano) sin cambios.
@@ -84,6 +121,7 @@ export default defineConfig({
     react(),
     spaFallback(),
     localModels(),
+    devPairs(),
     VitePWA({
       // PROVISIONAL: el aviso "Hay una versión nueva. Recargar" (BUGS B-016) queda pendiente.
       registerType: 'autoUpdate',

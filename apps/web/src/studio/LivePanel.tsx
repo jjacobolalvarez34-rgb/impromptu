@@ -1,8 +1,10 @@
-import { Button, IconButton } from '@impromptu/ui';
+import { exportMidi } from '@impromptu/midi';
+import { Button, IconButton, Switch } from '@impromptu/ui';
 import { Cable, Check, FileAudio, Mic, Pencil, Piano, Trash2, Video, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { live, refreshTakes, useLive } from './live';
 import { useStudio } from './store';
+import { loadMedia } from './mediaStore';
 import { deleteTake, loadTake, renameTake } from './takesDb';
 import type { TakeSummary } from './takesDb';
 import { formatTime } from './transport';
@@ -21,6 +23,8 @@ export function KeyboardSection() {
   const status = useLive((s) => s.status);
   const devices = useLive((s) => s.devices);
   const device = useLive((s) => s.device);
+  const recordMic = useLive((s) => s.recordMic);
+  const setRecordMic = useLive((s) => s.setRecordMic);
   const message = STATUS_TEXT[status];
   useEffect(() => {
     void live.autoConnect();
@@ -69,6 +73,13 @@ export function KeyboardSection() {
           ))}
         </ul>
       )}
+      {device && (
+        <Switch
+          label="Grabar también el sonido (micrófono)"
+          checked={recordMic}
+          onChange={setRecordMic}
+        />
+      )}
       {message && (
         <p role="alert" className={styles.alerta}>
           {message}
@@ -76,6 +87,33 @@ export function KeyboardSection() {
       )}
     </div>
   );
+}
+
+/**
+ * Solo en el localhost: guarda el MIDI y el audio de una toma del teclado en
+ * fixtures/jacobo/pares/, para medir los modelos de audio a notas contra lo que se tocó.
+ */
+async function saveForTests(id: string): Promise<string> {
+  const take = await loadTake(id);
+  const ref = take?.media.find((m) => m.kind === 'audio');
+  const audio = ref ? await loadMedia(ref.storageKey) : null;
+  if (!take || !ref || !audio) return 'Esta toma no tiene audio.';
+  const name = take.title.replace(/[^\p{L}\p{N} _-]+/gu, '').trim() || take.id;
+  const ext = ref.storageKey.split('.').pop() ?? 'webm';
+  const post = (file: string, body: BodyInit) =>
+    fetch(`${import.meta.env.BASE_URL}dev/guardar-par?archivo=${encodeURIComponent(file)}`, {
+      method: 'POST',
+      body,
+    });
+  const meta = JSON.stringify({ titulo: take.title, desfaseAudio: ref.offset }, null, 2);
+  const results = await Promise.all([
+    post(`${name}.mid`, new Blob([exportMidi(take) as BlobPart])),
+    post(`${name}.${ext}`, audio),
+    post(`${name}.json`, meta),
+  ]);
+  return results.every((r) => r.ok)
+    ? `Guardada en fixtures/jacobo/pares/${name}`
+    : 'No se pudo guardar.';
 }
 
 /** Cuántas grabaciones se ven antes de "Ver todas". */
@@ -129,6 +167,7 @@ function TakeRow({ take, current }: { take: TakeSummary; current: boolean }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(take.title);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [saved, setSaved] = useState<string | null>(null);
 
   useEffect(() => {
     if (!confirmDelete) return;
@@ -195,6 +234,11 @@ function TakeRow({ take, current }: { take: TakeSummary; current: boolean }) {
       {/* Renombrar y borrar solo en la grabación abierta: así el nombre de cada fila se lee completo. */}
       {current && (
         <div className={styles.acciones}>
+          {import.meta.env.DEV && take.source === 'teclado' && take.audio && (
+            <Button onClick={() => void saveForTests(take.id).then(setSaved)}>
+              Guardar para pruebas
+            </Button>
+          )}
           <IconButton
             label={`Renombrar ${take.title}`}
             icon={<Pencil />}
@@ -212,6 +256,11 @@ function TakeRow({ take, current }: { take: TakeSummary; current: boolean }) {
             />
           )}
         </div>
+      )}
+      {saved && (
+        <p className="ui-secundario" role="status">
+          {saved}
+        </p>
       )}
     </li>
   );

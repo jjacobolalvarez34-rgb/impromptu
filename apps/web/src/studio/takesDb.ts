@@ -19,10 +19,13 @@ export interface TakeSummary {
   source: 'teclado' | 'microfono' | 'archivo';
   /** Trae video de la cámara. */
   video: boolean;
+  /** Trae audio (del micrófono o del archivo convertido). */
+  audio: boolean;
 }
 
 function sourceOf(t: Take): TakeSummary['source'] {
-  if (!t.media.some((m) => m.kind === 'audio')) return 'teclado';
+  const fromKeyboard = t.tracks.some((tr) => tr.notes.some((n) => n.origin === 'midi-live'));
+  if (fromKeyboard || !t.media.some((m) => m.kind === 'audio')) return 'teclado';
   return /^Grabación de audio \d+$/.test(t.title) ? 'microfono' : 'archivo';
 }
 
@@ -75,6 +78,7 @@ export async function listTakes(): Promise<TakeSummary[]> {
       notes: t.tracks.reduce((n, tr) => n + tr.notes.length, 0),
       source: sourceOf(t),
       video: t.media.some((m) => m.kind === 'video'),
+      audio: t.media.some((m) => m.kind === 'audio'),
     }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }

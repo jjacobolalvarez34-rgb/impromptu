@@ -20,7 +20,19 @@ interface LiveState {
   takes: TakeSummary[];
   /** Valor actual del sustain (0–127), para el indicador de pedal. */
   sustain: number;
+  /** Al grabar con el teclado, grabar también el sonido real con el micrófono. */
+  recordMic: boolean;
+  setRecordMic: (on: boolean) => void;
 }
+
+const RECORD_MIC_KEY = 'impromptu-grabar-microfono';
+const readRecordMic = () => {
+  try {
+    return localStorage.getItem(RECORD_MIC_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
 
 export const useLive = create<LiveState>(() => ({
   status: isWebMidiSupported() ? 'off' : 'unsupported',
@@ -29,6 +41,15 @@ export const useLive = create<LiveState>(() => ({
   recording: false,
   takes: [],
   sustain: 0,
+  recordMic: readRecordMic(),
+  setRecordMic: (recordMic) => {
+    useLive.setState({ recordMic });
+    try {
+      localStorage.setItem(RECORD_MIC_KEY, recordMic ? '1' : '0');
+    } catch {
+      // Sin almacenamiento: vale solo para esta sesión.
+    }
+  },
 }));
 
 /** Reloj en vivo: el mismo de MIDIMessageEvent.timeStamp (BUGS B-007). */
@@ -197,9 +218,54 @@ class LiveSession {
     return useLive.getState().device?.profile.range ?? KEYBOARD_PRESETS[88];
   }
 
+  /** Grabación del micrófono que acompaña a la del teclado (si está activada). */
+  private mic: {
+    recorder: MediaRecorder;
+    stream: MediaStream;
+    chunks: Blob[];
+    startedAt: number;
+  } | null = null;
+
+  private async startMic(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      });
+      const chunks: Blob[] = [];
+      const recorder = new MediaRecorder(stream);
+      const mic = { recorder, stream, chunks, startedAt: liveNow() };
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+      // El segundo 0 del audio es cuando el grabador arranca de verdad (mismo reloj que el MIDI).
+      recorder.onstart = () => (mic.startedAt = liveNow());
+      recorder.start(1000);
+      this.mic = mic;
+    } catch {
+      // Sin permiso o sin micrófono: se graba solo el teclado.
+      this.mic = null;
+    }
+  }
+
+  private stopMic(): Promise<{ blob: Blob; startedAt: number } | null> {
+    const mic = this.mic;
+    this.mic = null;
+    if (!mic || mic.recorder.state === 'inactive') return Promise.resolve(null);
+    return new Promise((resolve) => {
+      mic.recorder.onstop = () => {
+        for (const t of mic.stream.getTracks()) t.stop();
+        const blob = new Blob(mic.chunks, { type: mic.recorder.mimeType });
+        resolve(blob.size > 0 ? { blob, startedAt: mic.startedAt } : null);
+      };
+      mic.recorder.requestData();
+      mic.recorder.stop();
+    });
+  }
+
   startRecording(): void {
     this.recordStart = liveNow();
     this.recorder.start(this.recordStart);
+    if (useLive.getState().recordMic) void this.startMic();
     startCameraRecording();
     useStudio.getState().setView('live');
     void this.keepScreenOn(true);
@@ -228,7 +294,17 @@ class LiveSession {
         : undefined,
     );
     const camera = await stopCameraRecording();
+    const micAudio = await this.stopMic();
     if (take.tracks.every((t) => t.notes.length === 0)) return null;
+    if (micAudio) {
+      const key = `${take.id}.${micAudio.blob.type.includes('ogg') ? 'ogg' : 'webm'}`;
+      await saveMedia(micAudio.blob, key);
+      take.media.push({
+        kind: 'audio',
+        storageKey: key,
+        offset: Math.round((micAudio.startedAt - this.recordStart) * 1000) / 1000,
+      });
+    }
     if (camera) {
       const key = `${take.id}.${camera.file.type.includes('mp4') ? 'mp4' : 'webm'}`;
       await saveMedia(camera.file, key);
