@@ -12,11 +12,14 @@
   },
   "dependencies": {
     "@impromptu/core": "workspace:*",
+    "@impromptu/midi": "workspace:*",
+    "@impromptu/render": "workspace:*",
     "@impromptu/ui": "workspace:*",
     "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "react-router": "catalog:"
+    "react-router": "catalog:",
+    "zustand": "catalog:"
   },
   "devDependencies": {
     "@types/react": "catalog:",

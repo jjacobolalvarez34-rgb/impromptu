@@ -1,0 +1,71 @@
+import { KEYBOARD_PRESETS, fitKeyboardRange } from '@impromptu/core';
+import type { Take } from '@impromptu/core';
+import { DEFAULT_SETTINGS } from '@impromptu/render';
+import type { VisualSettings } from '@impromptu/render';
+import { create } from 'zustand';
+import { Transport } from './transport';
+
+export type Aspect = '16:9' | '9:16' | '1:1';
+export type KeyboardMode = 'auto' | '61' | '76' | '88';
+
+interface StudioState {
+  take: Take | null;
+  /** Avisos del último archivo abierto, ya en español para el usuario. */
+  notices: string[];
+  settings: VisualSettings;
+  aspect: Aspect;
+  keyboard: KeyboardMode;
+  playing: boolean;
+  speed: number;
+  open: (take: Take, notices?: string[]) => void;
+  setSettings: (patch: Partial<VisualSettings>) => void;
+  setAspect: (aspect: Aspect) => void;
+  setKeyboard: (mode: KeyboardMode) => void;
+  togglePlay: () => void;
+  setSpeed: (speed: number) => void;
+}
+
+/** Un solo reloj para todo el estudio (visualizador, LCD, audio). */
+export const transport = new Transport();
+
+export const useStudio = create<StudioState>((set, get) => ({
+  take: null,
+  notices: [],
+  settings: DEFAULT_SETTINGS,
+  aspect: '16:9',
+  keyboard: 'auto',
+  playing: false,
+  speed: 1,
+  open: (take, notices = []) => {
+    transport.pause();
+    transport.duration = take.duration;
+    transport.loop = null;
+    transport.seek(0);
+    set({ take: withKeyboard(take, get().keyboard), notices, playing: false });
+  },
+  setSettings: (patch) => set({ settings: { ...get().settings, ...patch } }),
+  setAspect: (aspect) => set({ aspect }),
+  setKeyboard: (keyboard) => {
+    const take = get().take;
+    set({ keyboard, take: take && withKeyboard(take, keyboard) });
+  },
+  togglePlay: () => {
+    if (!get().take) return;
+    if (transport.playing) transport.pause();
+    else transport.play();
+    set({ playing: transport.playing });
+  },
+  setSpeed: (speed) => {
+    transport.setSpeed(speed);
+    set({ speed: transport.speed });
+  },
+}));
+
+/** El teclado elegido vive en Take.keyboardRange (no hace falta cambiar el modelo). */
+function withKeyboard(take: Take, mode: KeyboardMode): Take {
+  const keyboardRange =
+    mode === 'auto'
+      ? fitKeyboardRange(take.tracks.flatMap((t) => t.notes.map((n) => n.pitch)))
+      : { ...KEYBOARD_PRESETS[Number(mode) as 61 | 76 | 88] };
+  return { ...take, keyboardRange };
+}

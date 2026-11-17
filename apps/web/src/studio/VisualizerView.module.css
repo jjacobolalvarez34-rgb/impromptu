@@ -1,0 +1,40 @@
+.stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.canvas {
+  display: block;
+  border: 1px solid var(--linea);
+  border-radius: 2px;
+}
+
+.error {
+  position: absolute;
+  max-width: 36ch;
+  text-align: center;
+  color: var(--chasis);
+}
+
+.fps {
+  position: absolute;
+  top: var(--e-2);
+  right: var(--e-2);
+  padding: 2px 6px;
+  background: var(--lcd);
+  border: 1px solid var(--lcd-borde);
+  border-radius: var(--radio-lcd);
+  color: var(--ambar);
+  font: 500 11px/1.2 var(--fuente-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.host {
+  display: contents;
+}
