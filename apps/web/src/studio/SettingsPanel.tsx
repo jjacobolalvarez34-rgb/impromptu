@@ -1,6 +1,7 @@
 import type { PedalKind } from '@impromptu/core';
 import { THEMES } from '@impromptu/render';
 import { Button, Chips, Slider, Switch } from '@impromptu/ui';
+import { useAudio } from './audio';
 import { autoAssign } from './edit';
 import { ColorField } from './ColorField';
 import { useStudio } from './store';
@@ -12,6 +13,14 @@ const KEYBOARDS = [
   { value: '61', label: '61' },
   { value: '76', label: '76' },
   { value: '88', label: '88' },
+] as const;
+
+/** Sustain de panel (s): para quien no tiene pedal. Ver Piano.panelSustain. */
+const PANEL_SUSTAIN = [
+  { value: '0', label: 'Apagado' },
+  { value: '1', label: 'Corto' },
+  { value: '2.5', label: 'Medio' },
+  { value: '4', label: 'Largo' },
 ] as const;
 
 const NOTE_STYLES = [
@@ -237,6 +246,31 @@ export function SettingsPanel() {
           onChange={togglePedal(p.kind)}
         />
       ))}
+      <PanelSustain />
+    </>
+  );
+}
+
+/** Sustain sin pedal: cada nota se apaga sola al soltarla, como el botón SUSTAIN del Yamaha. */
+function PanelSustain() {
+  const panelSustain = useAudio((s) => s.panelSustain);
+  const setPanelSustain = useAudio((s) => s.setPanelSustain);
+  const value = PANEL_SUSTAIN.find((o) => Number(o.value) === panelSustain)?.value ?? '0';
+  return (
+    <>
+      <p className={styles.rotulo} aria-hidden="true">
+        Sustain sin pedal
+      </p>
+      <Chips
+        label="Sustain sin pedal"
+        options={PANEL_SUSTAIN}
+        value={value}
+        onChange={(v) => setPanelSustain(Number(v))}
+      />
+      <p className="ui-secundario">
+        Para quien no tiene pedal: cada nota sigue sonando un rato al soltarla y se apaga sola, sin
+        saturar. Suena al tocar y al exportar.
+      </p>
     </>
   );
 }

@@ -9,6 +9,8 @@ export interface Voice {
   release: number;
   /** 1 normal; menos con una corda pisada. */
   gain: number;
+  /** La misma tecla se volvió a tocar: se corta de una vez, sin la cola del sustain de panel. */
+  restruck?: boolean;
 }
 
 const SOFT_GAIN = 0.72;
@@ -74,7 +76,10 @@ export function resolveVoices(
   const lastByPitch = new Map<number, Voice>();
   for (const v of voices) {
     const prev = lastByPitch.get(v.note.pitch);
-    if (prev && prev.release > v.start) prev.release = v.start;
+    if (prev && prev.release > v.start) {
+      prev.release = v.start;
+      prev.restruck = true;
+    }
     lastByPitch.set(v.note.pitch, v);
   }
   return voices;

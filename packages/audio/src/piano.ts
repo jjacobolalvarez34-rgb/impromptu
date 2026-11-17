@@ -41,7 +41,12 @@ export interface LoadProgress {
 export interface PianoOptions {
   baseUrl?: string;
   layers?: readonly number[];
+  /** Sustain de panel en segundos (0 = apagado). Ver `Piano.panelSustain`. */
+  panelSustain?: number;
 }
+
+/** Límites del sustain de panel (s). */
+export const PANEL_SUSTAIN_MAX = 6;
 
 /**
  * Piano de cola (Salamander) con Web Audio. Descarga las muestras una vez y las guarda
@@ -53,6 +58,13 @@ export class Piano {
   private readonly baseUrl: string;
   private readonly layers: readonly number[];
   private active: ActiveVoice[] = [];
+  /**
+   * Sustain de panel, como el botón SUSTAIN del Yamaha PSR-E343: al soltar la tecla la nota no
+   * se corta con el apagador, se apaga sola en estos segundos. Sirve a quien no tiene pedal.
+   * Cada nota se apaga por su cuenta (no es un pedal pisado para siempre), así que no se
+   * amontona; repetir la misma tecla corta la anterior, como en un piano. 0 = apagado.
+   */
+  panelSustain = 0;
 
   constructor(
     readonly context: BaseAudioContext,
@@ -60,9 +72,27 @@ export class Piano {
   ) {
     this.baseUrl = options.baseUrl ?? DEFAULT_SAMPLE_BASE;
     this.layers = options.layers ?? DEFAULT_LAYERS;
+    this.panelSustain = Math.min(PANEL_SUSTAIN_MAX, Math.max(0, options.panelSustain ?? 0));
     this.output = context.createGain();
     this.output.gain.value = MASTER_GAIN;
-    this.output.connect(context.destination);
+    // Limitador suave: solo actúa en los picos (muchas notas con sustain a la vez) para que
+    // el sonido nunca se sature ni recorte.
+    const limiter = context.createDynamicsCompressor();
+    limiter.threshold.value = -4;
+    limiter.knee.value = 4;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.2;
+    this.output.connect(limiter).connect(context.destination);
+  }
+
+  /**
+   * Cola al soltar: el apagador (rápido) o el sustain de panel. `tau` es la constante de
+   * caída de setTargetAtTime; `length`, cuándo se detiene la muestra (ya inaudible).
+   */
+  private tail(quick = false): { tau: number; length: number } {
+    if (quick || this.panelSustain <= 0) return { tau: DAMPER / 3, length: DAMPER * 4 };
+    return { tau: this.panelSustain / 4, length: this.panelSustain * 1.25 };
   }
 
   get loaded(): boolean {
@@ -72,6 +102,7 @@ export class Piano {
   /** Usa las muestras ya decodificadas de otro piano (por ejemplo, para exportar sin volver a descargar). */
   shareSamplesFrom(other: Piano): void {
     for (const [name, buffer] of other.buffers) this.buffers.set(name, buffer);
+    this.panelSustain = other.panelSustain;
   }
 
   /** Descarga (o lee de la caché) y decodifica todas las muestras. */
@@ -128,15 +159,16 @@ export class Piano {
     } else {
       gain.gain.setValueAtTime(level, at);
     }
+    const tail = this.tail(voice.restruck);
     gain.gain.setValueAtTime(level, releaseAt);
-    gain.gain.setTargetAtTime(0, releaseAt, DAMPER / 3);
+    gain.gain.setTargetAtTime(0, releaseAt, tail.tau);
     this.admit(at);
     source.connect(gain).connect(this.output);
     const sampleOffset = offset * rate;
     if (sampleOffset >= buffer.duration) return;
     source.start(at, sampleOffset);
-    source.stop(releaseAt + DAMPER * 4);
-    this.track({ source, gain, end: releaseAt + DAMPER * 4 });
+    source.stop(releaseAt + tail.length);
+    this.track({ source, gain, end: releaseAt + tail.length });
   }
 
   /** En vivo: hace sonar una tecla ya, sin saber cuándo se soltará. Devuelve null si no hay muestras. */
@@ -158,19 +190,23 @@ export class Piano {
     return { source, gain };
   }
 
-  /** En vivo: cae el apagador sobre una voz de `strike`. */
-  damp(voice: LiveVoiceHandle): void {
+  /**
+   * En vivo: se suelta una voz de `strike`. Con sustain de panel se apaga sola en esos
+   * segundos; `quick` corta de una vez (repetir la tecla, desconectar).
+   */
+  damp(voice: LiveVoiceHandle, quick = false): void {
     const at = this.context.currentTime;
+    const tail = this.tail(quick);
     voice.gain.gain.cancelScheduledValues(at);
     voice.gain.gain.setValueAtTime(voice.gain.gain.value, at);
-    voice.gain.gain.setTargetAtTime(0, at, DAMPER / 3);
+    voice.gain.gain.setTargetAtTime(0, at, tail.tau);
     try {
-      voice.source.stop(at + DAMPER * 4);
+      voice.source.stop(at + tail.length);
     } catch {
       // Ya estaba detenida.
     }
     const entry = this.active.find((v) => v.source === voice.source);
-    if (entry) entry.end = at + DAMPER * 4;
+    if (entry) entry.end = at + tail.length;
   }
 
   /** Corta todo lo que está sonando o programado (pausar, buscar, cambiar de pieza). */

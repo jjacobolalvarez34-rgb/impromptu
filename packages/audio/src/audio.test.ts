@@ -102,6 +102,9 @@ describe('pedales y apagadores', () => {
     const [first, second] = resolveVoices([note(60, 0, 1), note(60, 2, 3)], pedals);
     expect(first!.release).toBe(2);
     expect(second!.release).toBe(10);
+    // Se marca para cortarla sin la cola del sustain de panel (no se amontonan en la misma tecla).
+    expect(first!.restruck).toBe(true);
+    expect(second!.restruck).toBeUndefined();
   });
 
   it('una corda baja la ganancia de las notas que empiezan con él pisado', () => {

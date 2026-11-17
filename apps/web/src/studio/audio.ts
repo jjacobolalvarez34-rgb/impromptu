@@ -2,6 +2,7 @@ import { LivePlayer, Piano, takeVoices } from '@impromptu/audio';
 import type { LiveVoiceHandle, Voice } from '@impromptu/audio';
 import type { Take } from '@impromptu/core';
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { audioOffset, useOwnAudio } from './ownAudio';
 import { transport } from './store';
 
@@ -18,18 +19,32 @@ interface AudioState {
   /** "Sonido de la app": se apaga si el teclado ya suena por sus parlantes (BUGS B-009). */
   enabled: boolean;
   setEnabled: (on: boolean) => void;
+  /** Sustain de panel en segundos (0 = apagado), como el botón SUSTAIN del PSR-E343. */
+  panelSustain: number;
+  setPanelSustain: (seconds: number) => void;
 }
 
-export const useAudio = create<AudioState>((set) => ({
-  status: 'idle',
-  progress: 0,
-  enabled: true,
-  setEnabled: (enabled) => {
-    set({ enabled });
-    if (!enabled) engine.live?.reset();
-    engine.reschedule();
-  },
-}));
+export const useAudio = create<AudioState>()(
+  persist(
+    (set) => ({
+      status: 'idle',
+      progress: 0,
+      enabled: true,
+      setEnabled: (enabled) => {
+        set({ enabled });
+        if (!enabled) engine.live?.reset();
+        engine.reschedule();
+      },
+      panelSustain: 0,
+      setPanelSustain: (panelSustain) => {
+        set({ panelSustain });
+        engine.applyPanelSustain();
+      },
+    }),
+    // Solo se recuerda el sustain de panel; el resto es estado de la sesión.
+    { name: 'impromptu-audio', partialize: (s) => ({ panelSustain: s.panelSustain }) },
+  ),
+);
 
 /**
  * Programa las notas de la toma en el piano siguiendo el transporte. El reloj del
@@ -43,6 +58,12 @@ class AudioEngine {
   private timer = 0;
   private latency = 0;
   private livePlayer: LivePlayer<LiveVoiceHandle> | null = null;
+
+  /** Cambió el sustain de panel: lo que ya está programado se vuelve a programar con la cola nueva. */
+  applyPanelSustain(): void {
+    if (this.piano) this.piano.panelSustain = useAudio.getState().panelSustain;
+    this.reschedule();
+  }
 
   /** Piano cargado (para exportar con sus muestras); null si aún no se descarga. */
   get loadedPiano(): Piano | null {
@@ -87,7 +108,9 @@ class AudioEngine {
    */
   preload(): Promise<Piano | null> {
     if (this.loading) return this.loading;
-    const piano = new Piano(this.ensureContext());
+    const piano = new Piano(this.ensureContext(), {
+      panelSustain: useAudio.getState().panelSustain,
+    });
     useAudio.setState({ status: 'loading', progress: 0 });
     this.loading = piano
       .load(({ loaded, total }) => useAudio.setState({ progress: loaded / total }))

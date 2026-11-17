@@ -4,7 +4,7 @@ import { isPedalDown } from '@impromptu/core';
 /** Lo mínimo que necesita el modo en vivo de un piano (el real o uno de prueba). */
 export interface Strikeable<H> {
   strike(pitch: number, velocity: number, gainScale?: number): H | null;
-  damp(voice: H): void;
+  damp(voice: H, quick?: boolean): void;
 }
 
 const SOFT_GAIN = 0.72;
@@ -26,7 +26,7 @@ export class LivePlayer<H> {
 
   noteOn(pitch: number, velocity: number): void {
     const previous = this.voices.get(pitch);
-    if (previous !== undefined) this.piano.damp(previous);
+    if (previous !== undefined) this.piano.damp(previous, true);
     const voice = this.piano.strike(pitch, velocity, this.soft ? SOFT_GAIN : 1);
     if (voice === null) this.voices.delete(pitch);
     else this.voices.set(pitch, voice);
@@ -60,7 +60,7 @@ export class LivePlayer<H> {
 
   /** Apaga todo (desconectar, cambiar de modo). */
   reset(): void {
-    for (const v of this.voices.values()) this.piano.damp(v);
+    for (const v of this.voices.values()) this.piano.damp(v, true);
     this.voices.clear();
     this.keysDown.clear();
     this.sostenutoHeld.clear();

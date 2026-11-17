@@ -12,7 +12,8 @@ function fakePiano() {
       log.push(`on ${id} v${velocity} g${gain}`);
       return id;
     },
-    damp: (id) => log.push(`off ${id}`),
+    // `cut`: se corta de una vez (repetir tecla, reset); `off`: se suelta (con su cola).
+    damp: (id, quick) => log.push(`${quick ? 'cut' : 'off'} ${id}`),
   };
   return { piano, log };
 }
@@ -59,7 +60,7 @@ describe('LivePlayer', () => {
     expect(log.at(-1)).toBe('off 48#1');
   });
 
-  it('repetir una tecla apaga la nota anterior y una corda suaviza', () => {
+  it('repetir una tecla corta la nota anterior de una vez y una corda suaviza', () => {
     const { piano, log } = fakePiano();
     const live = new LivePlayer(piano);
     live.pedal('sustain', 127);
@@ -67,7 +68,7 @@ describe('LivePlayer', () => {
     live.noteOff(60);
     live.pedal('soft', 127);
     live.noteOn(60, 50);
-    expect(log).toEqual(['on 60#1 v90 g1', 'off 60#1', 'on 60#2 v50 g0.72']);
+    expect(log).toEqual(['on 60#1 v90 g1', 'cut 60#1', 'on 60#2 v50 g0.72']);
   });
 
   it('reset apaga todo', () => {
@@ -76,6 +77,6 @@ describe('LivePlayer', () => {
     live.noteOn(60, 90);
     live.noteOn(64, 90);
     live.reset();
-    expect(log.filter((l) => l.startsWith('off'))).toHaveLength(2);
+    expect(log.filter((l) => l.startsWith('cut'))).toHaveLength(2);
   });
 });

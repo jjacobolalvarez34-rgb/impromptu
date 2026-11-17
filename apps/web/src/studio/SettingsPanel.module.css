@@ -20,3 +20,10 @@
   background: var(--panel-alto);
   cursor: pointer;
 }
+
+/* Título visible de un grupo de opciones (el nombre accesible lo da el radiogroup). */
+.rotulo {
+  margin: var(--e-3) 0 0;
+  color: var(--chasis);
+  font-size: 14px;
+}
