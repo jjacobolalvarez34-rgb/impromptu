@@ -1,0 +1,102 @@
+.seccion {
+  display: grid;
+  gap: var(--e-3);
+}
+
+.seccion h2 {
+  margin: var(--e-2) 0 0;
+}
+
+.seccion p {
+  margin: 0;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.fila {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  padding: var(--e-2) var(--e-3);
+  border: 0;
+  border-radius: var(--radio);
+  background: transparent;
+  color: var(--chasis);
+  font: 400 14px/1.3 var(--fuente-texto);
+  text-align: left;
+  cursor: pointer;
+}
+
+.fila:hover:not(:disabled) {
+  background: var(--panel-alto);
+}
+
+.fila:disabled {
+  color: var(--gris-texto);
+  cursor: not-allowed;
+}
+
+.fila[aria-current='true'] {
+  background: var(--panel-alto);
+  box-shadow: inset 2px 0 0 var(--ambar);
+}
+
+.nombre {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.punto {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gris-texto);
+}
+
+.punto[data-on='true'] {
+  background: var(--ambar);
+}
+
+.toma {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+}
+
+.toma > button[aria-label] {
+  flex: none;
+}
+
+.campo {
+  flex: 1;
+  min-width: 0;
+  height: var(--toque);
+  padding: 0 var(--e-2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--panel-alto);
+  color: var(--chasis);
+  font: 400 14px/1 var(--fuente-texto);
+}
+
+.alerta {
+  padding: var(--e-2) var(--e-3);
+  border: 1px solid var(--grabacion);
+  border-radius: var(--radio);
+  color: var(--chasis);
+  font-size: 13px;
+}

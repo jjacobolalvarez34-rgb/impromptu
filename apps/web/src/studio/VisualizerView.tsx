@@ -1,5 +1,6 @@
 import { Visualizer } from '@impromptu/render';
 import { useEffect, useRef, useState } from 'react';
+import { live, liveNow } from './live';
 import { transport, useStudio } from './store';
 import type { Aspect } from './store';
 import styles from './VisualizerView.module.css';
@@ -84,17 +85,30 @@ export function VisualizerView({ onFrame, showFps = false }: Props) {
     let raf = 0;
     let frames = 0;
     let since = performance.now();
+    // Si no se está reproduciendo y se toca el teclado, se muestra lo que se toca (las
+    // notas suben); si no, la toma con sus notas cayendo.
+    let showingLive = false;
     const loop = () => {
-      const t = transport.now();
-      viz.render(t);
-      onFrameRef.current?.(t);
+      const now = liveNow();
+      if (!transport.playing && live.active(now)) {
+        viz.setLive(live.notes, live.pedals, live.range());
+        showingLive = true;
+        viz.render(now);
+      } else {
+        if (showingLive) {
+          viz.setTake(useStudio.getState().take);
+          showingLive = false;
+        }
+        viz.render(transport.now());
+      }
+      onFrameRef.current?.(transport.now());
       frames++;
-      const now = performance.now();
-      if (now - since >= 500) {
+      const wall = performance.now();
+      if (wall - since >= 500) {
         if (fpsRef.current)
-          fpsRef.current.textContent = `${Math.round((frames * 1000) / (now - since))} fps`;
+          fpsRef.current.textContent = `${Math.round((frames * 1000) / (wall - since))} fps`;
         frames = 0;
-        since = now;
+        since = wall;
       }
       raf = requestAnimationFrame(loop);
     };

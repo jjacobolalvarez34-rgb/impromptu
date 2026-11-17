@@ -90,8 +90,15 @@ export interface Rect {
 }
 
 /**
- * Rectángulo de una nota que cae en el instante t, recortado en la línea de aterrizaje.
+ * 'fall': las notas caen hacia el teclado (reproducir una toma).
+ * 'rise': nacen en la tecla y suben mientras se toca (en vivo: no se conoce el futuro).
+ */
+export type Direction = 'fall' | 'rise';
+
+/**
+ * Rectángulo de una nota en el instante t, recortado en la línea de aterrizaje.
  * Null si no se ve (aún no entra, ya terminó o su tecla no está en el teclado).
+ * En 'rise' una nota que sigue abajo (end = Infinity) crece desde la tecla.
  */
 export function noteRect(
   note: NoteEvent,
@@ -99,11 +106,19 @@ export function noteRect(
   layout: FrameLayout,
   keyboard: KeyboardLayout,
   minHeight = 3,
+  direction: Direction = 'fall',
 ): Rect | null {
   const key = keyboard.key(note.pitch);
   if (!key) return null;
-  const bottom = Math.min(layout.keyLineY, layout.keyLineY - (note.start - t) * layout.pps);
-  const top = layout.keyLineY - (note.end - t) * layout.pps;
+  const line = layout.keyLineY;
+  const bottom =
+    direction === 'fall'
+      ? Math.min(line, line - (note.start - t) * layout.pps)
+      : line - Math.max(0, t - note.end) * layout.pps;
+  const top =
+    direction === 'fall'
+      ? line - (note.end - t) * layout.pps
+      : line - (t - note.start) * layout.pps;
   if (bottom <= 0 || top >= layout.keyLineY) return null;
   const y = Math.max(0, Math.min(top, bottom - minHeight));
   const gap = Math.max(1, key.width * layout.width * 0.08);

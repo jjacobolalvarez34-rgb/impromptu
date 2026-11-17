@@ -66,6 +66,18 @@ describe('notas visibles', () => {
     expect(r.x + r.width).toBeLessThanOrEqual((key.x + key.width) * 1920);
   });
 
+  it('en vivo la nota nace en la tecla, crece mientras suena y luego sube', () => {
+    const held = { ...note(60, 1, 2), end: Infinity };
+    const growing = noteRect(held, 1.5, layout, kb, 3, 'rise')!;
+    expect(growing.y + growing.height).toBe(layout.keyLineY);
+    expect(growing.height).toBeCloseTo(layout.pps * 0.5, 6);
+    const released = noteRect(note(60, 1, 2), 2.5, layout, kb, 3, 'rise')!;
+    expect(released.y + released.height).toBeCloseTo(layout.keyLineY - layout.pps * 0.5, 6);
+    expect(released.height).toBeCloseTo(layout.pps, 6);
+    expect(noteRect(note(60, 1, 2), 0.5, layout, kb, 3, 'rise')).toBeNull();
+    expect(noteRect(note(60, 1, 2), 10, layout, kb, 3, 'rise')).toBeNull();
+  });
+
   it('las notas fuera del teclado no se dibujan', () => {
     expect(noteRect(note(20, 0, 1), 0, layout, kb)).toBeNull();
   });

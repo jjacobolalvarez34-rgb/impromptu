@@ -1,7 +1,17 @@
-import { Button, Chips, IconButton, Lcd, Logo, Slider, Switch, Tabs } from '@impromptu/ui';
+import {
+  Button,
+  Chips,
+  DeviceIndicator,
+  IconButton,
+  Lcd,
+  Logo,
+  Slider,
+  Switch,
+  Tabs,
+} from '@impromptu/ui';
 import { THEMES } from '@impromptu/render';
 import type { PedalKind } from '@impromptu/core';
-import { FileMusic, Gauge, Pause, Play, SkipBack, Volume2, VolumeX } from 'lucide-react';
+import { FileMusic, Gauge, Pause, Play, SkipBack, Square, Volume2, VolumeX } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
 import { useSearchParams } from 'react-router';
@@ -10,6 +20,8 @@ import { VisualizerView } from '../studio/VisualizerView';
 import { LOCAL_PIECES, createDemoTake, openLocalPiece, openMidiFile } from '../studio/sources';
 import type { OpenedTake } from '../studio/sources';
 import { engine, useAudio } from '../studio/audio';
+import { live, useLive } from '../studio/live';
+import { KeyboardSection, TakesSection } from '../studio/LivePanel';
 import { transport, useStudio } from '../studio/store';
 import type { Aspect, KeyboardMode } from '../studio/store';
 import { formatTime } from '../studio/transport';
@@ -69,6 +81,18 @@ export function Estudio() {
   const audioProgress = useAudio((s) => s.progress);
   const audioEnabled = useAudio((s) => s.enabled);
 
+  const device = useLive((s) => s.device);
+  const recording = useLive((s) => s.recording);
+  const startRecording = () => {
+    transport.pause();
+    useStudio.setState({ playing: false });
+    live.startRecording();
+  };
+  const stopRecording = async () => {
+    const take = await live.stopRecording();
+    if (take) open(take);
+  };
+
   // El primer "Reproducir" es el gesto que permite crear el audio (BUGS B-008).
   const togglePlay = () => {
     void engine.start();
@@ -111,7 +135,9 @@ export function Estudio() {
   }, []);
 
   const onFrame = useCallback((t: number) => {
-    if (timeRef.current) timeRef.current.textContent = formatTime(t);
+    // Grabando, el LCD muestra el tiempo de la toma nueva.
+    const shown = useLive.getState().recording ? live.elapsed() : t;
+    if (timeRef.current) timeRef.current.textContent = formatTime(shown);
     if (seekRef.current && document.activeElement !== seekRef.current) {
       seekRef.current.value = String(t);
     }
@@ -167,9 +193,29 @@ export function Estudio() {
         </div>
         <Tabs label="Secciones" idPrefix="app" tabs={TABS} value="estudio" onChange={() => {}} />
         <div className={styles.acciones}>
-          <Button variant="primary" icon={<FileMusic />} onClick={() => fileInput.current?.click()}>
+          {device && (
+            <DeviceIndicator
+              name={device.profile.id === 'generic' ? device.name : device.profile.label}
+              connected
+            />
+          )}
+          <Button
+            variant={device ? 'secondary' : 'primary'}
+            icon={<FileMusic />}
+            onClick={() => fileInput.current?.click()}
+          >
             Abrir MIDI
           </Button>
+          {device &&
+            (recording ? (
+              <Button variant="stop" icon={<Square />} onClick={() => void stopRecording()}>
+                Detener
+              </Button>
+            ) : (
+              <Button variant="primary" rec onClick={startRecording}>
+                Grabar
+              </Button>
+            ))}
         </div>
       </header>
 
@@ -180,7 +226,9 @@ export function Estudio() {
         aria-labelledby="app-tab-estudio"
       >
         <aside className={styles.panel} aria-label="Fuentes y tomas">
-          <h2 className="ui-etiqueta">Fuentes y tomas</h2>
+          <KeyboardSection />
+          <TakesSection />
+          <h2 className="ui-etiqueta">Archivos MIDI</h2>
           <input
             ref={fileInput}
             type="file"

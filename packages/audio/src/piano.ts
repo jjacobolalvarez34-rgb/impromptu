@@ -108,6 +108,38 @@ export class Piano {
     source.onended = () => this.sounding.delete(source);
   }
 
+  /** En vivo: hace sonar una tecla ya, sin saber cuándo se soltará. Devuelve null si no hay muestras. */
+  strike(pitch: number, velocity: number, gainScale = 1): LiveVoiceHandle | null {
+    const sample = nearestSample(pitch);
+    const layer = layerFor(velocity, this.layers);
+    const buffer = this.buffers.get(sampleName(sample, layer));
+    if (!buffer) return null;
+    const at = this.context.currentTime;
+    const source = this.context.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = Math.pow(2, (pitch - sample) / 12);
+    const gain = this.context.createGain();
+    gain.gain.setValueAtTime(layerGain(velocity, layer) * gainScale, at);
+    source.connect(gain).connect(this.output);
+    source.start(at);
+    this.sounding.add(source);
+    source.onended = () => this.sounding.delete(source);
+    return { source, gain };
+  }
+
+  /** En vivo: cae el apagador sobre una voz de `strike`. */
+  damp(voice: LiveVoiceHandle): void {
+    const at = this.context.currentTime;
+    voice.gain.gain.cancelScheduledValues(at);
+    voice.gain.gain.setValueAtTime(voice.gain.gain.value, at);
+    voice.gain.gain.setTargetAtTime(0, at, DAMPER / 3);
+    try {
+      voice.source.stop(at + DAMPER * 4);
+    } catch {
+      // Ya estaba detenida.
+    }
+  }
+
   /** Corta todo lo que está sonando o programado (pausar, buscar, cambiar de pieza). */
   stopAll(): void {
     const now = this.context.currentTime;
@@ -128,4 +160,9 @@ export function takeVoices(take: Take): Voice[] {
     .filter((t) => t.instrument === 'piano')
     .flatMap((t) => resolveVoices(t.notes, t.pedals))
     .sort((a, b) => a.start - b.start);
+}
+
+export interface LiveVoiceHandle {
+  source: AudioBufferSourceNode;
+  gain: GainNode;
 }

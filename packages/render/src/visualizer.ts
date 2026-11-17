@@ -11,7 +11,7 @@ import {
   noteRect,
   pedalLevels,
 } from './scene';
-import type { FrameLayout, NoteIndex, VisualSettings } from './scene';
+import type { Direction, FrameLayout, NoteIndex, VisualSettings } from './scene';
 import { SPARK_LIFE, noteSparks } from './sparks';
 import type { Spark } from './sparks';
 import { getTheme, hexToNumber } from './themes';
@@ -69,6 +69,7 @@ class Pool<T extends Container> {
 export class Visualizer {
   private index: NoteIndex = { notes: [], maxDuration: 0 };
   private pedals: PedalEvent[] = [];
+  private direction: Direction = 'fall';
   private keyboard: KeyboardLayout = layoutKeyboard({ low: 36, high: 96 });
   private settings: VisualSettings = DEFAULT_SETTINGS;
   private theme: Theme = getTheme('ambar');
@@ -160,9 +161,22 @@ export class Visualizer {
   }
 
   setTake(take: Take | null): void {
+    this.direction = 'fall';
     this.index = indexNotes(take?.tracks ?? []);
     this.pedals = (take?.tracks ?? []).flatMap((t) => t.pedals).sort((a, b) => a.time - b.time);
     this.keyboard = layoutKeyboard(take?.keyboardRange ?? { low: 36, high: 96 });
+  }
+
+  /**
+   * Modo en vivo: las notas suben desde la tecla. `notes` va en orden de inicio y las que
+   * siguen abajo tienen end = Infinity. Se llama en cada cuadro con el búfer reciente.
+   */
+  setLive(notes: NoteEvent[], pedals: PedalEvent[], range: Take['keyboardRange']): void {
+    this.direction = 'rise';
+    this.index = { notes, maxDuration: Infinity };
+    this.pedals = pedals;
+    const r = this.keyboard.range;
+    if (r.low !== range.low || r.high !== range.high) this.keyboard = layoutKeyboard(range);
   }
 
   setSettings(settings: VisualSettings): void {
@@ -188,8 +202,10 @@ export class Visualizer {
     // Notas que caen
     this.notePool.begin();
     this.active.clear();
-    forEachNoteIn(this.index, t, t + L.keyLineY / L.pps, (note) => {
-      const rect = noteRect(note, t, L, this.keyboard);
+    const span = L.keyLineY / L.pps;
+    const [from, to] = this.direction === 'fall' ? [t, t + span] : [t - span, t];
+    forEachNoteIn(this.index, from, to, (note) => {
+      const rect = noteRect(note, t, L, this.keyboard, 3, this.direction);
       if (rect) {
         const sprite = this.notePool.next();
         sprite.position.set(rect.x, rect.y);

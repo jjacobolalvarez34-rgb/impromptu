@@ -1,5 +1,5 @@
-import { Piano, takeVoices } from '@impromptu/audio';
-import type { Voice } from '@impromptu/audio';
+import { LivePlayer, Piano, takeVoices } from '@impromptu/audio';
+import type { LiveVoiceHandle, Voice } from '@impromptu/audio';
 import type { Take } from '@impromptu/core';
 import { create } from 'zustand';
 import { transport } from './store';
@@ -25,6 +25,7 @@ export const useAudio = create<AudioState>((set) => ({
   enabled: true,
   setEnabled: (enabled) => {
     set({ enabled });
+    if (!enabled) engine.live?.reset();
     engine.reschedule();
   },
 }));
@@ -40,6 +41,12 @@ class AudioEngine {
   private cursor = 0;
   private timer = 0;
   private latency = 0;
+  private livePlayer: LivePlayer<LiveVoiceHandle> | null = null;
+
+  /** Piano para tocar en vivo; null si aún no carga o si el sonido de la app está apagado. */
+  get live(): LivePlayer<LiveVoiceHandle> | null {
+    return useAudio.getState().enabled ? this.livePlayer : null;
+  }
 
   constructor() {
     transport.subscribe(() => this.reschedule());
@@ -60,6 +67,7 @@ class AudioEngine {
     try {
       await piano.load(({ loaded, total }) => useAudio.setState({ progress: loaded / total }));
       this.piano = piano;
+      this.livePlayer = new LivePlayer(piano);
       useAudio.setState({ status: 'ready', progress: 1 });
       this.reschedule();
     } catch {
