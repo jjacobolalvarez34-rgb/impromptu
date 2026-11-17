@@ -26,7 +26,7 @@ type State =
   | { step: 'form' }
   | { step: 'working'; phase: string; value: number }
   | { step: 'done'; url: string; name: string; size: string }
-  | { step: 'error'; message: string };
+  | { step: 'error'; message: string; detail?: string };
 
 const PHASES: Record<string, string> = {
   audio: 'Preparando el audio',
@@ -116,6 +116,7 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
         setState({
           step: 'error',
           message: 'No pudimos terminar el video. Prueba con 1080p o 30 fps y vuelve a intentar.',
+          detail: e instanceof Error ? `${e.name}: ${e.message}` : String(e),
         });
     } finally {
       if (abort.current === controller) {
@@ -221,6 +222,7 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
       {state.step === 'error' && (
         <div className={styles.campos}>
           <p role="alert">{state.message}</p>
+          {state.detail && <p className="ui-secundario ui-mono">Detalle: {state.detail}</p>}
           <div className={styles.acciones}>
             <Button onClick={() => setState({ step: 'form' })}>Volver</Button>
           </div>

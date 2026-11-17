@@ -43,7 +43,12 @@ const rangeAt = (ranges: readonly [number, number][], t: number) =>
  * - Una corda: baja la ganancia de las notas que empiezan con él pisado.
  * - Repetir una tecla apaga la nota anterior de esa tecla (la misma cuerda).
  */
-export function resolveVoices(notes: readonly NoteEvent[], pedals: readonly PedalEvent[]): Voice[] {
+export function resolveVoices(
+  notes: readonly NoteEvent[],
+  pedals: readonly PedalEvent[],
+  /** Fin de la toma: un pedal que nunca se suelta apaga sus notas aquí. */
+  endTime?: number,
+): Voice[] {
   const sustain = pedalDownRanges(pedals, 'sustain');
   const sostenuto = pedalDownRanges(pedals, 'sostenuto');
   const soft = pedalDownRanges(pedals, 'soft');
@@ -58,6 +63,12 @@ export function resolveVoices(notes: readonly NoteEvent[], pedals: readonly Peda
     if (caught) release = Math.max(release, caught[1]);
     return { note, start: note.start, release, gain: rangeAt(soft, note.start) ? SOFT_GAIN : 1 };
   });
+
+  // Pedal pisado hasta el final (nunca se soltó): las notas se apagan al terminar la toma.
+  // Un final infinito rompe el audio (setValueAtTime no acepta Infinity).
+  const lastNote = sorted.reduce((m, n) => Math.max(m, n.end), 0);
+  const end = Math.max(endTime ?? 0, lastNote);
+  for (const v of voices) if (!Number.isFinite(v.release)) v.release = Math.max(v.note.end, end);
 
   // Misma tecla otra vez: la anterior se corta al empezar la nueva.
   const lastByPitch = new Map<number, Voice>();

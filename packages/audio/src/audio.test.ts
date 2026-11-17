@@ -82,6 +82,14 @@ describe('pedales y apagadores', () => {
     expect(b!.release).toBe(4);
   });
 
+  it('si el pedal nunca se suelta, las notas se apagan al final de la toma', () => {
+    const pedals = [ped('sustain', 0, 127)];
+    const voices = resolveVoices([note(60, 0, 1), note(64, 2, 3)], pedals, 10);
+    expect(voices.map((v) => v.release)).toEqual([10, 10]);
+    expect(resolveVoices([note(60, 0, 1)], pedals).map((v) => v.release)).toEqual([1]);
+    for (const v of voices) expect(Number.isFinite(v.release)).toBe(true);
+  });
+
   it('el sostenuto solo sostiene las notas que sonaban al pisarlo', () => {
     const pedals = [ped('sostenuto', 1, 127), ped('sostenuto', 5, 0)];
     const [held, later] = resolveVoices([note(48, 0, 2), note(72, 1.5, 2)], pedals);

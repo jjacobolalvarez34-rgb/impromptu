@@ -60,8 +60,12 @@ export class Transport {
       const len = this.loop.end - this.loop.start;
       t = this.loop.start + ((t - this.loop.start) % len);
     } else if (t >= this.duration) {
-      this.pause();
-      this.seek(this.duration);
+      // Llegó al final: se detiene aquí mismo. (Llamar a pause() desde now() volvía a
+      // llamar a now() sin fin y congelaba el visualizador mientras el audio seguía.)
+      this._playing = false;
+      this.anchorTime = this.duration;
+      this.anchorClock = this.clock();
+      this.emit();
       return this.duration;
     }
     return t;

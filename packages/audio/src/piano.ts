@@ -108,6 +108,8 @@ export class Piano {
    * que no suene un clic (al buscar o al repetir una sección).
    */
   play(voice: Voice, at: number, releaseAt: number, offset = 0): void {
+    if (!Number.isFinite(at)) return;
+    if (!Number.isFinite(releaseAt)) releaseAt = at + 30; // protección: nunca un final infinito
     const { note } = voice;
     const sample = nearestSample(note.pitch);
     const layer = layerFor(note.velocity, this.layers);
@@ -212,7 +214,7 @@ export class Piano {
 export function takeVoices(take: Take): Voice[] {
   return take.tracks
     .filter((t) => t.instrument === 'piano')
-    .flatMap((t) => resolveVoices(t.notes, t.pedals))
+    .flatMap((t) => resolveVoices(t.notes, t.pedals, take.duration))
     .sort((a, b) => a.start - b.start);
 }
 
