@@ -167,3 +167,45 @@ describe('partitura', () => {
     expect(q.tracks[0]!.notes.map((n) => [n.pitch, n.start, n.end])).toEqual([[60, 1.5, 2.5]]);
   });
 });
+
+describe('comienzo de la partitura', () => {
+  it('no escribe los compases vacíos del comienzo (cuenta del metrónomo)', () => {
+    // A 120 BPM en 4/4 un compás dura 2 s: la primera nota cae en el compás 3.
+    const t = take([note(60, 4, 4.5, 'R'), note(62, 4.5, 5, 'R')]);
+    const s = buildScore(t, { beats: beatsOf(t) });
+    expect(s.measures[0]!.number).toBe(1);
+    expect(s.measures[0]!.staves[0][0]!.pitches).toEqual([60]);
+    expect(s.measureTimes[0]).toBeCloseTo(4, 5);
+  });
+});
+
+describe('pedal', () => {
+  it('soltar y volver a pisar enseguida es un cambio de pedal', () => {
+    const t = take([note(48, 0, 1.9, 'L'), note(43, 1, 1.9, 'L')], 120, [
+      { time: 0, value: 127 },
+      { time: 0.98, value: 0 },
+      { time: 1.02, value: 127 },
+      { time: 1.9, value: 0 },
+    ]);
+    const s = buildScore(t, { beats: beatsOf(t) });
+    expect(s.measures[0]!.pedals.map((p) => p.type)).toEqual(['start', 'change', 'stop']);
+    expect(toMusicXml(s)).toContain('<pedal type="change" line="yes"');
+  });
+});
+
+describe('cuadrícula corrida', () => {
+  it('un MIDI cuyas notas caen 1/4 de pulso después de su cuadrícula se realinea', () => {
+    // Corcheas a 120 BPM, todas 0,125 s (1/4 de pulso) tarde respecto al tempo del archivo.
+    const notes = Array.from({ length: 32 }, (_, i) =>
+      note(60 + (i % 7), 0.125 + i * 0.25, 0.125 + i * 0.25 + 0.2, 'R'),
+    );
+    const beats = beatsOf(take(notes));
+    expect(beats.source).toBe('tempo-map');
+    // Ahora cada nota cae en una corchea exacta de la cuadrícula.
+    const s = buildScore(take(notes), { beats });
+    const types = s.measures.flatMap((m) =>
+      m.staves[0].filter((e) => e.pitches.length > 0).map((e) => e.type),
+    );
+    expect(new Set(types)).toEqual(new Set(['eighth']));
+  });
+});

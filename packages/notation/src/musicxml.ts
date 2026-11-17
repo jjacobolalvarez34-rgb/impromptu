@@ -3,6 +3,13 @@ import type { NoteEvent, PedalEvent, Take } from '@impromptu/core';
 import { spell } from './key';
 import type { Score, ScoreEvent } from './score';
 
+/**
+ * Pedal con línea (moderno y legible con cambios rápidos): "Ped." al pisar, línea mientras está
+ * abajo, muesca en cada cambio y gancho al soltar.
+ */
+const pedalXml = (type: 'start' | 'stop' | 'change') =>
+  `<pedal type="${type}" line="yes" sign="${type === 'start' ? 'yes' : 'no'}"/></direction-type>`;
+
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -70,7 +77,7 @@ export function toMusicXml(score: Score): string {
         const offset = p.position - pos;
         left +=
           '<direction placement="below"><direction-type>' +
-          `<pedal type="${p.type}" line="no" sign="yes"/></direction-type>` +
+          pedalXml(p.type) +
           (offset !== 0 ? `<offset>${offset}</offset>` : '') +
           '<staff>2</staff></direction>';
       }
@@ -80,7 +87,7 @@ export function toMusicXml(score: Score): string {
     for (const p of pedals) {
       left +=
         '<direction placement="below"><direction-type>' +
-        `<pedal type="${p.type}" line="no" sign="yes"/></direction-type>` +
+        pedalXml(p.type) +
         `<offset>${p.position - pos}</offset><staff>2</staff></direction>`;
     }
     return (

@@ -154,7 +154,7 @@ export function ScoreTab() {
             type="number"
             min={30}
             max={260}
-            value={manualBpm ?? beats.bpm}
+            value={manualBpm ?? Math.round(beats.bpm)}
             aria-label="Tempo en negras por minuto"
             onChange={(e) => {
               const v = Number(e.target.value);

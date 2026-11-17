@@ -31,8 +31,11 @@ export interface Measure {
   number: number;
   /** [mano derecha (clave de sol), mano izquierda (clave de fa)]. */
   staves: [ScoreEvent[], ScoreEvent[]];
-  /** Pedal de sustain: pisar y soltar (posición en el compás). */
-  pedals: { position: number; type: 'start' | 'stop' }[];
+  /**
+   * Pedal de sustain (posición en el compás): pisar, soltar, o cambio (soltar y volver a pisar
+   * casi en el mismo punto, que se escribe como una muesca en la línea del pedal).
+   */
+  pedals: { position: number; type: 'start' | 'stop' | 'change' }[];
 }
 
 export interface Score {
@@ -294,27 +297,36 @@ export function buildScore(take: Take, options: ScoreOptions): Score {
   ];
   const lastEnd = Math.max(0, ...spans.flat().map((s) => s.end));
   const count = Math.max(1, Math.ceil(lastEnd / measureLength));
+  // Los compases vacíos del comienzo (la cuenta del metrónomo, un silencio antes de tocar) no
+  // se escriben: la partitura empieza en el compás de la primera nota.
+  const firstStart = Math.min(...spans.flat().map((s) => s.start));
+  const first = Number.isFinite(firstStart)
+    ? Math.min(count - 1, Math.floor(firstStart / measureLength))
+    : 0;
   const key = estimateKey(notes);
 
   const measures: Measure[] = [];
   const measureTimes: number[] = [];
-  for (let m = 0; m < count; m++) {
+  for (let m = first; m < count; m++) {
     const from = m * measureLength;
     measureTimes.push(toSeconds(times, from / DIV));
-    const pedalMarks: Measure['pedals'] = [];
+    let pedalMarks: Measure['pedals'] = [];
     for (const [a, b] of sustain) {
       if (a >= from && a < from + measureLength)
         pedalMarks.push({ position: a - from, type: 'start' });
       if (b >= from && b < from + measureLength)
         pedalMarks.push({ position: b - from, type: 'stop' });
     }
+    pedalMarks = mergePedalChanges(
+      pedalMarks.sort((a, b) => a.position - b.position || (a.type === 'stop' ? -1 : 1)),
+    );
     measures.push({
-      number: m + 1,
+      number: m - first + 1,
       staves: [
         measureEvents(spans[0], from, measureLength),
         measureEvents(spans[1], from, measureLength),
       ],
-      pedals: pedalMarks.sort((a, b) => a.position - b.position),
+      pedals: pedalMarks,
     });
   }
   return {
@@ -327,4 +339,19 @@ export function buildScore(take: Take, options: ScoreOptions): Score {
     measures,
     measureTimes,
   };
+}
+
+/** Soltar y volver a pisar a menos de una semicorchea es un cambio de pedal (una sola marca). */
+function mergePedalChanges(marks: Measure['pedals']): Measure['pedals'] {
+  const out: Measure['pedals'] = [];
+  for (const m of marks) {
+    const prev = out[out.length - 1];
+    if (prev && prev.type === 'stop' && m.type === 'start' && m.position - prev.position <= 3) {
+      prev.type = 'change';
+      prev.position = m.position;
+      continue;
+    }
+    out.push({ ...m });
+  }
+  return out;
 }

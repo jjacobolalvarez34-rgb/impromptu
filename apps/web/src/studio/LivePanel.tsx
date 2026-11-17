@@ -1,10 +1,11 @@
 import { exportMidi } from '@impromptu/midi';
-import { Button, IconButton, Switch } from '@impromptu/ui';
+import { Button, Chips, IconButton, Switch } from '@impromptu/ui';
 import { Cable, Check, FileAudio, Mic, Pencil, Piano, Trash2, Video, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { live, refreshTakes, useLive } from './live';
 import { useStudio } from './store';
 import { loadMedia } from './mediaStore';
+import { useMetronome } from './metronome';
 import { deleteTake, loadTake, renameTake } from './takesDb';
 import type { TakeSummary } from './takesDb';
 import { formatTime } from './transport';
@@ -74,11 +75,14 @@ export function KeyboardSection() {
         </ul>
       )}
       {device && (
-        <Switch
-          label="Grabar también el sonido (micrófono)"
-          checked={recordMic}
-          onChange={setRecordMic}
-        />
+        <>
+          <Switch
+            label="Grabar también el sonido (micrófono)"
+            checked={recordMic}
+            onChange={setRecordMic}
+          />
+          <MetronomeControls />
+        </>
       )}
       {message && (
         <p role="alert" className={styles.alerta}>
@@ -263,5 +267,48 @@ function TakeRow({ take, current }: { take: TakeSummary; current: boolean }) {
         </p>
       )}
     </li>
+  );
+}
+
+const METER_OPTIONS = [
+  { value: '2', label: '2/4' },
+  { value: '3', label: '3/4' },
+  { value: '4', label: '4/4' },
+] as const;
+
+/** Metrónomo al grabar: con él, la partitura sale con el tempo y el compás exactos. */
+function MetronomeControls() {
+  const { on, bpm, beats, set } = useMetronome();
+  return (
+    <>
+      <Switch label="Metrónomo al grabar" checked={on} onChange={(v) => set({ on: v })} />
+      {on && (
+        <>
+          <label className={styles.metronomo}>
+            <input
+              type="number"
+              min={30}
+              max={240}
+              value={bpm}
+              aria-label="Tempo del metrónomo (negras por minuto)"
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                if (v >= 30 && v <= 240) set({ bpm: v });
+              }}
+            />
+            <span className="ui-secundario">BPM</span>
+          </label>
+          <Chips
+            label="Compás del metrónomo"
+            options={METER_OPTIONS}
+            value={String(beats) as '2' | '3' | '4'}
+            onChange={(v) => set({ beats: Number(v) })}
+          />
+          <p className="ui-secundario">
+            El primer compás es de cuenta. Con metrónomo, la partitura sale con el ritmo exacto.
+          </p>
+        </>
+      )}
+    </>
   );
 }

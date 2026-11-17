@@ -118,10 +118,6 @@ export function steadyBeats(bpm: number, first: number, duration: number): numbe
 }
 
 /**
- * Pulsos de una toma: del mapa de tempo si lo trae (MIDI de un DAW); si no, estimados de los
- * ataques (tomas grabadas o transcritas). Siempre en negras.
- */
-/**
  * Qué tan bien caen los ataques en una cuadrícula de semicorcheas (y tresillos) sobre estos
  * pulsos: fracción de notas a menos de 35 ms de algún punto de la cuadrícula.
  */
@@ -140,6 +136,45 @@ export function gridFit(notes: readonly NoteEvent[], times: readonly number[]): 
     if (near <= 0.035) hits++;
   }
   return hits / notes.length;
+}
+
+/** Fracción de ataques a menos de 30 ms de una corchea (distingue una cuadrícula corrida). */
+function straightFit(notes: readonly NoteEvent[], times: readonly number[]): number {
+  if (notes.length === 0 || times.length < 2) return 0;
+  let hits = 0;
+  let j = 0;
+  for (const n of [...notes].sort((a, b) => a.start - b.start)) {
+    while (j + 2 < times.length && times[j + 1]! <= n.start) j++;
+    const len = times[j + 1]! - times[j]!;
+    const x = ((n.start - times[j]!) / len) * 2;
+    if (Math.abs(x - Math.round(x)) * (len / 2) <= 0.03) hits++;
+  }
+  return hits / notes.length;
+}
+
+/**
+ * La cuadrícula de un MIDI puede venir corrida respecto a lo tocado (por ejemplo, el MIDI de
+ * Still learning cae 1/4 de pulso después de la cuadrícula de su archivo). Se busca el
+ * corrimiento (en 1/24 de pulso) que mejor alinea los ataques y se aplica si mejora claramente.
+ */
+export function alignPhase(notes: readonly NoteEvent[], times: readonly number[]): number[] {
+  if (times.length < 2) return [...times];
+  const len = times[1]! - times[0]!;
+  let best = 0;
+  let bestFit = straightFit(notes, times);
+  const base = bestFit;
+  for (let k = 1; k < 24; k++) {
+    const shift = (k / 24) * len;
+    const shifted = [times[0]! + shift - len, ...times.map((t) => t + shift)];
+    const fit = straightFit(notes, shifted);
+    if (fit > bestFit) {
+      bestFit = fit;
+      best = k;
+    }
+  }
+  if (best === 0 || bestFit < base + 0.1) return [...times];
+  const shift = (best / 24) * len;
+  return [times[0]! + shift - len, ...times.map((t) => t + shift)];
 }
 
 /**
@@ -166,7 +201,10 @@ export function beatsOf(take: Take, manual?: { bpm: number; first: number }): Be
   if (take.tempoMap.length > 0) {
     const grid = beatGrid(take.tempoMap, [4, 4], duration + 2);
     const fromFile: Beats = {
-      times: grid.map((b) => b.time),
+      times: alignPhase(
+        notes,
+        grid.map((b) => b.time),
+      ),
       bpm: take.tempoMap[0]!.bpm,
       source: 'tempo-map',
     };

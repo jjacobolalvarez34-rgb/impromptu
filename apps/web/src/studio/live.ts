@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { engine } from './audio';
 import { startCameraRecording, stopCameraRecording, useCamera } from './camera';
 import { saveMedia } from './mediaStore';
+import { Clicker, useMetronome } from './metronome';
 import { setTakeEditedListener, transport, useStudio } from './store';
 import { listTakes, saveTake } from './takesDb';
 import type { TakeSummary } from './takesDb';
@@ -262,8 +263,25 @@ class LiveSession {
     });
   }
 
+  private clicker = new Clicker();
+  /** Tempo y compás del metrónomo de esta grabación (si estaba encendido). */
+  private metronome: { bpm: number; beats: number } | null = null;
+
   startRecording(): void {
-    this.recordStart = liveNow();
+    const met = useMetronome.getState();
+    if (met.on) {
+      void engine.start();
+      const context = engine.audioContext;
+      const lead = 0.15;
+      this.clicker.start(context, context.currentTime + lead, met.bpm, met.beats);
+      // El primer clic, en el reloj en vivo (el del MIDI), contando la latencia de salida:
+      // así el tempo de la toma coincide con lo que se oyó.
+      this.recordStart = liveNow() + lead + (context.outputLatency || 0) + context.baseLatency;
+      this.metronome = { bpm: met.bpm, beats: met.beats };
+    } else {
+      this.recordStart = liveNow();
+      this.metronome = null;
+    }
     this.recorder.start(this.recordStart);
     if (useLive.getState().recordMic) void this.startMic();
     startCameraRecording();
@@ -293,6 +311,11 @@ class LiveSession {
           }
         : undefined,
     );
+    this.clicker.stop();
+    if (this.metronome) {
+      take.tempoMap = [{ time: 0, bpm: this.metronome.bpm }];
+      take.timeSignature = [this.metronome.beats, 4];
+    }
     const camera = await stopCameraRecording();
     const micAudio = await this.stopMic();
     if (take.tracks.every((t) => t.notes.length === 0)) return null;

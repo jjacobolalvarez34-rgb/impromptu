@@ -176,3 +176,25 @@
   justify-content: flex-end;
   gap: var(--e-1);
 }
+
+.metronomo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+}
+
+.metronomo input {
+  width: 5em;
+  min-height: 44px;
+  padding: 0 var(--e-2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--panel-alto);
+  color: var(--chasis);
+  font: 400 16px/1 var(--fuente-mono);
+}
+
+.metronomo input:focus-visible {
+  outline: 2px solid var(--ambar);
+  outline-offset: 2px;
+}
