@@ -78,6 +78,17 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
   - Los ajustes guardados de antes se completan con los valores por defecto al cargarse.
   - En la vista plana (celulares lentos) el halo no se dibuja.
 
+### ADR-011 · Líneas de compás y pulso en el visualizador
+- **Contexto:** Jacobo pidió ver el compás y el tempo "bajando" detrás de las notas.
+- **Decisión:**
+  - Se agrega `VisualProject.effects.beatGuides: boolean`.
+  - `@impromptu/core` calcula la cuadrícula de pulsos y compases (`beatGrid`) a partir de `tempoMap` y `timeSignature`, y respeta los cambios de tempo aunque caigan a mitad de un pulso.
+  - El visualizador dibuja una línea por pulso y una línea más marcada, con el número, por compás.
+  - El transporte muestra el compás, el pulso y el tempo actuales.
+- **Consecuencias:**
+  - Las tomas sin tempo (las grabadas en vivo) no muestran cuadrícula hasta que haya detección de tempo (fase 6).
+  - Por ahora solo se usa el primer compás del MIDI; los cambios de compás quedan para la fase 6.
+
 ---
 ### Plantilla
 ```

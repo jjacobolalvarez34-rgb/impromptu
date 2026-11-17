@@ -131,6 +131,11 @@ export function SettingsPanel() {
         checked={settings.effects.octaveGuides}
         onChange={(octaveGuides) => setEffect({ octaveGuides })}
       />
+      <Switch
+        label="Compases y pulsos"
+        checked={settings.effects.beatGuides}
+        onChange={(beatGuides) => setEffect({ beatGuides })}
+      />
 
       <h2 className="ui-etiqueta">Pedales</h2>
       {PEDALS.map((p) => (

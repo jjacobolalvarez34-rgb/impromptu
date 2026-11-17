@@ -11,8 +11,9 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
+import { beatAt, beatGrid, tempoAt } from '@impromptu/core';
 import { useNavigate, useSearchParams } from 'react-router';
 import { VisualizerView } from '../studio/VisualizerView';
 import { LOCAL_PIECES, createDemoTake, openLocalPiece, openMidiFile } from '../studio/sources';
@@ -95,6 +96,20 @@ export function Estudio() {
   const fileInput = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLSpanElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
+  const meterRef = useRef<HTMLSpanElement>(null);
+  // Cuadrícula de compases de la toma (para el LCD); null si no tiene tempo.
+  const meter = useMemo(() => {
+    if (!take || take.tempoMap.length === 0) return null;
+    return {
+      grid: beatGrid(take.tempoMap, take.timeSignature, take.duration + 2),
+      bpm: take.tempoMap[0]!.bpm,
+      tempoMap: take.tempoMap,
+    };
+  }, [take]);
+  const meterLive = useRef(meter);
+  useEffect(() => {
+    meterLive.current = meter;
+  }, [meter]);
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
@@ -129,6 +144,14 @@ export function Estudio() {
     // Grabando, el LCD muestra el tiempo de la toma nueva.
     const shown = useLive.getState().recording ? live.elapsed() : t;
     if (timeRef.current) timeRef.current.textContent = formatTime(shown);
+    const m = meterLive.current;
+    if (m && meterRef.current) {
+      const b = beatAt(m.grid, t);
+      const bpm = tempoAt(m.tempoMap, t);
+      meterRef.current.textContent = b ? `c.${b.bar} · ${b.beat}` : 'c.1 · 1';
+      const tempoEl = meterRef.current.nextElementSibling;
+      if (tempoEl && bpm) tempoEl.textContent = `♩ ${Math.round(bpm)}`;
+    }
     const duration = useStudio.getState().take?.duration ?? 0;
     if (playheadRef.current) {
       playheadRef.current.style.left = `${duration > 0 ? (t / duration) * 100 : 0}%`;
@@ -336,6 +359,12 @@ export function Estudio() {
           <span ref={timeRef}>00:00.00</span>
           <span className={styles.duracion}>/ {formatTime(take?.duration ?? 0)}</span>
         </Lcd>
+        {meter && (
+          <Lcd size="md" aria-label="Compás y tempo">
+            <span ref={meterRef}>c.1 · 1</span>
+            <span className={styles.duracion}>♩ {Math.round(meter.bpm)}</span>
+          </Lcd>
+        )}
         <IconButton
           label={loopOn ? 'Dejar de repetir la sección' : 'Repetir la sección marcada'}
           title="Arrastra sobre la línea de tiempo para marcar una sección"

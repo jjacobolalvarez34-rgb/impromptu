@@ -1,5 +1,6 @@
 import { Application, Container, Graphics, NineSliceSprite, Sprite, Text, Texture } from 'pixi.js';
-import type { NoteEvent, PedalEvent, Take } from '@impromptu/core';
+import { beatGrid } from '@impromptu/core';
+import type { Beat, NoteEvent, PedalEvent, Take } from '@impromptu/core';
 import { layoutKeyboard } from './keyboard-layout';
 import type { KeyboardLayout } from './keyboard-layout';
 import {
@@ -39,6 +40,7 @@ export const DEFAULT_SETTINGS: VisualSettings = {
     octaveGuides: true,
     noteGlow: 70,
     noteStyle: 'glow',
+    beatGuides: true,
   },
   show: { fingers: false, noteNames: false, pedals: ['sustain', 'sostenuto', 'soft'] },
   colors: { right: '#FF9F1C', left: '#E8E4DC', unassigned: '#9A968C' },
@@ -107,6 +109,10 @@ export class Visualizer {
   private readonly beamPool: Pool<Sprite>;
   private readonly noteTextures: Record<'flat' | 'glow', Texture>;
   private readonly sparkTints: number[] = [];
+  /** Pulsos y compases de la toma (vacío si no tiene tempo). */
+  private beats: Beat[] = [];
+  private readonly barLabels = new Container();
+  private readonly barLabelPool: Pool<Text>;
   private readonly glowPool: Pool<Sprite>;
   private readonly sparkPool: Pool<Sprite>;
 
@@ -164,6 +170,14 @@ export class Visualizer {
       s.blendMode = 'add';
       return s;
     });
+    this.barLabelPool = new Pool(
+      this.barLabels,
+      () =>
+        new Text({
+          text: '',
+          style: { fontFamily: 'Martian Mono, monospace', fontSize: 11, fill: 0xa39f95 },
+        }),
+    );
     this.pedalLabel = new Text({
       text: 'Ped.',
       style: { fontFamily: 'Martian Mono, monospace', fontSize: 12, fill: 0xa39f95 },
@@ -171,6 +185,7 @@ export class Visualizer {
 
     app.stage.addChild(
       this.guides,
+      this.barLabels,
       this.beamLayer,
       this.haloLayer,
       this.noteLayer,
@@ -210,6 +225,7 @@ export class Visualizer {
     this.index = indexNotes(take?.tracks ?? []);
     this.pedals = (take?.tracks ?? []).flatMap((t) => t.pedals).sort((a, b) => a.time - b.time);
     this.keyboard = layoutKeyboard(take?.keyboardRange ?? { low: 36, high: 96 });
+    this.beats = take ? beatGrid(take.tempoMap, take.timeSignature, take.duration + 2) : [];
   }
 
   /**
@@ -261,7 +277,7 @@ export class Visualizer {
     const { effects, colors } = this.settings;
     const scale = L.height / 1080;
 
-    this.drawGuides();
+    this.drawGuides(t);
 
     // Notas que caen
     this.notePool.begin();
@@ -387,15 +403,41 @@ export class Visualizer {
     return c;
   }
 
-  private drawGuides(): void {
+  private drawGuides(t: number): void {
     const g = this.guides.clear();
-    if (!this.settings.effects.octaveGuides) return;
     const L = this.layout;
-    for (const key of this.keyboard.keys) {
-      if (key.pitch % 12 !== 0) continue;
-      g.rect(Math.round(key.x * L.width), 0, 1, L.keyLineY);
+    const scale = L.height / 1080;
+    if (this.settings.effects.octaveGuides) {
+      for (const key of this.keyboard.keys) {
+        if (key.pitch % 12 !== 0) continue;
+        g.rect(Math.round(key.x * L.width), 0, 1, L.keyLineY);
+      }
+      g.fill({ color: this.theme.guide, alpha: 0.7 });
     }
-    g.fill({ color: this.theme.guide, alpha: 0.7 });
+
+    // Líneas de compás y de pulso que caen con la música (solo al reproducir una toma).
+    this.barLabelPool.begin();
+    if (this.settings.effects.beatGuides && this.direction === 'fall' && this.beats.length > 0) {
+      const span = L.keyLineY / L.pps;
+      const thin = Math.max(1, Math.round(scale));
+      for (const b of this.beats) {
+        if (b.time < t) continue;
+        if (b.time > t + span) break;
+        const y = Math.round(L.keyLineY - (b.time - t) * L.pps);
+        if (b.beat === 1) {
+          g.rect(0, y - thin, L.width, thin * 2).fill({ color: this.theme.label, alpha: 0.32 });
+          const label = this.barLabelPool.next();
+          label.text = String(b.bar);
+          label.style.fontSize = Math.round(11 * Math.max(1, scale));
+          label.style.fill = this.theme.label;
+          label.alpha = 0.75;
+          label.position.set(Math.round(6 * scale), y - label.height - 2);
+        } else {
+          g.rect(0, y, L.width, thin).fill({ color: this.theme.guide, alpha: 0.55 });
+        }
+      }
+    }
+    this.barLabelPool.end();
   }
 
   private drawKeyboard(colors: VisualSettings['colors']): void {

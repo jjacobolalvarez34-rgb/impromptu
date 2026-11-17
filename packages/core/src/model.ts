@@ -83,6 +83,7 @@ export interface VisualProject {
     octaveGuides: boolean;
     noteGlow: number; // 0–200 %, halo de las notas (ADR-010)
     noteStyle: 'flat' | 'glow'; // ADR-010
+    beatGuides: boolean; // líneas de compás y pulso (ADR-011)
   };
   show: { fingers: boolean; noteNames: boolean; pedals: PedalKind[] };
   colors: { right: string; left: string; unassigned: string };

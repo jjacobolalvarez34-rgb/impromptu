@@ -117,7 +117,8 @@ interface VisualProject {
   layout: 'visualizer' | 'camera-top' | 'camera-inset' | 'background';
   aspect: '16:9' | '9:16' | '1:1';
   effects: { sparks: number; keyGlow: number; fallSpeed: number; octaveGuides: boolean;
-             noteGlow: number; noteStyle: 'flat' | 'glow' };   // ADR-010
+             noteGlow: number; noteStyle: 'flat' | 'glow';     // ADR-010
+             beatGuides: boolean };                            // ADR-011
   show: { fingers: boolean; noteNames: boolean; pedals: PedalKind[] };
   colors: { right: string; left: string; unassigned: string };
   background?: { kind: 'color' | 'image' | 'video' | 'blur'; value: string };
