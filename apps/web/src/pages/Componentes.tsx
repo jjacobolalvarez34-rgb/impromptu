@@ -14,6 +14,9 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import styles from './Componentes.module.css';
 
+/** Ícono servido desde la carpeta pública, respetando la ruta base (GitHub Pages). */
+const ICON = `${import.meta.env.BASE_URL}icon.svg`;
+
 const COLORES = [
   ['--carbon', '#1C1C1A', 'Carbón', 'Fondo de la app y del visualizador'],
   ['--panel', '#232321', 'Panel', 'Paneles laterales y barras'],
@@ -100,10 +103,10 @@ export function Componentes() {
               <Logo size="clamp(32px, 11vw, 58px)" />
             </Muestra>
             <Muestra etiqueta="Ícono de app" className={styles.iconos}>
-              <img src="/icon.svg" width={96} height={96} alt="Ícono de Impromptu" />
-              <img src="/icon.svg" width={40} height={40} alt="" />
-              <img src="/icon.svg" width={28} height={28} alt="" />
-              <img src="/icon.svg" width={16} height={16} alt="" />
+              <img src={ICON} width={96} height={96} alt="Ícono de Impromptu" />
+              <img src={ICON} width={40} height={40} alt="" />
+              <img src={ICON} width={28} height={28} alt="" />
+              <img src={ICON} width={16} height={16} alt="" />
             </Muestra>
             <Muestra etiqueta="Sobre fondo claro" className={styles.fondoClaro}>
               <Logo size={32} variant="claro" />

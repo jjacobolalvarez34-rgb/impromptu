@@ -20,7 +20,7 @@ if (!root) throw new Error('Falta el elemento #root en index.html');
 
 createRoot(root).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/app" element={<Portada />} />
