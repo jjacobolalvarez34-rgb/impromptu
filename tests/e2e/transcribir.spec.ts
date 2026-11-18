@@ -49,9 +49,9 @@ test('convierte un audio en notas y lo abre como pieza', async ({ page }, info) 
   await expect(panel.getByRole('button', { name: 'Cancelar' })).toBeVisible();
   // Termina sin error, queda en "Tus grabaciones" y la cola se vacía.
   const grabaciones = panel.getByRole('region', { name: 'Tus grabaciones' });
-  await expect(
-    grabaciones.getByRole('listitem').filter({ hasText: 'acorde-prueba' }),
-  ).toBeVisible({ timeout: 150_000 });
+  await expect(grabaciones.getByRole('listitem').filter({ hasText: 'acorde-prueba' })).toBeVisible({
+    timeout: 150_000,
+  });
   await expect(panel.getByRole('button', { name: 'Cancelar' })).toHaveCount(0);
   await expect(panel.getByRole('alert')).toHaveCount(0);
   await expect(panel.getByRole('button', { name: 'Convertir un audio' })).toBeEnabled();
