@@ -24,6 +24,8 @@ import kotlin.math.abs
 class TranskunTest {
     private val modelos = File(System.getenv("IMPROMPTU_MODELOS") ?: "D:/.cache/models")
     private val golden = File(modelos, "golden-transkun")
+    /** Modelo para celular (atención por partes y puntuador aparte), el que va en la app. */
+    private val movil = File(modelos, "movil")
 
     private fun mapa(f: File): FloatBuffer = RandomAccessFile(f, "r").use { raf ->
         raf.channel.map(FileChannel.MapMode.READ_ONLY, 0, raf.length()).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer()
@@ -54,15 +56,18 @@ class TranskunTest {
 
     @Test
     fun transcribeComoPython() {
-        assumeTrue(File(golden, "notes-mono.json").exists() && File(modelos, "transkun-red.onnx").exists())
+        assumeTrue(File(golden, "notes-mono.json").exists() && File(movil, "transkun-red.onnx").exists())
         val env = OrtEnvironment.getEnvironment()
         val opciones = OrtSession.SessionOptions().apply {
             setOptimizationLevel(OrtSession.SessionOptions.OptLevel.EXTENDED_OPT)
+            setCPUArenaAllocator(false)
+            setMemoryPatternOptimization(false)
         }
         val tk = Transkun(
             env,
-            env.createSession(File(modelos, "transkun-red.onnx").absolutePath, opciones),
-            env.createSession(File(modelos, "transkun-cabezas.onnx").absolutePath, opciones),
+            env.createSession(File(movil, "transkun-red.onnx").absolutePath, opciones),
+            env.createSession(File(movil, "transkun-puntuador.onnx").absolutePath, opciones),
+            env.createSession(File(movil, "transkun-cabezas.onnx").absolutePath, opciones),
             Transkun.constantes(
                 JSONObject(File(modelos, "transkun-espectro.json").readText()),
                 floats(File(modelos, "transkun-ventanas.f32")),
@@ -70,9 +75,24 @@ class TranskunTest {
             ),
         )
         val audio = floats(File(golden, "audio-mono.f32"))
+        // Memoria del proceso (privada, incluye la nativa de ONNX Runtime) mientras transcribe.
+        // (Por reflexión: las pruebas compilan contra android.jar, que no trae java.lang.management.)
+        val os = Class.forName("java.lang.management.ManagementFactory").getMethod("getOperatingSystemMXBean").invoke(null)
+        val leer = Class.forName("com.sun.management.OperatingSystemMXBean").getMethod("getCommittedVirtualMemorySize")
+        fun memoria() = leer.invoke(os) as Long
+        val base = memoria()
+        var pico = base
+        val vigia = Thread {
+            while (!Thread.currentThread().isInterrupted) {
+                pico = maxOf(pico, memoria())
+                try { Thread.sleep(100) } catch (e: InterruptedException) { break }
+            }
+        }.apply { isDaemon = true; start() }
         val inicio = System.nanoTime()
         val eventos = tk.use { it.transcribir(audio) {} }
         val segundos = (System.nanoTime() - inicio) / 1e9
+        vigia.interrupt()
+        println("Memoria: antes %d MB, pico %d MB (+%d MB)".format(base shr 20, pico shr 20, (pico - base) shr 20))
         val esperadas = JSONArray(File(golden, "notes-mono.json").readText())
         val ref = List(esperadas.length()) { esperadas.getJSONObject(it) }
 

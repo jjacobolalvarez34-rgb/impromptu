@@ -32,12 +32,14 @@ import kotlin.math.sqrt
  * corda. Port de packages/transcribe/src/transkun (espectro, Viterbi y unión de segmentos), que
  * a su vez sigue el original de Python línea a línea.
  *
- * Memoria (BUG-004): las salidas grandes de la red (S ocupa 172 MB por segmento) se escriben en
+ * Memoria (BUG-004): el modelo para celular (ADR-019) calcula la atención por partes y puntúa de
+ * a 10 teclas; las salidas se escriben en
  * búferes directos reservados una sola vez, fuera del montón de Java, y se reutilizan.
  */
 class Transkun internal constructor(
     private val env: OrtEnvironment = OrtEnvironment.getEnvironment(),
     private val red: OrtSession,
+    private val puntuador: OrtSession,
     private val cabezas: OrtSession,
     private val c: Constantes,
 ) : AutoCloseable {
@@ -74,6 +76,7 @@ class Transkun internal constructor(
 
     override fun close() {
         runCatching { red.close() }
+        runCatching { puntuador.close() }
         runCatching { cabezas.close() }
         runCatching { opcionesCorrida.close() }
     }
@@ -95,14 +98,13 @@ class Transkun internal constructor(
         val porTipo = LinkedHashMap<Int, MutableList<Evento>>()
         val pasos = ceil(total.toDouble() / paso).toInt()
 
-        // Búferes directos reutilizados en cada segmento.
+        // Búferes directos reutilizados en cada segmento. S se calcula de a LOTE teclas (BUG-004):
+        // para las 90 juntas serían 172 MB más las copias intermedias del modelo.
         val entrada = directo(T * c.nMels * c.nWins)
-        val bufS = directo(T * T * nSym)
-        val bufSkip = directo((T - 1) * nSym)
         val bufCtx = directo(nSym * T * D)
+        val bufS = directo(T * T * LOTE)
+        val bufSkip = directo((T - 1) * LOTE) // S_skip es siempre 0 en Transkun V2
         val tEntrada = OnnxTensor.createTensor(env, entrada, longArrayOf(1, T.toLong(), c.nMels.toLong(), c.nWins.toLong()))
-        val tS = OnnxTensor.createTensor(env, bufS, longArrayOf(T.toLong(), T.toLong(), nSym.toLong()))
-        val tSkip = OnnxTensor.createTensor(env, bufSkip, longArrayOf((T - 1).toLong(), nSym.toLong()))
         val tCtx = OnnxTensor.createTensor(env, bufCtx, longArrayOf(nSym.toLong(), T.toLong(), D.toLong()))
         val segmento = FloatArray(largoSeg)
         try {
@@ -122,14 +124,24 @@ class Transkun internal constructor(
                 entrada.clear()
                 entrada.put(feats)
                 entrada.rewind()
-                try {
-                    red.run(mapOf("features" to tEntrada), setOf(), mapOf("S" to tS, "S_skip" to tSkip, "ctx" to tCtx), opcionesCorrida).close()
-                } catch (e: OrtException) {
+                correr { red.run(mapOf("features" to tEntrada), setOf(), mapOf("ctx" to tCtx), opcionesCorrida).close() }
+                val intervalos = ArrayList<List<Pair<Int, Int>>>(nSym)
+                var s0 = 0
+                while (s0 < nSym) {
                     if (cancelada) throw Cancelada()
-                    throw e
+                    val n = min(LOTE, nSym - s0)
+                    bufCtx.limit((s0 + n) * T * D).position(s0 * T * D)
+                    val trozo = bufCtx.slice()
+                    bufCtx.clear()
+                    bufS.clear().limit(T * T * n)
+                    OnnxTensor.createTensor(env, trozo, longArrayOf(n.toLong(), T.toLong(), D.toLong())).use { tTrozo ->
+                        OnnxTensor.createTensor(env, bufS, longArrayOf(T.toLong(), T.toLong(), n.toLong())).use { tS ->
+                            correr { puntuador.run(mapOf("ctx" to tTrozo), setOf(), mapOf("S" to tS), opcionesCorrida).close() }
+                        }
+                    }
+                    intervalos += Decodificacion.viterbi(bufS, bufSkip, T, n, inicioForzado.copyOfRange(s0, s0 + n))
+                    s0 += n
                 }
-                if (cancelada) throw Cancelada()
-                val intervalos = Decodificacion.viterbi(bufS, bufSkip, T, nSym, inicioForzado)
                 val n = intervalos.sumOf { it.size }
                 var fuerza = FloatArray(0)
                 var of = FloatArray(0)
@@ -172,15 +184,26 @@ class Transkun internal constructor(
             return Decodificacion.cerrar(porTipo)
         } finally {
             tEntrada.close()
-            tS.close()
-            tSkip.close()
             tCtx.close()
         }
+    }
+
+    /** Corre la red; si se canceló a mitad, ONNX Runtime corta y se avisa como cancelación. */
+    private inline fun correr(f: () -> Unit) {
+        try {
+            f()
+        } catch (e: OrtException) {
+            if (cancelada) throw Cancelada()
+            throw e
+        }
+        if (cancelada) throw Cancelada()
     }
 
     companion object {
         /** Ancho del contexto por cuadro y símbolo (salida ctx de la red). */
         const val D = 256
+        /** Teclas que se puntúan juntas: 10 → S de 19 MB por vez. */
+        const val LOTE = 10
         const val TASA = 44_100
 
         fun cuadros(largo: Int, hop: Int) = ceil(largo.toDouble() / hop).toInt() + 1
@@ -205,16 +228,21 @@ class Transkun internal constructor(
             val env = OrtEnvironment.getEnvironment()
             val opciones = OrtSession.SessionOptions().apply {
                 setOptimizationLevel(OrtSession.SessionOptions.OptLevel.EXTENDED_OPT)
+                // Sin el reservador propio de ONNX Runtime: guarda bloques y no los suelta (2,3 GB
+                // de pico contra 0,8 GB sin él, medido con Consuelo). BUG-004.
+                setCPUArenaAllocator(false)
+                setMemoryPatternOptimization(false)
                 setIntraOpNumThreads(Runtime.getRuntime().availableProcessors().coerceIn(1, 4))
             }
             val red = env.createSession(mapear(context, "transkun-red.onnx"), opciones)
+            val puntuador = env.createSession(mapear(context, "transkun-puntuador.onnx"), opciones)
             val cabezas = env.createSession(mapear(context, "transkun-cabezas.onnx"), opciones)
             val c = constantes(
                 JSONObject(context.assets.open("modelos/transkun-espectro.json").bufferedReader().readText()),
                 floats(context, "transkun-ventanas.f32"),
                 floats(context, "transkun-mel.f32"),
             )
-            return Transkun(env, red, cabezas, c)
+            return Transkun(env, red, puntuador, cabezas, c)
         }
 
         /** Constantes del espectro (transkun-espectro.json y las tablas .f32). */

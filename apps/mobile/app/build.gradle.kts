@@ -80,8 +80,8 @@ abstract class CopiarModelos : DefaultTask() {
     }
 }
 
-val carpetaModelos = System.getenv("IMPROMPTU_MODELOS") ?: "D:/.cache/models"
-val archivosModelo = listOf("transkun-red.onnx", "transkun-cabezas.onnx", "transkun-ventanas.f32", "transkun-mel.f32", "transkun-espectro.json")
+val carpetaModelos = System.getenv("IMPROMPTU_MODELOS") ?: "D:/.cache/models/movil"
+val archivosModelo = listOf("transkun-red.onnx", "transkun-puntuador.onnx", "transkun-cabezas.onnx", "transkun-ventanas.f32", "transkun-mel.f32", "transkun-espectro.json")
 androidComponents {
     onVariants { variante ->
         val nombre = "copiarModelos" + variante.name.replaceFirstChar { it.uppercase() }

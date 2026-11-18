@@ -1,0 +1,7 @@
+{
+  "gradle.autoDetect": "off",
+  "java.import.gradle.enabled": false,
+  "java.import.gradle.user.home": "D:/.cache/gradle",
+  "java.import.gradle.java.home": "D:/tools/jdk-21.0.13+9",
+  "java.configuration.updateBuildConfiguration": "disabled"
+}

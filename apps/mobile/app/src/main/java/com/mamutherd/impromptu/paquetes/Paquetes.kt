@@ -120,7 +120,7 @@ class Paquetes(private val context: Context) {
 
 /** Archivos de Transkun dentro de la app (assets/modelos, sin comprimir). */
 object Modelo {
-    val ARCHIVOS = listOf("transkun-red.onnx", "transkun-cabezas.onnx", "transkun-ventanas.f32", "transkun-mel.f32", "transkun-espectro.json")
+    val ARCHIVOS = listOf("transkun-red.onnx", "transkun-puntuador.onnx", "transkun-cabezas.onnx", "transkun-ventanas.f32", "transkun-mel.f32", "transkun-espectro.json")
 
     fun disponible(context: Context) = runCatching { verificar(context) }.isSuccess
 

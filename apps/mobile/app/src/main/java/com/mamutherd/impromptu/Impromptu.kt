@@ -131,7 +131,8 @@ object Impromptu {
                 if (audio.size < Transkun.TASA / 2) throw IllegalStateException("El audio es demasiado corto.")
                 if (!isActive) return@launch
                 conversion = Conversion.Preparando
-                val tk = transkun ?: Transkun.cargar(app).also { transkun = it }
+                // Se carga para cada conversión y se suelta al final: no ocupa memoria mientras se toca.
+                val tk = Transkun.cargar(app).also { transkun = it }
                 if (!isActive) return@launch
                 conversion = Conversion.Escuchando(0f)
                 val eventos = tk.transcribir(audio) { conversion = Conversion.Escuchando(it) }
@@ -143,11 +144,12 @@ object Impromptu {
             } catch (e: CancellationException) {
                 // Cancelada: la pantalla ya volvió al inicio.
             } catch (e: OutOfMemoryError) {
-                transkun?.close()
-                transkun = null
                 conversion = Conversion.Fallo("El celular se quedó sin memoria. Prueba con un audio más corto.")
             } catch (e: Throwable) {
                 conversion = Conversion.Fallo(e.message ?: "No se pudo convertir el audio.")
+            } finally {
+                transkun?.close()
+                transkun = null
             }
         }
     }
