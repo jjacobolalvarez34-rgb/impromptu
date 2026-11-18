@@ -40,8 +40,24 @@ export const LOCAL_PIECES = Object.keys(localPieces)
   .map((path) => ({ path, name: prettyName(path) }))
   .sort((a, b) => a.name.localeCompare(b.name));
 
+/** Piezas de prueba de guitarra, bajo y batería (fase 9), generadas con scripts/demos-midi.mjs. */
+const demoPieces = import.meta.glob('../../../../fixtures/demos/*.mid', {
+  query: '?url',
+  import: 'default',
+}) as Record<string, () => Promise<string>>;
+
+export const DEMO_PIECES = Object.keys(demoPieces)
+  .map((path) => ({
+    path,
+    name: prettyName(path)
+      .replace(/^(Guitarra|Bajo|Bateria) /, '$1: ')
+      .replace('Bateria', 'Batería')
+      .replace('melodia', 'melodía'),
+  }))
+  .sort((a, b) => a.name.localeCompare(b.name));
+
 export async function openLocalPiece(path: string): Promise<OpenedTake> {
-  const load = localPieces[path];
+  const load = localPieces[path] ?? demoPieces[path];
   if (!load) throw new Error(`No existe ${path}`);
   const res = await fetch(await load());
   const blob = await res.blob();

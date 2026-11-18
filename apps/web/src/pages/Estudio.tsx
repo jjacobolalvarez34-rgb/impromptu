@@ -19,7 +19,13 @@ import type { CSSProperties, DragEvent } from 'react';
 import { beatAt, beatGrid, tempoAt } from '@impromptu/core';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { VisualizerView } from '../studio/VisualizerView';
-import { LOCAL_PIECES, createDemoTake, openLocalPiece, openMidiFile } from '../studio/sources';
+import {
+  LOCAL_PIECES,
+  DEMO_PIECES,
+  createDemoTake,
+  openLocalPiece,
+  openMidiFile,
+} from '../studio/sources';
 import type { OpenedTake } from '../studio/sources';
 import { engine, useAudio } from '../studio/audio';
 import { live, useLive } from '../studio/live';
@@ -420,6 +426,17 @@ export function Estudio() {
                   <Gauge aria-hidden="true" /> 2.000 notas en pantalla
                 </button>
               </li>
+              {DEMO_PIECES.map((p) => (
+                <li key={p.path}>
+                  <button
+                    type="button"
+                    className={styles.fila}
+                    onClick={() => void load(openLocalPiece(p.path))}
+                  >
+                    {p.name}
+                  </button>
+                </li>
+              ))}
             </ul>
           </section>
 

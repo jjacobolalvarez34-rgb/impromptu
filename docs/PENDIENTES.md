@@ -52,6 +52,11 @@ Con eso Claude sube las muestras y el modelo, y las apps los descargan la primer
   10. **Exportar video en el celular**: hoy se ve saturado (ocupa toda la pantalla). En las tres apps, **vista previa** (aunque sea una miniatura) al exportar.
   11. **Fase 11**: gráficos mejores (teclas que bajan, etc.).
   12. En celular y tableta, interfaz **intuitiva** y que no se sature, sobre todo el editor.
+- **Para después (Jacobo, 2026-11-18, al ver guitarra y batería):**
+  13. **Partitura vacía**: aunque no haya pieza abierta, mostrar el pentagrama vacío del instrumento elegido (piano, guitarra con tablatura, batería), en todos los instrumentos.
+  14. **Instrumento al lado de cada pieza** en las listas (Tus piezas, Tus grabaciones, Pruebas).
+  15. Mejorar cómo se ven guitarra y batería (fase 11): los números de traste casi no se leen sobre notas finas; en la batería, los golpes seguidos (hi-hat en semicorcheas) se pegan en una columna.
+  - MIDIs de prueba de cada instrumento en el estudio, sección **Pruebas** (`fixtures/demos`, generados con `node scripts/demos-midi.mjs`).
 - **Orden pedido por Jacobo:** (a) llevar a la web y a la PC la presentación y mejorar la pantalla principal de la PC (que se parezca a la de la web, que sí le gusta); (b) guitarra, misma idea del piano; (c) batería; (d) fase 10; (e) integrar todo en web, PC y celular; (f) compilar al final.
 
 ## Lo que queda (resumen al 2026-11-17)

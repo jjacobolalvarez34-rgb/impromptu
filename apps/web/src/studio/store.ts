@@ -2,7 +2,7 @@ import { KEYBOARD_PRESETS, fitKeyboardRange } from '@impromptu/core';
 import type { Instrument, Take } from '@impromptu/core';
 import type { HandSize } from '@impromptu/practice';
 import { autoAssign, hasNoHands } from './edit';
-import { DEFAULT_SETTINGS } from '@impromptu/render';
+import { DEFAULT_SETTINGS, instrumentoDe } from '@impromptu/render';
 import type { VisualSettings } from '@impromptu/render';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -126,6 +126,9 @@ export const useStudio = create<StudioState>()(
       playing: false,
       speed: 1,
       open: (take, notices = []) => {
+        // Al abrir una pieza de guitarra, bajo o batería, el selector pasa a ese instrumento.
+        const propio = instrumentoDe(take);
+        if (propio !== 'piano') set({ instrumento: propio });
         useOwnAudio.getState().set(null);
         useVideo.getState().set(null);
         void attachTakeVideo(take);
