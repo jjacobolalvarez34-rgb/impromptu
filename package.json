@@ -1,6 +1,7 @@
 {
   "name": "impromptu",
   "private": true,
+  "license": "GPL-3.0-or-later",
   "description": "Videos de piano con notas cayendo, gratis y open source.",
   "type": "module",
   "packageManager": "pnpm@12.9.1",

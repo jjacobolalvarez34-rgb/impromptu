@@ -182,3 +182,11 @@ sincronía con el audio, en los mismos formatos del video del visualizador (16:9
 el micrófono (audio) y ver la partitura escribirse (pedido de Jacobo). Jacobo valida que se
 pueda corregir una transcripción a mano sin salir de la app.
 ```
+
+## Fase 11 — Gráficos mejores (pedido de Jacobo, 2026-11-18)
+```
+Fase 11 de docs/ROADMAP.md. Que el visualizador se vea de primera en web, PC y celular:
+teclado realista por niveles (teclas que bajan según la fuerza, sombras, brillo), notas con
+mejor luz, chispas y estelas, y lo equivalente para guitarra (diapasón) y batería (pads).
+Mismo dibujo en pantalla y en el video exportado. Medir 60 fps en el celular de Jacobo.
+```

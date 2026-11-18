@@ -4,7 +4,7 @@ Claude Code: si algo de esta lista bloquea tu tarea, usa el valor provisional, m
 
 | # | Pendiente | Provisional | Estado |
 |---|---|---|---|
-| P1 | **Licencia del proyecto.** Opciones: GPL-3.0 (las copias deben seguir abiertas), MPL-2.0 (punto medio) o MIT (permisiva). Recomendación: **GPL-3.0**, que protege que nadie lo cierre y lo venda. Como dueño del código, igual puedes tener un plan pago tuyo. | GPL-3.0 | Abierto |
+| P1 | **Licencia del proyecto** | GPL-3.0 | **Decidido 2026-11-18: GPL-3.0** (`LICENSE`). Mamut Herd puede cobrar la nube (P23): es un servicio, la GPL no lo impide |
 | P2 | Nombre en GitHub (usuario u organización) y dominio (revisar disponibilidad de impromptu.app, .studio, .music) | `impromptu` | Abierto |
 | P3 | Revisión de marca "Impromptu" en Colombia (SIC) antes de lanzar la v0.1 | — | Abierto |
 | P4 | **Fixtures reales:** grabar 5 piezas en el PSR-E343 con MIDI + WAV + video desde arriba (lenta, rápida, mucho pedal, acordes, mano cruzada) y subirlas a `fixtures/` | MIDIs sintéticos | Abierto |
@@ -18,15 +18,22 @@ Claude Code: si algo de esta lista bloquea tu tarea, usa el valor provisional, m
 | P12 | **Celular como app instalable, no web, y sin conexión en todo lo posible** | Resuelto en ADR-008: misma interfaz empaquetada como APK (Tauri 2 móvil o Capacitor, se elige en la fase 8) | Decidido 2026-11-16 |
 | P13 | Yamaha: Jacobo tiene el controlador USB-MIDI de Yamaha en Descargas. Ver en la fase 2 si Windows reconoce el PSR-E343 sin él | Probar primero sin el controlador | Abierto |
 | P14 | Logo y video de marca (pedirlo cuando se quiera, no antes): (1) la nota ámbar de la "i" parece tocar el palo; DESIGN §1 pide que vaya separada. Se corrige en `Logo.module.css` y en la constante `WORD_NOTE` de `LogoIntro.tsx` a la vez. (2) Otros formatos del MP4: `pnpm intro:mp4 1080 1920` (vertical) y `pnpm intro:mp4 1080 1080` (cuadrado) | Tal como está | En espera de Jacobo |
-| P15 | Espejo propio de las muestras del Salamander (hoy se descargan de tambien.github.io/Piano). Opciones: GitHub Pages del repo, release de GitHub o un CDN gratuito | Copia pública actual | Abierto, antes de v0.1 |
+| P15 | Espejo propio de las muestras del Salamander (hoy se descargan de tambien.github.io/Piano) | Copia pública actual | **Decidido 2026-11-18: Hugging Face, junto al modelo (P21)** |
 | P16 | **Rediseñar la interfaz de celular**: Jacobo eligió "Piezas primero" con la pieza en horizontal (DESIGN §5) | Diseño elegido 2026-11-17 | Decidido; falta construirla (fase 8) |
 | P17 | Probar `/en-vivo` en OBS (captura de ventana con fondo verde y clave de croma; fuente de navegador con fondo transparente) y resolver el [VERIFICAR] de ARQUITECTURA | — | En espera de Jacobo |
 | P18 | Probar el sostenuto y la una corda con un teclado que los tenga (Jacobo solo tiene sustain): testers | Pruebas automáticas | Abierto |
 | P19 | Interruptor "Reducir animaciones" dentro de la app, para quien se marea con el movimiento. Hoy las animaciones se ven siempre, aunque el sistema las tenga apagadas (Jacobo lo pidió así) | Animaciones siempre | Abierto |
-| P21 | **Dónde se publica el modelo de piano con pedal** (154 MB) para la web y las apps: Hugging Face (gratis, permite descarga desde el navegador), un release de GitHub (no permite descarga directa desde el navegador por CORS) u otro. Se descarga una sola vez y queda guardado | Solo en desarrollo, desde `D:\.cache\models` | Abierto |
+| P21 | **Dónde se publica el modelo de piano** (Transkun para celular, ~58 MB) para la web y las apps | Dentro del APK; en la web, desde `D:\.cache\models` solo en desarrollo | **Decidido 2026-11-18: Hugging Face, con la cuenta de Mamut Herd; lo sube Claude.** Falta que Jacobo cree la cuenta (ver "Para subir a Hugging Face") |
 | P22 | **Destacar "de MP3 a MIDI" en la página de inicio**: para quien no sabe de dónde sacar partituras o MIDI, Impromptu saca el MIDI de un audio (Convertir un audio → Guardar MIDI). Texto y lugar en la página | Sin destacar | Abierto |
 | P20 | **Impromptu es un producto de Mamut Herd** (la empresa de Jacobo; kit de marca en `mamut-herd-kit-de-marca.zip`). Falta: (1) visto bueno de dónde va el sello "Un producto de Mamut Herd"; (2) la web de Mamut Herd (`MAMUT_HERD_URL` del kit), que da Jacobo; (3) P1 sigue abierta: el código puede ser abierto y la marca de Mamut Herd | Sello en el pie de la página de inicio y en "Acerca de"; © 2026 Mamut Herd | Decidido el dueño 2026-11-17; ubicación en espera de Jacobo |
 | P23 | **Cuenta y nube con suscripción** (idea de Jacobo, 2026-11-18): iniciar sesión y guardar las piezas en la nube, con un límite, pagando una suscripción. Choca con la regla "sin servidores de pago" (CLAUDE.md): la nube sí cuesta, así que tendría que pagarse con la suscripción. Falta decidir proveedor, precio y límite | Solo un aviso "Próximamente: cuenta y nube" en las apps | Abierto |
+
+## Para subir a Hugging Face (P15 y P21)
+Claude no puede crear la cuenta (pide confirmar el correo). Pasos para Jacobo:
+1. Crear la cuenta en huggingface.co con el correo de Mamut Herd (o una organización "mamutherd" dentro de tu cuenta).
+2. En Settings → Access Tokens → "Create new token", tipo **Write**, nombre "impromptu".
+3. Guardar el token en el archivo `D:\.cache\huggingface\token` (una sola línea, sin nada más) y avisarle a Claude. No pegarlo en el chat ni en el repositorio.
+Con eso Claude sube las muestras y el modelo, y las apps los descargan la primera vez (después funcionan sin internet). El APK baja de ~100 MB a ~45 MB.
 
 ## Lo que dijo Jacobo al probar la app nativa (2026-11-18)
 - **Funciona** (verificado por Jacobo en su celular): la conversión ya no cierra la app (BUG-004), el teclado suena sin retraso, el micrófono graba bien (probado con su piano vertical) y la partitura sale muy bien. La conversión tarda un poco más de lo que le gustaría.
@@ -39,6 +46,12 @@ Claude Code: si algo de esta lista bloquea tu tarea, usa el valor provisional, m
 - **Solo app de celular:**
   6. La pantalla de grabar con el micrófono se ve fea (solo un botón gigante).
   7. Faltan animaciones que la hagan sentir cómoda.
+- **Más pedidos (2026-11-18):**
+  8. Guitarra y batería con **las mismas funciones del piano** siempre que se pueda, cada una con sus modos, y con extras propios: **editor de tablatura** (guitarra) y **editor de partitura de batería**. Que no queden "más pobres" que el piano.
+  9. **Videos de guitarra y batería**: inventar una forma de verlos (innovación).
+  10. **Exportar video en el celular**: hoy se ve saturado (ocupa toda la pantalla). En las tres apps, **vista previa** (aunque sea una miniatura) al exportar.
+  11. **Fase 11**: gráficos mejores (teclas que bajan, etc.).
+  12. En celular y tableta, interfaz **intuitiva** y que no se sature, sobre todo el editor.
 - **Orden pedido por Jacobo:** (a) llevar a la web y a la PC la presentación y mejorar la pantalla principal de la PC (que se parezca a la de la web, que sí le gusta); (b) guitarra, misma idea del piano; (c) batería; (d) fase 10; (e) integrar todo en web, PC y celular; (f) compilar al final.
 
 ## Lo que queda (resumen al 2026-11-17)
