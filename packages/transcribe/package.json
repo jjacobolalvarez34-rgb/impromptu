@@ -18,6 +18,7 @@
     "onnxruntime-web": "1.31.1"
   },
   "devDependencies": {
+    "@impromptu/audio": "workspace:*",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

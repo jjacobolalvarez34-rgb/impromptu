@@ -1,4 +1,4 @@
-import { LivePlayer, Piano, takeVoices } from '@impromptu/audio';
+import { LivePlayer, Piano, Sintes, takeVoices } from '@impromptu/audio';
 import type { LiveVoiceHandle, Voice } from '@impromptu/audio';
 import type { Hand, Take } from '@impromptu/core';
 import { create } from 'zustand';
@@ -53,6 +53,8 @@ export const useAudio = create<AudioState>()(
 class AudioEngine {
   private context: AudioContext | null = null;
   private piano: Piano | null = null;
+  /** Guitarra, bajo y batería sintetizados (fase 9): listos apenas hay contexto de audio. */
+  sintes: Sintes | null = null;
   private voices: Voice[] = [];
   private cursor = 0;
   private timer = 0;
@@ -99,6 +101,7 @@ class AudioEngine {
 
   private ensureContext(): AudioContext {
     this.context ??= new AudioContext({ latencyHint: 'interactive' });
+    this.sintes ??= new Sintes(this.context);
     return this.context;
   }
 
@@ -146,6 +149,7 @@ class AudioEngine {
   dispose(): void {
     window.clearInterval(this.timer);
     this.piano?.stopAll();
+    this.sintes?.stopAll();
     void this.context?.close();
   }
 
@@ -171,6 +175,7 @@ class AudioEngine {
   /** Corta lo programado y vuelve a programar desde el instante actual. */
   reschedule(): void {
     this.piano?.stopAll();
+    this.sintes?.stopAll();
     this.stopOwn();
     window.clearInterval(this.timer);
     const t = transport.now();
@@ -179,7 +184,7 @@ class AudioEngine {
     if (this.usingOwnAudio) {
       this.startOwn(t);
     } else {
-      if (!this.piano) return;
+      if (!this.piano && !this.sintes) return;
       this.chase(t);
       this.tick();
     }
@@ -222,21 +227,24 @@ class AudioEngine {
    * su punto medio para que al buscar o repetir una sección se oiga lo que se ve.
    */
   private chase(t: number): void {
-    const piano = this.piano;
-    if (!piano) return;
     const loopEnd = transport.loop?.end ?? Infinity;
     for (let i = lowerBound(this.voices, t - CHASE_WINDOW); i < this.cursor; i++) {
       const v = this.voices[i]!;
       if (v.start >= t || v.release <= t + 0.02) continue;
       const release = Math.min(v.release, loopEnd);
       const elapsed = (t - v.start) / transport.speed;
-      piano.play(
+      this.salida(v)?.play(
         v,
         transport.toClock(t) + this.latency,
         transport.toClock(release) + this.latency,
         elapsed,
       );
     }
+  }
+
+  /** Quién toca una voz: el piano, o el sintetizador de guitarra, bajo y batería. */
+  private salida(v: Voice): Piano | Sintes | null {
+    return !v.instrument || v.instrument === 'piano' ? this.piano : this.sintes;
   }
 
   private tick(): void {
@@ -249,11 +257,11 @@ class AudioEngine {
       }
       return;
     }
-    const piano = this.piano;
-    if (!piano || !transport.playing) return;
+    if ((!this.piano && !this.sintes) || !transport.playing) return;
     const t = transport.now();
     if (transport.wrapped(t)) {
-      piano.stopAll();
+      this.piano?.stopAll();
+      this.sintes?.stopAll();
       this.cursor = lowerBound(this.voices, t);
       this.chase(t);
     }
@@ -265,7 +273,7 @@ class AudioEngine {
       this.cursor++;
       if (v.start < t - 0.02) continue; // ya pasó (después de buscar)
       const release = Math.min(v.release, loopEnd);
-      piano.play(
+      this.salida(v)?.play(
         v,
         transport.toClock(v.start) + this.latency,
         transport.toClock(release) + this.latency,

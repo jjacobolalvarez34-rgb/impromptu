@@ -1,4 +1,4 @@
-import { Piano, takeVoices } from '@impromptu/audio';
+import { Piano, Sintes, takeVoices } from '@impromptu/audio';
 import type { KeyboardCalibration, Take } from '@impromptu/core';
 import { Visualizer } from '@impromptu/render';
 import type { VisualSettings } from '@impromptu/render';
@@ -100,11 +100,14 @@ export async function exportVideo(opts: ExportOptions): Promise<ExportResult> {
     opts.onProgress?.({ phase: 'audio', value: 0 });
     audio = await renderOwnAudio(take, opts.ownAudio.buffer, opts.ownAudio.offset);
     check();
-  } else if (opts.piano?.loaded) {
+  } else if (
+    opts.piano?.loaded ||
+    take.tracks.some((t) => t.instrument !== 'piano' && t.notes.length > 0)
+  ) {
     opts.onProgress?.({ phase: 'audio', value: 0 });
     audio = await renderPianoAudio(
       take,
-      opts.piano,
+      opts.piano ?? null,
       (value) => opts.onProgress?.({ phase: 'audio', value }),
       signal,
     );
@@ -184,7 +187,7 @@ const AUDIO_STEP = 5;
  */
 export async function renderPianoAudio(
   take: Take,
-  source: Piano,
+  source: Piano | null,
   onProgress?: (value: number) => void,
   signal?: AbortSignal,
 ): Promise<AudioBuffer> {
@@ -192,8 +195,14 @@ export async function renderPianoAudio(
   const length = Math.ceil(seconds * SAMPLE_RATE);
   const context = new OfflineAudioContext(2, length, SAMPLE_RATE);
   const piano = new Piano(context);
-  piano.shareSamplesFrom(source);
-  for (const voice of takeVoices(take)) piano.play(voice, voice.start, voice.release);
+  if (source) piano.shareSamplesFrom(source);
+  // Guitarra, bajo y batería (fase 9) se sintetizan aquí mismo.
+  const sintes = new Sintes(context);
+  for (const voice of takeVoices(take)) {
+    if (!voice.instrument || voice.instrument === 'piano')
+      piano.play(voice, voice.start, voice.release);
+    else sintes.play(voice, voice.start, voice.release);
+  }
 
   return new Promise<AudioBuffer>((resolve, reject) => {
     for (let t = AUDIO_STEP; t < seconds; t += AUDIO_STEP) {

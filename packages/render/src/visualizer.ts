@@ -11,9 +11,18 @@ import {
   Texture,
 } from 'pixi.js';
 import { beatGrid } from '@impromptu/core';
-import type { Beat, KeyboardCalibration, NoteEvent, PedalEvent, Take } from '@impromptu/core';
+import type {
+  Beat,
+  Instrument,
+  KeyboardCalibration,
+  NoteEvent,
+  PedalEvent,
+  Take,
+} from '@impromptu/core';
 import { calibratedKeyLine, calibratedKeyboard, coverRect } from './calibration';
 import { layoutKeyboard } from './keyboard-layout';
+import { COLOR_CUERDA, COLOR_PIEZA, carriles, instrumentoDe } from './instrumentos';
+import type { Carriles } from './instrumentos';
 import type { KeyboardLayout } from './keyboard-layout';
 import {
   forEachNoteIn,
@@ -107,6 +116,8 @@ export class Visualizer {
   private readonly colorCache = new Map<string, number>();
   private readonly sparks: Spark[] = [];
   private readonly active = new Map<number, NoteEvent>();
+  /** Guitarra, bajo o batería (fase 9): carriles virtuales en vez de teclas. */
+  private carriles: Carriles | null = null;
 
   private readonly guides = new Graphics();
   private readonly beamLayer = new Container();
@@ -266,9 +277,21 @@ export class Visualizer {
 
   setTake(take: Take | null): void {
     this.direction = 'fall';
-    this.index = indexNotes(take?.tracks ?? []);
+    this.carriles = take ? carriles(take.tracks, instrumentoDe(take)) : null;
+    this.index = this.carriles
+      ? indexNotes([
+          {
+            id: 'carriles',
+            instrument: this.carriles.instrument,
+            name: '',
+            notes: this.carriles.notas,
+            pedals: [],
+          },
+        ])
+      : indexNotes(take?.tracks ?? []);
     this.pedals = (take?.tracks ?? []).flatMap((t) => t.pedals).sort((a, b) => a.time - b.time);
-    this.keyboard = layoutKeyboard(take?.keyboardRange ?? { low: 36, high: 96 });
+    this.keyboard =
+      this.carriles?.layout ?? layoutKeyboard(take?.keyboardRange ?? { low: 36, high: 96 });
     this.beats = take ? beatGrid(take.tempoMap, take.timeSignature, take.duration + 2) : [];
   }
 
@@ -276,8 +299,28 @@ export class Visualizer {
    * Modo en vivo: las notas suben desde la tecla. `notes` va en orden de inicio y las que
    * siguen abajo tienen end = Infinity. Se llama en cada cuadro con el búfer reciente.
    */
-  setLive(notes: NoteEvent[], pedals: PedalEvent[], range: Take['keyboardRange']): void {
+  setLive(
+    notes: NoteEvent[],
+    pedals: PedalEvent[],
+    range: Take['keyboardRange'],
+    instrument: Instrument = 'piano',
+  ): void {
     this.direction = 'rise';
+    if (instrument !== 'piano') {
+      // Batería electrónica o guitarra MIDI: sus carriles.
+      this.carriles = carriles(
+        [{ id: 'vivo', instrument, name: '', notes, pedals: [] }],
+        instrument,
+      );
+      this.index = { notes: this.carriles?.notas ?? [], maxDuration: Infinity };
+      this.pedals = [];
+      if (this.carriles) this.keyboard = this.carriles.layout;
+      return;
+    }
+    if (this.carriles) {
+      this.carriles = null;
+      this.keyboard = layoutKeyboard(range);
+    }
     this.index = { notes, maxDuration: Infinity };
     this.pedals = pedals;
     const r = this.keyboard.range;
@@ -423,7 +466,7 @@ export class Visualizer {
     forEachNoteIn(this.index, from, to, (note) => {
       const rect = noteRect(note, t, L, this.keyboard, 3, this.direction);
       if (rect) {
-        const tint = this.color(noteColor(note, colors));
+        const tint = this.colorNota(note, colors);
         const v = note.velocity / 127;
         if (halo > 0) {
           // Halo aditivo del color de la nota (ADR-010).
@@ -442,7 +485,8 @@ export class Visualizer {
         sprite.height = rect.height;
         sprite.tint = tint;
         sprite.alpha = 0.72 + 0.28 * v;
-        const text = labelFor(note, showFingers, showNames);
+        const text =
+          this.carriles?.meta.get(note.id)?.etiqueta ?? labelFor(note, showFingers, showNames);
         if (text) this.placeLabel(text, rect, tint, scale);
         this.hitRects.push({ id: note.id, ...rect });
         if (this.selection.has(note.id)) {
@@ -470,7 +514,7 @@ export class Visualizer {
         if (!key) continue;
         const w = key.width * L.width;
         const cx = key.x * L.width + w / 2;
-        const tint = this.color(noteColor(note, colors));
+        const tint = this.colorNota(note, colors);
         const v = note.velocity / 127;
         const glow = this.glowPool.next();
         glow.position.set(cx, L.keyLineY);
@@ -499,7 +543,7 @@ export class Visualizer {
         if (!key || this.sparks.length > MAX_SPARKS) return;
         const w = key.width * L.width;
         const first = this.sparks.length;
-        const tint = lighten(this.color(noteColor(note, colors)), 0.55);
+        const tint = lighten(this.colorNota(note, colors), 0.55);
         noteSparks(
           note,
           t,
@@ -680,7 +724,70 @@ export class Visualizer {
     this.barLabelPool.end();
   }
 
+  /** Color de una nota: por mano (piano), por cuerda (guitarra) o por pieza (batería). */
+  private colorNota(note: NoteEvent, colors: VisualSettings['colors']): number {
+    const propio = this.carriles?.meta.get(note.id)?.color;
+    return this.color(propio ?? noteColor(note, colors));
+  }
+
+  /** Mástil (guitarra y bajo) o parches (batería) en lugar del teclado. */
+  private drawCarriles(c: Carriles): void {
+    const L = this.layout;
+    const g = this.keys.clear();
+    const top = L.keyLineY;
+    const h = L.keyboardHeight;
+    const lineH = Math.max(2, Math.round(L.height * 0.003));
+    if (c.instrument === 'drums') {
+      const w = L.width / c.trastes;
+      g.rect(0, top, L.width, h).fill(this.theme.background);
+      for (let i = 0; i < c.trastes; i++) {
+        const color = this.color(COLOR_PIEZA[i]!);
+        const activa = this.active.has(i);
+        const r = Math.min(w * 0.4, h * 0.38) * (activa ? 1.08 : 1);
+        g.ellipse((i + 0.5) * w, top + h * 0.5, r, r * 0.8)
+          .fill(activa ? color : 0x2e2e2b)
+          .stroke({ width: Math.max(2, h * 0.03), color });
+      }
+    } else {
+      const col = L.width / c.trastes;
+      g.rect(0, top, L.width, h).fill(0x2b2017);
+      // Marcas del mástil (3, 5, 7, 9, 12 doble, 15…).
+      for (const f of [3, 5, 7, 9, 12, 15, 17, 19, 21]) {
+        if (f >= c.trastes) continue;
+        const x = (f + 0.5) * col;
+        const r = Math.min(col, h) * 0.07;
+        if (f === 12) {
+          g.circle(x, top + h * 0.3, r).fill(0x5a4a3a);
+          g.circle(x, top + h * 0.7, r).fill(0x5a4a3a);
+        } else g.circle(x, top + h * 0.5, r).fill(0x5a4a3a);
+      }
+      // Cejuela (más gruesa) y trastes.
+      for (let f = 1; f < c.trastes; f++) {
+        const ancho = f === 1 ? Math.max(4, col * 0.08) : Math.max(2, col * 0.04);
+        g.rect(f * col - ancho / 2, top, ancho, h).fill(f === 1 ? 0xe8e4dc : 0x9a968c);
+      }
+      // Cuerdas: la 1 arriba (como en la tablatura), más gruesas las graves.
+      const fila = (cuerda: number) => top + (h * (cuerda - 0.5)) / c.cuerdas;
+      for (let s = 1; s <= c.cuerdas; s++) {
+        const grosor = Math.max(1, (0.6 + s * 0.35) * (h / 160));
+        g.rect(0, fila(s) - grosor / 2, L.width, grosor).fill(0xd8d4cc);
+      }
+      // Donde se pisa ahora: un punto del color de la cuerda.
+      for (const pitch of this.active.keys()) {
+        const traste = Math.floor(pitch / c.cuerdas);
+        const cuerda = (pitch % c.cuerdas) + 1;
+        const r = Math.min(col * 0.38, (h / c.cuerdas) * 0.42);
+        g.circle((traste + 0.5) * col, fila(cuerda), r).fill(this.color(COLOR_CUERDA[cuerda - 1]!));
+      }
+    }
+    g.rect(0, top - lineH, L.width, lineH).fill(this.theme.keyLine);
+  }
+
   private drawKeyboard(colors: VisualSettings['colors']): void {
+    if (this.carriles) {
+      this.drawCarriles(this.carriles);
+      return;
+    }
     const L = this.layout;
     const g = this.keys.clear();
     const th = this.theme;
@@ -690,7 +797,7 @@ export class Visualizer {
       const x = key.x * L.width;
       const w = key.width * L.width;
       const note = this.active.get(key.pitch);
-      const lit = note ? this.color(noteColor(note, colors)) : undefined;
+      const lit = note ? this.colorNota(note, colors) : undefined;
       if (!key.black) {
         g.rect(x + 0.5, L.keyLineY, w - 1, L.keyboardHeight).fill(lit ?? th.whiteKey);
         g.rect(x + 0.5, L.keyLineY + L.keyboardHeight - 3, w - 1, 3).fill(th.whiteKeyEdge);

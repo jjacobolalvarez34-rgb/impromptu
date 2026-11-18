@@ -17,3 +17,5 @@ export type { TranskunStage } from './transkun/transcribe';
 export type { TkNote } from './transkun/decode';
 export { AvanceSuave, fraseDeEspera, textoRestante } from './avance';
 export type { EtapaDeEspera } from './avance';
+export { detectarBateria } from './bateria';
+export type { Golpe } from './bateria';

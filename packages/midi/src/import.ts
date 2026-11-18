@@ -39,7 +39,20 @@ interface RawTrack {
   notes: NoteEvent[];
   pedals: PedalEvent[];
   channels: Set<number>;
+  /** Primer programa General MIDI de la pista (instrumento), o null. */
+  program: number | null;
   unclosed: number;
+}
+
+/**
+ * Instrumento de una pista (fase 9): canal 10 = batería; programas General MIDI 24–31 = guitarra y
+ * 32–39 = bajo; lo demás, piano.
+ */
+function instrumentoDePista(r: RawTrack): Track['instrument'] {
+  if (r.channels.size === 1 && r.channels.has(DRUM_CHANNEL)) return 'drums';
+  if (r.program !== null && r.program >= 24 && r.program <= 31) return 'guitar';
+  if (r.program !== null && r.program >= 32 && r.program <= 39) return 'bass';
+  return 'piano';
 }
 
 /**
@@ -77,7 +90,7 @@ export function importMidi(bytes: Uint8Array, options: ImportOptions = {}): Impo
   const tracks: Track[] = noted.map((r) =>
     createTrack(
       {
-        instrument: r.channels.size === 1 && r.channels.has(DRUM_CHANNEL) ? 'drums' : 'piano',
+        instrument: instrumentoDePista(r),
         name: r.name,
         notes: r.notes,
         pedals: sortPedals([...r.pedals, ...loosePedals]),
@@ -112,6 +125,7 @@ function readTrack(
     notes: [],
     pedals: [],
     channels: new Set(),
+    program: null,
     unclosed: 0,
   };
   // Note-ons abiertos por canal y tecla, en orden de llegada (FIFO).
@@ -156,6 +170,9 @@ function readTrack(
         break;
       case 'noteOff':
         close(e.channel, e.noteNumber, t);
+        break;
+      case 'programChange':
+        track.program ??= e.programNumber;
         break;
       case 'controller': {
         const kind = pedalKindFromCC(e.controllerType);

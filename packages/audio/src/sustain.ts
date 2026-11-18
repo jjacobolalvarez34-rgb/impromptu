@@ -1,4 +1,4 @@
-import type { NoteEvent, PedalEvent, PedalKind } from '@impromptu/core';
+import type { Instrument, NoteEvent, PedalEvent, PedalKind } from '@impromptu/core';
 import { isPedalDown } from '@impromptu/core';
 
 /** Una nota lista para sonar: cuándo empieza, cuándo la apagan los apagadores y su ganancia. */
@@ -11,6 +11,8 @@ export interface Voice {
   gain: number;
   /** La misma tecla se volvió a tocar: se corta de una vez, sin la cola del sustain de panel. */
   restruck?: boolean;
+  /** Instrumento que la toca (sin dato: piano). */
+  instrument?: Instrument;
 }
 
 const SOFT_GAIN = 0.72;

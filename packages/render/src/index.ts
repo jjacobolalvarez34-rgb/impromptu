@@ -8,3 +8,5 @@ export { frameLayout, BASE_LOOKAHEAD } from './scene';
 export { calibratedKeyboard, calibratedKeyLine, coverRect } from './calibration';
 export type { VideoRect } from './calibration';
 export type { Direction, VisualSettings } from './scene';
+export { carriles, instrumentoDe, COLOR_CUERDA, COLOR_PIEZA } from './instrumentos';
+export type { Carriles } from './instrumentos';

@@ -1,6 +1,13 @@
 import { writeMidi } from 'midi-file';
 import type { MidiData, MidiEvent } from 'midi-file';
-import type { NoteEvent, PedalEvent, PedalKind, Take, TempoPoint } from '@impromptu/core';
+import type {
+  NoteEvent,
+  PedalEvent,
+  PedalKind,
+  Take,
+  TempoPoint,
+  Instrument,
+} from '@impromptu/core';
 
 /** Resolución del archivo: 480 ticks por negra, la más común en los DAW. */
 const PPQ = 480;
@@ -85,6 +92,8 @@ function pedalEvents(pedals: readonly PedalEvent[], ticks: (t: number) => number
  *   partitura de piano; si no, una pista por cada pista de la toma.
  * - Pedales como CC64 (sustain), CC66 (sostenuto) y CC67 (una corda), en la primera pista.
  */
+const DRUM = 9;
+
 export function exportMidi(take: Take): Uint8Array {
   const ticks = secondsToTicks(take.tempoMap);
   const tempoMap = take.tempoMap.length > 0 ? take.tempoMap : [{ time: 0, bpm: DEFAULT_BPM }];
@@ -115,30 +124,56 @@ export function exportMidi(take: Take): Uint8Array {
     });
   }
 
-  const allNotes = take.tracks.flatMap((t) => t.notes);
+  // El piano va por manos (si las tiene); guitarra, bajo y batería (fase 9) en su propia pista,
+  // con su programa General MIDI (la batería en el canal 10).
+  const piano = take.tracks.filter((t) => t.instrument === 'piano');
+  const otros = take.tracks.filter((t) => t.instrument !== 'piano');
+  const allNotes = piano.flatMap((t) => t.notes);
   const allPedals = take.tracks.flatMap((t) => t.pedals).sort((a, b) => a.time - b.time);
   const byHand = allNotes.some((n) => n.hand !== null);
-  const parts: { name: string; notes: NoteEvent[]; pedals: PedalEvent[] }[] = byHand
+  type Parte = { name: string; notes: NoteEvent[]; pedals: PedalEvent[]; instrument: Instrument };
+  const partes: Parte[] = byHand
     ? [
-        { name: 'Mano derecha', notes: allNotes.filter((n) => n.hand !== 'L'), pedals: allPedals },
-        { name: 'Mano izquierda', notes: allNotes.filter((n) => n.hand === 'L'), pedals: [] },
+        {
+          name: 'Mano derecha',
+          notes: allNotes.filter((n) => n.hand !== 'L'),
+          pedals: allPedals,
+          instrument: 'piano',
+        },
+        {
+          name: 'Mano izquierda',
+          notes: allNotes.filter((n) => n.hand === 'L'),
+          pedals: [],
+          instrument: 'piano',
+        },
       ]
-    : take.tracks.map((t, i) => ({
+    : piano.map((t, i) => ({
         name: t.name,
         notes: t.notes,
         pedals: i === 0 ? allPedals : [],
+        instrument: 'piano',
       }));
+  for (const t of otros)
+    partes.push({ name: t.name, notes: t.notes, pedals: [], instrument: t.instrument });
 
+  const PROGRAMA: Record<Instrument, number> = { piano: 0, guitar: 25, bass: 33, drums: 0 };
+  let canal = 0;
   const tracks = [
     toTrack(take.title, conductor),
-    ...parts
+    ...partes
       .filter((p) => p.notes.length > 0 || p.pedals.length > 0)
-      .map((p, i) => {
-        const channel = Math.min(i, 8); // el canal 10 (índice 9) es de batería
+      .map((p) => {
+        // El canal 10 (índice 9) es solo de batería.
+        const channel = p.instrument === 'drums' ? DRUM : Math.min(canal++, 8);
         const program: Timed = {
           tick: 0,
           order: -1,
-          event: { deltaTime: 0, type: 'programChange', channel, programNumber: 0 },
+          event: {
+            deltaTime: 0,
+            type: 'programChange',
+            channel,
+            programNumber: PROGRAMA[p.instrument],
+          },
         };
         return toTrack(p.name, [
           program,

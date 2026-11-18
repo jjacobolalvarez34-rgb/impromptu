@@ -5,3 +5,5 @@ export type { Strikeable } from './live';
 export { resolveVoices, pedalDownRanges } from './sustain';
 export type { Voice } from './sustain';
 export * from './salamander';
+export { Sintes, cuerda, golpe, TIMBRE_DE } from './sintes';
+export type { Timbre } from './sintes';

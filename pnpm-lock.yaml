@@ -535,6 +535,9 @@ importers:
         specifier: 1.31.1
         version: 1.31.1
     devDependencies:
+      '@impromptu/audio':
+        specifier: workspace:*
+        version: link:../audio
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

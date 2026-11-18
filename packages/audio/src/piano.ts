@@ -246,11 +246,23 @@ export class Piano {
   }
 }
 
-/** Voces de una toma, ordenadas, listas para el programador. */
+/**
+ * Voces de una toma, ordenadas, listas para el programador. El piano con sus pedales; guitarra,
+ * bajo y batería (fase 9) tal como están escritas, con su instrumento para elegir el sonido.
+ */
 export function takeVoices(take: Take): Voice[] {
   return take.tracks
-    .filter((t) => t.instrument === 'piano')
-    .flatMap((t) => resolveVoices(t.notes, t.pedals, take.duration))
+    .flatMap((t): Voice[] =>
+      t.instrument === 'piano'
+        ? resolveVoices(t.notes, t.pedals, take.duration)
+        : t.notes.map((note) => ({
+            note,
+            start: note.start,
+            release: note.end,
+            gain: 1,
+            instrument: t.instrument,
+          })),
+    )
     .sort((a, b) => a.start - b.start);
 }
 
