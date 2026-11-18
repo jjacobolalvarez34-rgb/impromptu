@@ -78,7 +78,7 @@ export function Celular() {
 function Inicio({ onRecord, onSettings }: { onRecord: () => void; onSettings: () => void }) {
   const device = useLive((s) => s.device);
   const takes = useLive((s) => s.takes);
-  const busy = useTranscribe((s) => s.state.step === 'working');
+  const busy = useTranscribe((s) => s.state.step === 'recording');
   const fileInput = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -338,10 +338,12 @@ function Grabando({ onDone }: { onDone: () => void }) {
     return () => cancelAnimationFrame(raf);
   }, [recordingKeys]);
 
-  // Con el micrófono, al detener se transcribe: la pieza se abre sola al terminar (o se vuelve
-  // al inicio si hubo un aviso).
+  // Con el micrófono, al detener la grabación va a la cola de conversiones y se vuelve al
+  // inicio: se puede grabar otra mientras la IA trabaja (pedido de Jacobo, 2026-11-18).
+  const vioGrabar = useRef(false);
   useEffect(() => {
-    if (!recordingKeys && micState === 'error') onDone();
+    if (micState === 'recording') vioGrabar.current = true;
+    else if (!recordingKeys && (vioGrabar.current || micState === 'error')) onDone();
   }, [recordingKeys, micState, onDone]);
 
   const stop = async () => {
@@ -354,7 +356,6 @@ function Grabando({ onDone }: { onDone: () => void }) {
     }
   };
 
-  const working = !recordingKeys && micState === 'working';
   return (
     <div className={styles.horizontal}>
       <Girar />
@@ -365,23 +366,19 @@ function Grabando({ onDone }: { onDone: () => void }) {
         <aside className={styles.lateral} aria-label="Grabación">
           <span className={styles.estado}>
             <span className={styles.punto} aria-hidden="true" />
-            {working ? 'Escuchando…' : 'Grabando'}
+            Grabando
           </span>
           <Lcd size="lg">
             <span ref={timeRef}>00:00</span>
           </Lcd>
-          {working ? (
-            <TranscribeStatus />
-          ) : (
-            <button
-              type="button"
-              className={styles.detener}
-              aria-label="Detener la grabación"
-              onClick={() => void stop()}
-            >
-              <Square aria-hidden="true" />
-            </button>
-          )}
+          <button
+            type="button"
+            className={styles.detener}
+            aria-label="Detener la grabación"
+            onClick={() => void stop()}
+          >
+            <Square aria-hidden="true" />
+          </button>
           {recordingKeys && (
             <span className={styles.pedal} data-pisado={sustain >= 64}>
               <span aria-hidden="true">

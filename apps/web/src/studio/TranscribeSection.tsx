@@ -1,10 +1,11 @@
 import { Button, Chips, Lcd } from '@impromptu/ui';
 import { FileAudio, Mic, Square, X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
-import { prepareTranscriber } from '@impromptu/transcribe';
+import { useEffect, useRef, useState } from 'react';
+import { fraseDeEspera, prepareTranscriber, textoRestante } from '@impromptu/transcribe';
 import { onMenuAction } from '../desktop';
 import { engine } from './audio';
-import { PIANO_MODEL_URL, micStream, useTranscribe } from './transcribeStore';
+import { PIANO_MODEL_URL, avanceVisible, micStream, useTranscribe } from './transcribeStore';
+import type { Conversion } from './transcribeStore';
 import styles from './LivePanel.module.css';
 import own from './TranscribeSection.module.css';
 
@@ -40,7 +41,6 @@ export function MicSection() {
     <div className={styles.seccion}>
       <Button
         icon={<Mic />}
-        disabled={state.step === 'working'}
         // Al acercarse al botón se va preparando la IA que escucha en vivo.
         onPointerEnter={prepareTranscriber}
         onFocus={prepareTranscriber}
@@ -101,7 +101,8 @@ function LevelMeter() {
 /** Botón "Convertir un audio" (archivo a notas). */
 export function ConvertAudioButton({ label = 'Convertir un audio' }: { label?: string }) {
   const input = useRef<HTMLInputElement>(null);
-  const busy = useTranscribe((s) => s.state.step === 'working' || s.state.step === 'recording');
+  // Se puede convertir otro mientras uno trabaja (cola); no mientras se graba.
+  const busy = useTranscribe((s) => s.state.step === 'recording');
   // Menú de la app de escritorio: Archivo › Convertir un audio.
   useEffect(() => onMenuAction((a) => a === 'convertir-audio' && input.current?.click()), []);
   return (
@@ -125,29 +126,88 @@ export function ConvertAudioButton({ label = 'Convertir un audio' }: { label?: s
   );
 }
 
-/** Aviso fijo arriba del panel mientras la IA trabaja, o si algo falló. */
-export function TranscribeStatus() {
-  const state = useTranscribe((s) => s.state);
-  const { cancel, reset } = useTranscribe.getState();
-  if (state.step === 'working') {
+/** Una conversión de la cola: barra que se mueve todo el tiempo, frase y cuánto falta. */
+function FilaConversion({ c, ahora }: { c: Conversion; ahora: number }) {
+  if (c.inicio === null) {
     return (
-      <div className={own.aviso}>
-        <p className="ui-secundario" role="status">
-          {state.label}
+      <div className={own.fila}>
+        <p className="ui-secundario">
+          <strong>{c.name}</strong> · espera su turno
         </p>
-        <div className={styles.toma}>
-          {state.progress === null ? (
-            <div className={own.preparando} style={{ flex: 1 }} aria-hidden="true" />
-          ) : (
-            <Lcd size="md">{Math.round(state.progress * 100)} %</Lcd>
-          )}
-          <Button icon={<X />} onClick={cancel}>
-            Cancelar
-          </Button>
-        </div>
+        <Button icon={<X />} onClick={() => useTranscribe.getState().cancel(c.id)}>
+          Quitar
+        </Button>
       </div>
     );
   }
+  const { valor, restante } = avanceVisible(c, ahora);
+  const falta = textoRestante(restante);
+  return (
+    <div className={own.conversion}>
+      <div className={own.fila}>
+        <p className="ui-secundario">
+          <strong>{c.name}</strong>
+        </p>
+        {valor !== null && <Lcd size="md">{Math.floor(valor * 100)} %</Lcd>}
+        <Button icon={<X />} onClick={() => useTranscribe.getState().cancel(c.id)}>
+          Cancelar
+        </Button>
+      </div>
+      {valor === null ? (
+        <div className={own.preparando} aria-hidden="true" />
+      ) : (
+        <div className={own.barra} aria-hidden="true">
+          <div style={{ transform: `scaleX(${valor})` }} />
+        </div>
+      )}
+      <p className="ui-secundario" role="status">
+        {c.detalle ?? fraseDeEspera(c.etapa, ahora - c.inicio)}
+        {falta && ` · ${falta}`}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Aviso fijo arriba del panel con la cola de conversiones (se puede seguir grabando mientras
+ * trabajan), o si algo falló.
+ */
+export function TranscribeStatus() {
+  const state = useTranscribe((s) => s.state);
+  const cola = useTranscribe((s) => s.cola);
+  const { reset } = useTranscribe.getState();
+  const [ahora, setAhora] = useState(() => performance.now());
+  useEffect(() => {
+    if (cola.length === 0) return;
+    let raf = 0;
+    const tic = () => {
+      setAhora(performance.now());
+      raf = requestAnimationFrame(tic);
+    };
+    raf = requestAnimationFrame(tic);
+    return () => cancelAnimationFrame(raf);
+  }, [cola.length]);
+  return (
+    <>
+      {cola.length > 0 && (
+        <div className={own.aviso}>
+          {cola.map((c) => (
+            <FilaConversion key={c.id} c={c} ahora={ahora} />
+          ))}
+        </div>
+      )}
+      <EstadoMic state={state} reset={reset} />
+    </>
+  );
+}
+
+function EstadoMic({
+  state,
+  reset,
+}: {
+  state: ReturnType<typeof useTranscribe.getState>['state'];
+  reset: () => void;
+}) {
   if (state.step === 'error') {
     return (
       <div className={own.aviso}>

@@ -7,6 +7,8 @@ import {
   transcribe,
   transcribeTranskun,
 } from '@impromptu/transcribe';
+import { AvanceSuave } from '@impromptu/transcribe';
+import type { EtapaDeEspera } from '@impromptu/transcribe';
 import type { Take } from '@impromptu/core';
 import { create } from 'zustand';
 import { engine } from './audio';
@@ -18,6 +20,9 @@ import { saveTake } from './takesDb';
 
 /**
  * Audio a notas (fase 5, ADR-013 y ADR-014): grabar con el micrófono o convertir un archivo.
+ * Las conversiones van en una cola (pedido de Jacobo, 2026-11-18): se puede grabar otra o
+ * convertir otro archivo mientras la anterior trabaja; se hacen de a una para no llenar la
+ * memoria.
  * El estado vive aquí para que el botón del micrófono, el de convertir y el aviso de avance
  * puedan estar en distintos lugares del panel. Cada resultado se guarda en "Tus grabaciones"
  * con su audio, como las tomas del teclado.
@@ -25,11 +30,19 @@ import { saveTake } from './takesDb';
 export type Model = 'piano' | 'rapido';
 
 export type TranscribeState =
-  | { step: 'idle' }
-  | { step: 'recording'; device: string }
-  /** `progress` null: avance indeterminado (preparando). */
-  | { step: 'working'; label: string; progress: number | null; name: string }
-  | { step: 'error'; message: string };
+  { step: 'idle' } | { step: 'recording'; device: string } | { step: 'error'; message: string };
+
+/** Una conversión en la cola. `progreso` null: todavía sin avance real (preparando). */
+export interface Conversion {
+  id: number;
+  name: string;
+  etapa: EtapaDeEspera;
+  /** Texto propio de la etapa (por ejemplo, cuántos MB se descargan). */
+  detalle: string | null;
+  progreso: number | null;
+  /** Cuándo empezó a trabajar (performance.now()), o null si espera su turno. */
+  inicio: number | null;
+}
 
 /**
  * Carpeta del modelo de piano con pedal (Transkun, ADR-015). En desarrollo se sirve desde la
@@ -45,17 +58,37 @@ const AUDIO_PREFIX = 'Grabación de audio';
 
 interface Store {
   state: TranscribeState;
+  /** Conversiones: la primera es la que trabaja; las demás esperan su turno. */
+  cola: Conversion[];
   model: Model;
   setModel: (model: Model) => void;
   /** Vuelve al estado inicial (cerrar un aviso de error). */
   reset: () => void;
-  cancel: () => void;
+  /** Cancela una conversión (o la que trabaja, si no se dice cuál). */
+  cancel: (id?: number) => void;
   startMic: () => Promise<void>;
   stopMic: () => void;
   convert: (file: File) => void;
 }
 
 let abort: AbortController | null = null;
+let actual: number | null = null;
+let siguienteId = 1;
+const pendientes: { id: number; blob: Blob; name: string; fromMic: boolean }[] = [];
+let procesando = false;
+/** Barra continua de cada conversión (fuera de React: se lee en cada cuadro). */
+const avances = new Map<number, AvanceSuave>();
+
+/** Lo que muestra la barra de una conversión ahora (0 a 1) y los segundos que faltan. */
+export function avanceVisible(
+  c: Conversion,
+  ahora: number,
+): { valor: number | null; restante: number | null } {
+  if (c.etapa === 'descargando') return { valor: c.progreso ?? 0, restante: null };
+  const a = avances.get(c.id);
+  if (c.etapa !== 'escuchando' || !a) return { valor: null, restante: null };
+  return { valor: a.valor(ahora), restante: a.restante(ahora) };
+}
 let recorder: MediaRecorder | null = null;
 let stream: MediaStream | null = null;
 let listener: LiveListener | null = null;
@@ -64,33 +97,76 @@ const mb = (bytes: number) => Math.round(bytes / 1e6);
 
 /** "Grabación de audio N", con N uno más que la mayor que ya existe. */
 function nextAudioName(): string {
-  const used = useLive
-    .getState()
-    .takes.map((t) => /^Grabación de audio (\d+)$/.exec(t.title)?.[1])
+  // También cuentan las que esperan en la cola (todavía no están guardadas).
+  const used = [
+    ...useLive.getState().takes.map((t) => t.title),
+    ...useTranscribe.getState().cola.map((c) => c.name),
+  ]
+    .map((title) => /^Grabación de audio (\d+)$/.exec(title)?.[1])
     .filter((n): n is string => n !== undefined)
     .map(Number);
   return `${AUDIO_PREFIX} ${Math.max(0, ...used) + 1}`;
 }
 
 export const useTranscribe = create<Store>((set, get) => {
-  const show = (label: string, progress: number | null) =>
-    set((s) => (s.state.step === 'working' ? { state: { ...s.state, label, progress } } : s));
+  const cambiar = (id: number, c: Partial<Conversion>) =>
+    set((s) => ({ cola: s.cola.map((x) => (x.id === id ? { ...x, ...c } : x)) }));
+  const quitar = (id: number) => set((s) => ({ cola: s.cola.filter((x) => x.id !== id) }));
+  const fallo = (name: string, message: string) =>
+    set((s) =>
+      s.state.step === 'recording'
+        ? s
+        : { state: { step: 'error', message: `«${name}»: ${message}` } },
+    );
 
-  const run = async (blob: Blob, name: string, fromMic: boolean) => {
+  const encolar = (blob: Blob, name: string, fromMic: boolean) => {
+    const id = siguienteId++;
+    pendientes.push({ id, blob, name, fromMic });
+    set((s) => ({
+      cola: [
+        ...s.cola,
+        { id, name, etapa: 'leyendo', detalle: null, progreso: null, inicio: null },
+      ],
+    }));
+    void procesar();
+  };
+
+  const procesar = async () => {
+    if (procesando) return;
+    procesando = true;
+    try {
+      for (let job = pendientes.shift(); job; job = pendientes.shift()) {
+        await run(job.id, job.blob, job.name, job.fromMic);
+        quitar(job.id);
+      }
+    } finally {
+      procesando = false;
+    }
+  };
+
+  const run = async (id: number, blob: Blob, name: string, fromMic: boolean) => {
     const controller = new AbortController();
     abort = controller;
-    set({ state: { step: 'working', label: `Escuchando «${name}»…`, progress: null, name } });
+    actual = id;
+    cambiar(id, { inicio: performance.now() });
+    const show = (etapa: EtapaDeEspera, progreso: number | null, detalle: string | null = null) => {
+      if (etapa === 'escuchando' && progreso !== null) {
+        const ahora = performance.now();
+        let a = avances.get(id);
+        if (!a) avances.set(id, (a = new AvanceSuave(ahora, 0.1)));
+        a.actualizar(progreso, ahora);
+      }
+      cambiar(id, { etapa, progreso, detalle });
+    };
     try {
       const buffer = await engine.audioContext.decodeAudioData(await blob.arrayBuffer());
       if (peakLevel(buffer) < SILENCE) {
-        set({
-          state: {
-            step: 'error',
-            message: fromMic
-              ? 'No llegó sonido del micrófono. Revisa en el candado de la barra de direcciones cuál micrófono usa el navegador, o acerca el micrófono al piano.'
-              : 'Ese audio está en silencio.',
-          },
-        });
+        fallo(
+          name,
+          fromMic
+            ? 'No llegó sonido del micrófono. Revisa en el candado de la barra de direcciones cuál micrófono usa el navegador, o acerca el micrófono al piano.'
+            : 'Ese audio está en silencio.',
+        );
         return;
       }
       let take: Take;
@@ -101,15 +177,12 @@ export const useTranscribe = create<Store>((set, get) => {
           onStage: (st) => {
             if (st.stage === 'downloading')
               show(
-                `Descargando el modelo de piano (${mb(st.total || 58e6)} MB, solo la primera vez)…`,
+                'descargando',
                 st.total ? st.loaded / st.total : null,
+                `Descargando el modelo de piano (${mb(st.total || 58e6)} MB, solo la primera vez)`,
               );
-            else if (st.stage === 'preparing') show('Preparando el modelo de piano…', null);
-            else
-              show(
-                `Escuchando «${name}» (procesador, ${st.threads} ${st.threads === 1 ? 'hilo' : 'hilos'})…`,
-                st.progress,
-              );
+            else if (st.stage === 'preparing') show('preparando', null);
+            else show('escuchando', st.progress);
           },
         });
         take = takeFromTranskun(result, name, buffer.duration);
@@ -117,26 +190,21 @@ export const useTranscribe = create<Store>((set, get) => {
         const raw = await transcribe(buffer, {
           signal: controller.signal,
           onStage: (stage) =>
-            show(
-              stage === 'preparing'
-                ? 'Preparando la IA. Solo la primera vez; puede tardar hasta medio minuto.'
-                : `Escuchando «${name}»…`,
-              stage === 'preparing' ? null : 0,
-            ),
-          onProgress: (progress) => show(`Escuchando «${name}»…`, progress),
+            stage === 'preparing'
+              ? show('preparando', null, 'Solo la primera vez; puede tardar hasta medio minuto')
+              : show('escuchando', 0),
+          onProgress: (progress) => show('escuchando', progress),
         });
         take = takeFromTranscription(raw, name, buffer.duration);
       }
       if (take.tracks[0]!.notes.length === 0) {
-        set({
-          state: {
-            step: 'error',
-            message:
-              'Se oyó sonido, pero no encontramos notas de piano. Prueba con el micrófono más cerca del piano o con menos ruido alrededor.',
-          },
-        });
+        fallo(
+          name,
+          'Se oyó sonido, pero no encontramos notas de piano. Prueba con el micrófono más cerca del piano o con menos ruido alrededor.',
+        );
         return;
       }
+      show('armando', 1);
       // Se guarda con su audio (las notas salieron de él: desfase 0) en "Tus grabaciones".
       const ext = blob.type.includes('webm') ? 'webm' : blob.type.includes('ogg') ? 'ogg' : 'audio';
       const key = `${take.id}.${ext}`;
@@ -144,28 +212,35 @@ export const useTranscribe = create<Store>((set, get) => {
       take.media.push({ kind: 'audio', storageKey: key, offset: 0 });
       await saveTake(take);
       await refreshTakes();
-      useStudio.getState().open(take);
-      set({ state: { step: 'idle' } });
+      // Se abre si no se está grabando otra cosa ni hay más en la cola (si no, queda en
+      // "Tus grabaciones").
+      if (get().state.step !== 'recording' && pendientes.length === 0)
+        useStudio.getState().open(take);
     } catch (e) {
-      if (e instanceof TranscriptionCancelled) set({ state: { step: 'idle' } });
-      else
-        set({
-          state: {
-            step: 'error',
-            message: 'No pudimos convertir ese audio. Prueba con MP3, WAV, M4A o FLAC.',
-          },
-        });
+      if (!(e instanceof TranscriptionCancelled))
+        fallo(name, 'No pudimos convertir ese audio. Prueba con MP3, WAV, M4A o FLAC.');
     } finally {
       abort = null;
+      actual = null;
+      avances.delete(id);
     }
   };
 
   return {
     state: { step: 'idle' },
+    cola: [],
     model: PIANO_MODEL_URL ? 'piano' : 'rapido',
     setModel: (model) => set({ model }),
     reset: () => set({ state: { step: 'idle' } }),
-    cancel: () => abort?.abort(),
+    cancel: (id) => {
+      if (id === undefined || id === actual) {
+        abort?.abort();
+        return;
+      }
+      const i = pendientes.findIndex((p) => p.id === id);
+      if (i >= 0) pendientes.splice(i, 1);
+      quitar(id);
+    },
 
     startMic: async () => {
       void engine.start();
@@ -195,7 +270,8 @@ export const useTranscribe = create<Store>((set, get) => {
         listener = null;
         for (const t of stream?.getTracks() ?? []) t.stop();
         stream = null;
-        void run(new Blob(chunks, { type: rec.mimeType }), nextAudioName(), true);
+        set({ state: { step: 'idle' } });
+        encolar(new Blob(chunks, { type: rec.mimeType }), nextAudioName(), true);
       };
       rec.start(1000);
       recorder = rec;
@@ -213,7 +289,7 @@ export const useTranscribe = create<Store>((set, get) => {
 
     convert: (file) => {
       if (get().model === 'rapido') prepareTranscriber();
-      void run(file, file.name.replace(/\.[^.]+$/, ''), false);
+      encolar(file, file.name.replace(/\.[^.]+$/, ''), false);
     },
   };
 });

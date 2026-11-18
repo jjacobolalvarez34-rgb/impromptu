@@ -156,6 +156,8 @@ async function run(samples: Float32Array, baseUrl: string) {
     const beginTime = i / fs - padBegin;
     const T = frameCount(segmentSize, hop);
     const features = segmentFeatures([slice], consts);
+    // Avisos dentro del segmento: la barra se mueve más seguido.
+    post({ type: 'progress', value: (step + 0.1) / steps });
     const out = await red.run({
       features: new ort.Tensor('float32', features, [1, T, nMels, nWins]),
     });
@@ -163,6 +165,7 @@ async function run(samples: Float32Array, baseUrl: string) {
     const skip = out.S_skip!.data as Float32Array;
     const ctx = out.ctx!.data as Float32Array;
     const D = ctx.length / (nSym * T);
+    post({ type: 'progress', value: (step + 0.85) / steps });
     const intervals = viterbiBackward(S, skip, T, nSym, startPos);
     const total = intervals.reduce((a, l) => a + l.length, 0);
 

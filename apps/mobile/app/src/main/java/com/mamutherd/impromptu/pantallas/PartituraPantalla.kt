@@ -86,15 +86,15 @@ fun PartituraPantalla(id: String, nav: Navegador) {
             delay(300)
         }
     }
-    // Cursor: unas 12 veces por segundo mientras suena.
+    // Reloj para la línea de lectura: la página la mueve a 60 fps y extrapola entre avisos.
     LaunchedEffect(web, motor) {
         val w = web ?: return@LaunchedEffect
         while (true) {
             if (motor != null) {
                 tocando = motor.reproduciendo
-                if (tocando) w.evaluateJavascript("window.impromptu && impromptu.cursor(${motor.posicionVisible})", null)
+                w.evaluateJavascript("window.impromptu && impromptu.reloj(${motor.posicionVisible}, $tocando, ${motor.velocidad})", null)
             }
-            delay(80)
+            delay(if (tocando) 250 else 120)
         }
     }
 

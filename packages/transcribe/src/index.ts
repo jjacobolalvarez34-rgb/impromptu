@@ -15,3 +15,5 @@ export type { TranscribeParams, TranscribeStage, TranscribeOptions } from './tra
 export { transcribeTranskun, takeFromTranskun, TRANSKUN_RATE } from './transkun/transcribe';
 export type { TranskunStage } from './transkun/transcribe';
 export type { TkNote } from './transkun/decode';
+export { AvanceSuave, fraseDeEspera, textoRestante } from './avance';
+export type { EtapaDeEspera } from './avance';

@@ -1,5 +1,13 @@
 import { exportMidi } from '@impromptu/midi';
-import { beatsOf, buildScore, quantizedTake, toMusicXml } from '@impromptu/notation';
+import {
+  LineaDeLectura,
+  aRedondas,
+  beatsOf,
+  buildScore,
+  leerRecorrido,
+  quantizedTake,
+  toMusicXml,
+} from '@impromptu/notation';
 import type { Score } from '@impromptu/notation';
 import { Button, Chips } from '@impromptu/ui';
 import { Download, FileMusic, Printer } from 'lucide-react';
@@ -66,6 +74,7 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
 
   // Dibujo con OpenSheetMusicDisplay (se carga solo al abrir esta pestaña).
   const osmd = useRef<OpenSheetMusicDisplay | null>(null);
+  const linea = useRef<LineaDeLectura | null>(null);
   useEffect(() => {
     if (!xml || !holder.current) return;
     let cancelled = false;
@@ -86,7 +95,9 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
         await view.load(xml);
         if (cancelled) return;
         view.render();
-        view.cursor.show();
+        // Cursor suave: se lee una vez dónde cae cada nota y una línea propia se desliza.
+        linea.current?.quitar();
+        linea.current = new LineaDeLectura(el, el.parentElement ?? el, leerRecorrido(view.cursor));
         osmd.current = view;
         setStatus('ready');
       } catch {
@@ -96,40 +107,17 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
     return () => {
       cancelled = true;
       osmd.current = null;
+      linea.current?.quitar();
+      linea.current = null;
     };
   }, [xml]);
 
-  // Cursor sincronizado con la reproducción.
+  // Cursor sincronizado con la reproducción: en cada cuadro, sin saltos de nota en nota.
   useEffect(() => {
     if (!score || !beats || status !== 'ready') return;
-    const measureQuarters = score.time[0] * (4 / score.time[1]);
     let raf = 0;
-    let lastTarget = -1;
     const loop = () => {
-      const view = osmd.current;
-      if (view) {
-        const t = transport.now();
-        // Posición en redondas (unidad del cursor de OSMD) desde el comienzo.
-        let m = 0;
-        while (m + 1 < score.measureTimes.length && score.measureTimes[m + 1]! <= t) m++;
-        const start = score.measureTimes[m]!;
-        const end = score.measureTimes[m + 1] ?? start + (60 / score.bpm) * measureQuarters;
-        const frac = Math.min(0.999, Math.max(0, (t - start) / Math.max(1e-6, end - start)));
-        const target = ((m + frac) * measureQuarters) / 4;
-        if (Math.abs(target - lastTarget) > 1e-4) {
-          const cursor = view.cursor;
-          const now = () => cursor.Iterator.currentTimeStamp.RealValue;
-          if (now() > target + 1e-6) cursor.reset();
-          while (!cursor.Iterator.EndReached) {
-            cursor.next();
-            if (now() > target + 1e-6) {
-              cursor.previous();
-              break;
-            }
-          }
-          lastTarget = target;
-        }
-      }
+      linea.current?.mover(aRedondas(transport.now(), score.measureTimes, score.bpm, score.time));
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);

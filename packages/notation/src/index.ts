@@ -5,3 +5,5 @@ export type { Key } from './key';
 export { DIV, buildScore, quantizeOnsets, splitFigures, toBeatPosition, toSeconds } from './score';
 export type { Measure, NoteType, Score, ScoreEvent, ScoreOptions } from './score';
 export { quantizedTake, toMusicXml } from './musicxml';
+export { LineaDeLectura, aRedondas, leerRecorrido, posicionEn } from './cursor';
+export type { FinesDeRenglon, PuntoCursor } from './cursor';

@@ -5,7 +5,14 @@
  */
 import { createNoteEvent, createTake, createTrack, fitKeyboardRange } from '@impromptu/core';
 import type { PedalKind, Take } from '@impromptu/core';
-import { beatsOf, buildScore, toMusicXml } from '@impromptu/notation';
+import {
+  LineaDeLectura,
+  aRedondas,
+  beatsOf,
+  buildScore,
+  leerRecorrido,
+  toMusicXml,
+} from '@impromptu/notation';
 import type { Score } from '@impromptu/notation';
 import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 
@@ -25,6 +32,7 @@ const puente = (globalThis as unknown as { Puente?: Puente }).Puente;
 let vista: OpenSheetMusicDisplay | null = null;
 let partitura: Score | null = null;
 let xml = '';
+let linea: LineaDeLectura | null = null;
 
 function aTake(p: PiezaWeb): Take {
   const notes = p.notes.map((n) => createNoteEvent({ ...n, origin: 'midi-file' }));
@@ -54,43 +62,45 @@ async function mostrar(pieza: PiezaWeb, compas: string): Promise<void> {
     });
     await vista.load(xml);
     vista.render();
-    vista.cursor.show();
+    linea?.quitar();
+    linea = new LineaDeLectura(
+      el,
+      document.scrollingElement as HTMLElement,
+      leerRecorrido(vista.cursor),
+    );
+    linea.mover(0);
     puente?.listo(Math.round(partitura.bpm));
   } catch (e) {
     puente?.error(e instanceof Error ? e.message : String(e));
   }
 }
 
-let ultimo = -1;
+// Reloj: Kotlin avisa el segundo de la pieza unas 4 veces por segundo; entre avisos se
+// extrapola, así la línea se mueve en cada cuadro (60 fps) sin saltos.
+let base = 0;
+let baseMs = performance.now();
+let tocando = false;
+let velocidad = 1;
 
-/** Lleva el cursor al segundo `t` de la pieza (Kotlin lo llama mientras suena). */
-function cursor(t: number): void {
-  const v = vista;
-  const s = partitura;
-  if (!v || !s) return;
-  const negras = s.time[0] * (4 / s.time[1]);
-  let m = 0;
-  while (m + 1 < s.measureTimes.length && s.measureTimes[m + 1]! <= t) m++;
-  const inicio = s.measureTimes[m]!;
-  const fin = s.measureTimes[m + 1] ?? inicio + (60 / s.bpm) * negras;
-  const frac = Math.min(0.999, Math.max(0, (t - inicio) / Math.max(1e-6, fin - inicio)));
-  const objetivo = ((m + frac) * negras) / 4;
-  if (Math.abs(objetivo - ultimo) < 1e-4) return;
-  const c = v.cursor;
-  const ahora = () => c.Iterator.currentTimeStamp.RealValue;
-  if (ahora() > objetivo + 1e-6) c.reset();
-  while (!c.Iterator.EndReached) {
-    c.next();
-    if (ahora() > objetivo + 1e-6) {
-      c.previous();
-      break;
-    }
-  }
-  ultimo = objetivo;
+function reloj(t: number, suena: boolean, vel: number): void {
+  base = t;
+  baseMs = performance.now();
+  tocando = suena;
+  velocidad = vel;
 }
+
+function cuadro(): void {
+  const s = partitura;
+  if (linea && s) {
+    const t = tocando ? base + ((performance.now() - baseMs) / 1000) * velocidad : base;
+    linea.mover(aRedondas(t, s.measureTimes, s.bpm, s.time));
+  }
+  requestAnimationFrame(cuadro);
+}
+requestAnimationFrame(cuadro);
 
 (globalThis as unknown as Record<string, unknown>).impromptu = {
   mostrar: (json: string, compas: string) => void mostrar(JSON.parse(json) as PiezaWeb, compas),
-  cursor,
+  reloj,
   musicxml: () => xml,
 };
