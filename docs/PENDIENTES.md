@@ -56,6 +56,10 @@ Con eso Claude sube las muestras y el modelo, y las apps los descargan la primer
   13. **Partitura vacía**: aunque no haya pieza abierta, mostrar el pentagrama vacío del instrumento elegido (piano, guitarra con tablatura, batería), en todos los instrumentos.
   14. **Instrumento al lado de cada pieza** en las listas (Tus piezas, Tus grabaciones, Pruebas).
   15. Mejorar cómo se ven guitarra y batería (fase 11): los números de traste casi no se leen sobre notas finas; en la batería, los golpes seguidos (hi-hat en semicorcheas) se pegan en una columna.
+  16. **Batería más elegante**: las notas que caen más suaves y menos forzadas.
+  17. **Batería: elegir la vista**: la de carriles actual o una vista como una batería real, donde los golpes van (bajando o subiendo) hacia la pieza que toca golpear, para que un baterista la pueda seguir.
+  18. **Batería: el tempo a la vista**: en una esquina, algo que marque el pulso (el click), con opción de que suene.
+  19. **Partitura de guitarra y bajo**: elegir ver notas y tablatura, o solo tablatura.
   - MIDIs de prueba de cada instrumento en el estudio, sección **Pruebas** (`fixtures/demos`, generados con `node scripts/demos-midi.mjs`).
 - **Orden pedido por Jacobo:** (a) llevar a la web y a la PC la presentación y mejorar la pantalla principal de la PC (que se parezca a la de la web, que sí le gusta); (b) guitarra, misma idea del piano; (c) batería; (d) fase 10; (e) integrar todo en web, PC y celular; (f) compilar al final.
 

@@ -230,13 +230,15 @@ export class Sintes {
     source.buffer = b;
     const gain = this.context.createGain();
     gain.gain.setValueAtTime(voice.gain, at);
+    source.connect(gain).connect(this.output);
+    // Primero start: el navegador no deja programar stop antes (era lo que dejaba mudas a la
+    // guitarra y el bajo).
+    source.start(at, offset);
     if (instrument !== 'drums' && Number.isFinite(releaseAt)) {
       gain.gain.setValueAtTime(voice.gain, releaseAt);
       gain.gain.setTargetAtTime(0, releaseAt, 0.04);
       source.stop(releaseAt + 0.3);
     }
-    source.connect(gain).connect(this.output);
-    source.start(at, offset);
     const a = { source, gain };
     this.activas.push(a);
     source.onended = () => {
