@@ -203,3 +203,16 @@
   min-height: 44px;
   color: var(--chasis);
 }
+
+/* Aviso de lo que viene: cuenta y nube (P23). */
+.nube {
+  display: grid;
+  gap: var(--e-2);
+  padding: var(--e-4);
+  border: 1px dashed var(--lcd-borde);
+  border-radius: var(--radio);
+}
+
+.nube p {
+  margin: 0;
+}

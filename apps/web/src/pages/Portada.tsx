@@ -104,6 +104,16 @@ export function Portada() {
           </div>
         </section>
 
+        <section aria-labelledby="nube" className={styles.nube}>
+          <h2 id="nube" className="ui-etiqueta ui-aparece-texto" style={delay(7)}>
+            Próximamente: cuenta y nube
+          </h2>
+          <p className="ui-secundario ui-aparece-texto" style={delay(8)}>
+            Inicia sesión y guarda tus piezas en la nube para abrirlas en el celular, el computador
+            o la web. Será con una suscripción y un límite de espacio; todo lo demás sigue gratis.
+          </p>
+        </section>
+
         <section aria-labelledby="como" className={styles.como}>
           <h2 id="como" className="ui-etiqueta ui-aparece-texto" style={delay(8)}>
             Cómo se usa

@@ -11,7 +11,8 @@ import { pathToFileURL } from 'node:url';
  */
 const SCHEME = 'app';
 const HOST = 'impromptu';
-const START = `${SCHEME}://${HOST}/estudio?intro`;
+// Abre en la pantalla principal de la web (intro y elegir instrumento), como pidió Jacobo.
+const START = `${SCHEME}://${HOST}/app?intro`;
 
 /** Carpetas de la web compilada y de los modelos: dentro del instalador, o del repositorio en desarrollo. */
 const webDir = app.isPackaged

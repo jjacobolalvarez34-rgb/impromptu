@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { engine, useAudio } from './audio';
 import { audioOffset, useOwnAudio } from './ownAudio';
 import { useVideo, videoOffset } from './video';
+import { ExportPreview } from './ExportPreview';
 import { useStudio } from './store';
 import type { Aspect } from './store';
 import styles from './ExportDialog.module.css';
@@ -171,6 +172,7 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
         Exportar video
       </h2>
       <p className="ui-secundario">{take?.title ?? 'Abre una pieza o una toma primero.'}</p>
+      {open && state.step !== 'done' && <ExportPreview aspect={aspect} />}
 
       {state.step === 'form' && (
         <div className={styles.campos}>

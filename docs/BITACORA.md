@@ -27,7 +27,11 @@ Una entrada por sesión, la más reciente arriba.
   - **Animaciones**: transiciones entre pantallas, tarjetas que se hunden al tocarlas, lista de piezas animada, barra "trabajando" que va y viene. **Tableta**: inicio en dos columnas.
   - **"Cuenta y nube · Próximamente"** en Ajustes (P23).
 - Pruebas: notación 16/16 (cursor), transcripción (avance) 4/4, web e2e de transcripción y partitura en verde; app: Gradle BUILD SUCCESSFUL y JUnit 6/6 (Transkun igual a Python, +685 MB).
-- Pendiente: llevar a la web y la PC la presentación y la pantalla principal de la PC; vista previa al exportar en web y PC; guitarra; batería; fase 10; fase 11; integrar y compilar.
+- Hecho, paso 2 (web y PC):
+  - **App de PC**: abre en la pantalla principal de la web (intro animada y elegir instrumento), como pidió Jacobo, en vez de entrar directo al estudio. **Sin verificar** (no se armó el instalador de nuevo; se hará al final).
+  - **Vista previa al exportar** en web y PC: miniatura animada con la forma del formato (horizontal, vertical o cuadrado) y los ajustes del video. Prueba e2e `exportar.spec.ts` (verifica la forma) y captura `test-results/capturas/exportar-escritorio.png`.
+  - **"Próximamente: cuenta y nube"** en la pantalla principal de la web y la PC.
+- Pendiente: guitarra; batería; fase 10; fase 11; integrar en las tres y compilar.
 
 ---
 

@@ -71,3 +71,19 @@
   border-bottom-width: 1px;
   transform: translateY(2px);
 }
+
+/* Vista previa del video: miniatura animada con la forma del formato. */
+.previa {
+  display: grid;
+  justify-items: center;
+  gap: var(--e-2);
+  margin: var(--e-4) 0 0;
+}
+
+.lienzo {
+  overflow: hidden;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: #111110;
+  line-height: 0;
+}
