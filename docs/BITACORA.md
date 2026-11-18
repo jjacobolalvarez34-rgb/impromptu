@@ -14,6 +14,34 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-18 · Fase 8 · App de Android nativa (Kotlin + Compose)
+- Hecho (ADR-019). **Todo esto está sin verificar en un celular**: no hubo teléfono conectado ni emulador (falta el controlador de virtualización de Windows).
+  - Se quitó Capacitor: `apps/mobile` es ahora una app nativa en Kotlin + Jetpack Compose. Se borraron `apps/web/src/native/{install,midi}.ts` y las dependencias `@capacitor/*`; la web no cambia.
+  - **Presentación** la primera vez (notas que caen sobre un teclado, el logo y cuatro líneas de qué hace la app) y **elegir instrumentos**: Piano trae todo (sonido Salamander, ~90 MB, se descarga una vez y se puede cancelar y retomar; IA Transkun, viene dentro del APK). Batería y Guitarra: "pronto".
+  - **Inicio nuevo** ("Piezas primero"): franja LCD con el teclado conectado, cuatro formas de crear (Grabar, Micrófono, Audio a notas, Abrir MIDI) y la lista de piezas con renombrar, guardar MIDI, video y borrar (con confirmación). Aviso de la conversión en curso.
+  - **Motor de sonido propio** en AudioTrack de baja latencia a la frecuencia del celular: muestras decodificadas una vez a PCM y leídas con memoria mapeada; sustain, sostenuto, una corda, sustain sin pedal (Ajustes), 64 voces y limitador.
+  - **Teclado MIDI por USB (OTG)** con la API MIDI de Android y **grabación** con notas que suben del teclado; al detener se guarda y se abre la pieza.
+  - **Pieza en horizontal**: notas cayendo a 60 fps (mismo dibujo para pantalla y video), tocar/pausa, ir al comienzo, barra de tiempo, velocidad 50/75/100 %, ocultar controles con un toque.
+  - **Micrófono** (fuente sin procesar si el celular la tiene) y **audio a notas** (MP3, WAV, M4A…) con **Transkun nativo en ONNX Runtime**: espectro, Viterbi y unión de segmentos portados a Kotlin.
+  - **Partitura** en un WebView con el mismo paquete de notación de la web y OpenSheetMusicDisplay (`apps/mobile/partitura`): compás, tocar con cursor que sigue lo que suena, compartir MusicXML.
+  - **Exportar video** en el celular (H.264 + AAC): horizontal, vertical o cuadrado; 1080p o 720p; 4 s de cola con fundido; queda en Películas/Impromptu y se puede compartir. Sigue aunque se salga de la pantalla.
+  - **Abrir y guardar MIDI** (tipo 1, PPQ 480, con pedales), también abrir un .mid desde otra app.
+  - **BUG-002, BUG-003 y BUG-004**: arreglos hechos (ver BUGS).
+  - Ícono de la app con el logo, tema C3 (Archivo y Martian Mono), íconos al estilo Lucide.
+  - APK firmado con la llave de Mamut Herd: `apps/mobile/release/Impromptu-0.1.0.apk` (~100 MB, solo celulares de 64 bits).
+  - VS Code: la extensión de Gradle ya no importa el proyecto por su cuenta (escribía su caché en C:).
+- Pruebas (en la PC):
+  - Gradle `assembleDebug` y `assembleRelease`: BUILD SUCCESSFUL. Firma verificada con apksigner (CN=Mamut Herd).
+  - `pnpm --filter @impromptu/mobile pruebas` (JUnit): 6/6. **Transkun en Kotlin contra Python** con 30 s de Consuelo: 153 notas contra 153, F1 100 %, fuerza idéntica; Viterbi igual nota a nota; MIDI de ida y vuelta; secuencia y grabación.
+  - Memoria de Transkun medida en esa prueba: de +2,5 GB a +0,67 GB (BUG-004).
+  - `pnpm lint`, `pnpm typecheck` y `pnpm test`: verdes.
+- Probado por Jacobo: todavía no. Pasos en PENDIENTES ("Para que pruebe Jacobo").
+- Pendiente para la próxima:
+  - Lo que diga Jacobo al probar el APK.
+  - Velocidad real de la conversión en su celular (en la PC: 30 s de audio en ~58 s).
+  - Dónde alojar las muestras (P15) y el modelo (P21); hoy el modelo va dentro del APK.
+- Pedidos del usuario no atendidos: ninguno de la V1 pedida (grabar con el teclado, ver y escuchar, micrófono y MP3 a MIDI, partitura y exportar video, presentación, paquetes, inicio nuevo). Todo está hecho pero sin verificar en un celular.
+
 ### 2026-11-17 · Fase 8 · Apps de PC y Android
 - Hecho (ADR-018):
   - **Diseño:** cuatro propuestas navegables en un lienzo. Jacobo eligió PC "Estudio directo" y celular "Piezas primero", con la pieza en horizontal (DESIGN §5).

@@ -44,11 +44,18 @@
 - Cómo reproducir (Jacobo, 2026-11-17): Grabar, Detener, y Cancelar mientras la IA convierte lo grabado.
 - Esperado / obtenido: volver al inicio sin la grabación (o con el audio guardado). Obtenido: la pantalla sigue en "Grabando", la app se traba y no deja hacer nada.
 - Causa: pendiente de investigar. Probablemente la pantalla Grabando solo sale con un error o con la pieza abierta, y cancelar no hace ninguna de las dos cosas.
-- Arreglo y prueba que lo cubre: pendiente.
+- Arreglo y prueba que lo cubre (2026-11-18, app nativa, ADR-019): la conversión vive fuera de la pantalla (`Impromptu.convertir`); Cancelar detiene ONNX Runtime a mitad (`RunOptions.setTerminate`) y vuelve al inicio enseguida; una conversión nueva espera a que la anterior termine. **Sin verificar en un celular.**
 
 ### BUG-003 · Celular: no hay un botón claro para volver, y el "atrás" de Android cierra la app
 - Dónde: app de Android (Capacitor), todas las pantallas.
 - Cómo reproducir (Jacobo, 2026-11-17): estando en una pieza, grabando o en ajustes, buscar cómo volver; el botón atrás del sistema sale de la app.
 - Esperado / obtenido: un "volver" evidente en cada pantalla, y el atrás del sistema debe ir a la pantalla anterior. Obtenido: la app se cierra.
 - Causa: la app no maneja el botón atrás de Android (`@capacitor/app`, evento `backButton`), y el botón de volver de la pieza es solo un ícono pequeño.
-- Arreglo y prueba que lo cubre: pendiente.
+- Arreglo y prueba que lo cubre (2026-11-18, app nativa): botón de volver de 48 dp en cada pantalla y `BackHandler` que vuelve a la anterior; solo en el inicio sale de la app. Grabando o con el micrófono abierto, pregunta antes de descartar. **Sin verificar en un celular.**
+
+### BUG-004 · Celular: la app se cierra al convertir una grabación
+- Dónde: app de Android (Capacitor), conversión con el piano con pedal (Transkun).
+- Cómo reproducir (Jacobo, 2026-11-17): grabar algo con el micrófono y esperar la conversión: se quedó cargando y la app se cerró.
+- Esperado / obtenido: la pieza convertida. Obtenido: la app se cierra.
+- Causa (medida 2026-11-18): ONNX Runtime ocupa ~2,5 GB por segmento de 16 s: la atención arma matrices de ~3 GB si se calcula de una vez, el puntuador hace varias copias de S (691×691×90, 172 MB cada una) y el reservador de memoria de ONNX Runtime guarda los bloques sin soltarlos.
+- Arreglo y prueba que lo cubre (app nativa, ADR-019): modelo para celular con la atención por partes y el puntuador aparte (de a 10 teclas), sin el reservador; el modelo se suelta al terminar cada conversión. `TranskunTest.transcribeComoPython` mide la memoria: de +2,5 GB a +0,67 GB, con las mismas 153 notas que Python. **Sin verificar en un celular.**

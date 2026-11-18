@@ -31,6 +31,10 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 | TensorFlow.js 3.21 | Ejecutar Basic Pitch | Apache-2.0 (verificado) | Aviso de licencia |
 | `@spotify/basic-pitch` 1.0.1 (código y modelo) | Audio a notas (fase 5) | Apache-2.0 (verificado) | Aviso de licencia; crédito en "Acerca de" |
 | `onnxruntime-web` 1.31.1 | Correr el modelo de piano (ADR-014) | MIT (verificado) | Aviso de copyright |
+| `onnxruntime-android` 1.31.1 | Transkun en la app de Android (ADR-019) | MIT | Aviso de copyright; crédito en "Acerca de" de la app |
+| Jetpack Compose, AndroidX, kotlinx-coroutines | App de Android | Apache-2.0 | Aviso de licencia |
+| `onnxruntime` 1.31.1 (escritorio) y `org.json` | Solo pruebas de la app de Android en la PC | MIT; dominio público | Solo desarrollo, no va en el APK |
+| Trazos de íconos de Lucide (copiados a `Iconos.kt`) | Íconos de la app de Android | ISC | Aviso de copyright |
 | Transkun V2 (paquete de pip `transkun` 2.0.1: código y pesos `pretrained/2.0.pt`) | Piano con pedal (ADR-015); espectro y decodificación portados a TS | MIT, © 2021 Yujia Yan (verificado: LICENSE y clasificador del paquete; los pesos vienen dentro del paquete) | Aviso de copyright; crédito en "Acerca de" |
 | Modelo de piano de Kong et al. | Se evaluó y se dejó (ADR-014, ADR-015) | CC BY 4.0 | Ya no se usa |
 | Dexie (IndexedDB) | Almacenamiento | [VERIFICAR] | |

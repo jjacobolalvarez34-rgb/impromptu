@@ -237,6 +237,22 @@ Formato: contexto → decisión → consecuencias. Para agregar una, copia la pl
   - Más adelante, el modelo de piano puede correr nativo con `onnxruntime-node` (~2× tiempo real en el portátil de Jacobo, contra ~0,15× en el navegador).
   - ADR-008 se mantiene en lo esencial (tres productos, una base de código); cambia la herramienta.
 
+### ADR-019 · App de Android nativa (Kotlin + Jetpack Compose) en vez de Capacitor
+- **Contexto:** la app de Capacitor (ADR-018) se trababa al cancelar (BUG-002), no tenía cómo volver (BUG-003) y se cerró por memoria al convertir (BUG-004). Jacobo pidió una app totalmente nativa, que funcione, con presentación, paquetes por instrumento y un inicio nuevo.
+- **Decisión:**
+  - `apps/mobile`: Kotlin 2.4 + Jetpack Compose (BOM 2026.06.01; la 2026.09 pide AGP 9.1 y SDK 37), AGP 8.13, minSdk 26, solo arm64-v8a. Sin ViewModel ni librería de navegación: una pila de pantallas propia con BackHandler.
+  - Sonido: sampler propio sobre AudioTrack de baja latencia; muestras del Salamander decodificadas a PCM 16 bits mono y mapeadas en memoria (no ocupan el montón).
+  - MIDI: `android.media.midi` (clase estándar por USB).
+  - Audio a notas: Transkun V2 con `onnxruntime-android` 1.31.1. **Modelo para celular** exportado aparte (`D:/.cache/models/movil`, script `D:/.cache/claude-tmp/transkun_movil.py`): la atención se calcula por partes de 128 MB (mismo cálculo) y el puntuador de intervalos va en otro modelo que se corre de a 10 teclas; ONNX Runtime sin su reservador de memoria. Mismo resultado que Python (F1 100 %) con un cuarto de la memoria.
+  - Partitura: WebView con un paquete propio (`apps/mobile/partitura`, Vite) que reutiliza `@impromptu/notation` y OpenSheetMusicDisplay, en vez de reescribir la notación en Kotlin.
+  - Video: MediaCodec (H.264 + AAC) y MediaMuxer; el mismo dibujo del visualizador (Canvas de Android) para pantalla y video.
+  - El modelo se copia a los assets al compilar, desde `D:/.cache/models/movil` (variable `IMPROMPTU_MODELOS`); no pasa por git. PROVISIONAL(P21).
+- **Consecuencias:**
+  - La app de Android ya no comparte la interfaz con la web: lo que se mejore en una hay que llevarlo a la otra. La lógica de notación sí se comparte.
+  - El APK pesa ~100 MB por el modelo y ONNX Runtime.
+  - El CI no compila Android (falta el SDK allí); las pruebas de Kotlin se corren a mano con `pnpm --filter @impromptu/mobile pruebas`.
+  - ADR-018 queda reemplazado en lo de Android; la app de PC sigue con Electron.
+
 ---
 ### Plantilla
 ```

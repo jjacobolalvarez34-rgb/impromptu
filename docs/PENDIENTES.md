@@ -30,7 +30,13 @@ Claude Code: si algo de esta lista bloquea tu tarea, usa el valor provisional, m
 ## Lo que queda (resumen al 2026-11-17)
 
 ### Para que pruebe Jacobo
-1. **App de Android** (`apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk`): instalarla, conectar el Yamaha por cable OTG, grabar con el teclado y con el micrófono, abrir una pieza (debe girar a horizontal) y probar sin internet.
+1. **App de Android nativa** (`apps/mobile/release/Impromptu-0.1.0.apk`, 2026-11-18). Antes, desinstalar la de Capacitor. Nada está verificado en un celular todavía:
+   1. Primera vez: presentación → "Elige qué instalar" → descargar el piano (~90 MB). Probar Cancelar a mitad y volver a descargar: debe seguir desde donde iba.
+   2. Grabar: conectar el Yamaha por OTG (su nombre sale en la franja ámbar), que suene el piano con el pedal, grabar, "Detener y guardar": abre la pieza en horizontal.
+   3. Pieza: tocar/pausa, barra de tiempo, velocidades. Volver y el atrás de Android vuelven al inicio, no cierran la app (BUG-003).
+   4. Micrófono: grabar 20–30 s; probar Cancelar mientras convierte (BUG-002). "Audio a notas" con un MP3. Ver si la app se cierra (BUG-004) y cuánto tarda.
+   5. Partitura y Video desde la pieza; el video queda en Películas/Impromptu.
+   6. Ajustes: sustain sin pedal.
 2. **App de PC** (`apps/desktop/release/Impromptu-0.0.0-instalador.exe`): instalarla, conectar el Yamaha, probar el menú Archivo y convertir un audio sin internet. Windows avisará que el instalador no está firmado.
 3. **Piano con pedal (Transkun)** con su piano: grabar con "Grabar también el sonido" y "Guardar para pruebas", para medirlo contra lo que tocó.
 4. **Micrófono en vivo** (las notas suben al tocar) y **sustain sin pedal**.
@@ -45,7 +51,7 @@ Claude Code: si algo de esta lista bloquea tu tarea, usa el valor provisional, m
   - En la app de PC, el modelo de piano corriendo nativo (`onnxruntime-node`): de ~0,15× a ~2× tiempo real en el portátil de Jacobo.
   - Ícono, pantalla de arranque y firma del APK; firma del instalador de Windows (sin firma, Windows avisa).
   - Actualizaciones automáticas de las apps.
-  - App de Android **nativa** (la de Capacitor es para probar, ADR-018).
+  - App de Android **nativa**: hecha el 2026-11-18 (ADR-019), sin verificar en un celular.
 - **Fase 9:** guitarra (tablatura) y batería.
 - **Fase 10:** editor de partitura, video de la partitura y grabar directo en la partitura.
 - **Al final:** teclado realista por niveles (sombras y teclas que bajan según la fuerza).
@@ -56,7 +62,8 @@ Claude Code: si algo de esta lista bloquea tu tarea, usa el valor provisional, m
 ### Decisiones de Jacobo abiertas
 P1 (licencia del código), P2 (nombre en GitHub y dominio), P3 (marca en la SIC), P7 (donaciones), P11 (publicar sus grabaciones de prueba), P14 (logo y formatos del video de marca), P15 (dónde alojar las muestras del piano), P17 (prueba en OBS), P18 (sostenuto y una corda con testers), P19 (interruptor para reducir animaciones), P20 (web de Mamut Herd), P21 (dónde publicar el modelo de piano para la web), P22 (destacar "de MP3 a MIDI" en la página de inicio).
 
-### Pedidos de Jacobo después de probar las apps (2026-11-17), sin empezar
+### Pedidos de Jacobo después de probar las apps (2026-11-17)
+En la app de Android nativa (2026-11-18) se hicieron la presentación, el inicio nuevo, el ícono con el logo, la memoria (BUG-004), BUG-002 y BUG-003, **sin verificar en un celular**. En la web y la app de PC siguen sin empezar:
 - **Mejorar muchísimo las apps** ("toca mejorar supremamente la app").
 - **Agregar la página de presentación (landing)** también en las apps.
 - **Mejorar la pestaña principal** (el Estudio).
@@ -65,11 +72,11 @@ P1 (licencia del código), P2 (nombre en GitHub y dominio), P3 (marca en la SIC)
 - **BUG-002**: al cancelar la conversión de una grabación, la app se queda "grabando" y se traba.
 - **BUG-003**: no hay un botón claro para volver, y el atrás de Android cierra la app.
 
-## Próxima sesión: app de Android NATIVA (decidido por Jacobo, 2026-11-17)
+## App de Android NATIVA (decidido por Jacobo, 2026-11-17; construida el 2026-11-18, ADR-019, sin verificar en un celular)
 - **Ya no Capacitor.** App totalmente nativa en Kotlin + Jetpack Compose (reemplaza `apps/mobile`; ADR-019 por escribir). La web queda como está por ahora (a Jacobo le gusta); la prioridad es que la app de celular funcione.
 - **Primera vez que se abre:** presentación (landing) y luego elegir qué descargar: **Piano** (todo: sonido y modelo de IA), **Batería** y **Guitarra** como "pronto". Después, la pantalla principal rediseñada (la actual le parece fea).
 - **Versión 1 trae todo:** grabar con el teclado (MIDI por OTG, con el piano sonando), ver y escuchar piezas (notas cayendo en horizontal, abrir y guardar MIDI), micrófono y MP3 a MIDI (Transkun con ONNX Runtime nativo), partitura (MusicXML generado en Kotlin y dibujado con OpenSheetMusicDisplay empaquetado) y exportar video (MediaCodec H.264 + AAC).
 - **Toolchain listo en D::** Java 21 (`D:\tools\jdk-21.0.13+9`), SDK (`D:\Android\sdk`), Gradle (`D:\.cache\gradle`, AGP 8.13.0, Gradle 8.14.3 ya en caché).
 - **Hay que resolver:** dónde se alojan los paquetes para descargarlos (P21, también las muestras P15).
-- **Estado sin commit** (de la app Capacitor, a descartar o reutilizar): ícono y pantalla de arranque de Impromptu en `apps/mobile/android/app/src/main/res` (reutilizables) y firma en `build.gradle`. La llave de firma (Mamut Herd) quedó en `D:\Android\keys\impromptu-release.jks` con su contraseña en `impromptu-release.properties`: **guardar copia, sin ella no se puede actualizar la app en Google Play.**
+- Se reutilizaron el ícono y la firma de la app Capacitor. La llave de firma (Mamut Herd) quedó en `D:\Android\keys\impromptu-release.jks` con su contraseña en `impromptu-release.properties`: **guardar copia, sin ella no se puede actualizar la app en Google Play.**
 - Bugs de la app Capacitor que la nativa debe evitar: BUG-002, BUG-003, BUG-004 (se cerró por memoria al convertir una grabación).
