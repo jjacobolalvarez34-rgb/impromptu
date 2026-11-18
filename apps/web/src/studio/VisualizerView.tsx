@@ -132,8 +132,11 @@ export function VisualizerView({
         return;
       }
       const now = liveNow();
-      if (useStudio.getState().view === 'live' && !transport.playing) {
-        viz.setLive(live.notes, live.pedals, live.range());
+      const st = useStudio.getState();
+      // Sin toma abierta y con guitarra, bajo o batería elegida: se ve su mástil o sus parches.
+      const vacioOtro = !st.take && st.instrumento !== 'piano';
+      if ((st.view === 'live' && !transport.playing) || vacioOtro) {
+        viz.setLive(live.notes, live.pedals, live.range(), useStudio.getState().instrumento);
         showingLive = true;
         const cam = useCamera.getState();
         viz.setCalibration(cam.calibration ?? null);
@@ -141,7 +144,7 @@ export function VisualizerView({
         viz.render(now);
       } else {
         if (showingLive) {
-          viz.setTake(useStudio.getState().take);
+          viz.setTake(st.take);
           showingLive = false;
         }
         const t = transport.now();

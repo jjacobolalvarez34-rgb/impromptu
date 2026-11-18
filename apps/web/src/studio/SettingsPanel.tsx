@@ -1,5 +1,5 @@
 import type { PedalKind } from '@impromptu/core';
-import { THEMES } from '@impromptu/render';
+import { THEMES, instrumentoDe } from '@impromptu/render';
 import { Button, Chips, Slider, Switch } from '@impromptu/ui';
 import { useAudio } from './audio';
 import { autoAssign } from './edit';
@@ -7,6 +7,24 @@ import { ColorField } from './ColorField';
 import { useStudio } from './store';
 import type { KeyboardMode } from './store';
 import styles from './SettingsPanel.module.css';
+
+const TIMBRES = [
+  { value: 'nylon', label: 'Nylon' },
+  { value: 'acero', label: 'Acero' },
+  { value: 'electrica', label: 'Eléctrica' },
+] as const;
+
+const AFINACIONES_UI = [
+  { value: 'estandar', label: 'Estándar' },
+  { value: 'drop-d', label: 'Drop D' },
+  { value: 'medio-tono-abajo', label: 'Medio tono abajo' },
+] as const;
+
+const SENSIBILIDAD = [
+  { value: '0.6', label: 'Baja' },
+  { value: '1', label: 'Media' },
+  { value: '1.4', label: 'Alta' },
+] as const;
 
 const KEYBOARDS = [
   { value: 'auto', label: 'Auto' },
@@ -59,6 +77,11 @@ export function SettingsPanel() {
   const keyboard = useStudio((s) => s.keyboard);
   const handSize = useStudio((s) => s.handSize);
   const hasTake = useStudio((s) => s.take !== null);
+  // Las opciones dependen del instrumento: el de la pieza abierta o, sin pieza, el elegido.
+  const instrumento = useStudio((s) => (s.take ? instrumentoDe(s.take) : s.instrumento));
+  const piano = instrumento === 'piano';
+  const guitarra = useStudio((s) => s.guitarra);
+  const sensibilidad = useStudio((s) => s.sensibilidadBateria);
   const { setSettings, setKeyboard } = useStudio.getState();
 
   const setEffect = (patch: Partial<typeof settings.effects>) =>
@@ -129,63 +152,107 @@ export function SettingsPanel() {
         }}
       />
 
-      <h2 className="ui-etiqueta">Notas</h2>
-      <div className={styles.colores}>
-        <ColorField
-          label="Mano derecha"
-          value={settings.colors.right}
-          onChange={setColor('right')}
-        />
-        <ColorField
-          label="Mano izquierda"
-          value={settings.colors.left}
-          onChange={setColor('left')}
-        />
-        <ColorField
-          label="Sin asignar"
-          value={settings.colors.unassigned}
-          onChange={setColor('unassigned')}
-        />
-      </div>
+      {(instrumento === 'guitar' || instrumento === 'bass') && (
+        <>
+          <h2 className="ui-etiqueta">{instrumento === 'bass' ? 'Bajo' : 'Guitarra'}</h2>
+          <p className="ui-secundario">
+            Cada nota cae sobre el traste y la cuerda donde se pisa, con el color de su cuerda y el
+            número de traste.
+          </p>
+          {instrumento === 'guitar' && (
+            <>
+              <Chips
+                label="Sonido de la guitarra"
+                options={TIMBRES}
+                value={guitarra.timbre}
+                onChange={(timbre) => useStudio.getState().setGuitarra({ timbre })}
+              />
+              <Chips
+                label="Afinación"
+                options={AFINACIONES_UI}
+                value={guitarra.afinacion}
+                onChange={(afinacion) => useStudio.getState().setGuitarra({ afinacion })}
+              />
+            </>
+          )}
+        </>
+      )}
+      {instrumento === 'drums' && (
+        <>
+          <h2 className="ui-etiqueta">Batería</h2>
+          <p className="ui-secundario">
+            Cada pieza tiene su carril y su color: los golpes caen sobre su parche.
+          </p>
+          <span className="ui-secundario">Sensibilidad del micrófono</span>
+          <Chips
+            label="Sensibilidad del micrófono"
+            options={SENSIBILIDAD}
+            value={String(sensibilidad) as '0.6' | '1' | '1.4'}
+            onChange={(v) => useStudio.getState().setSensibilidadBateria(Number(v))}
+          />
+        </>
+      )}
+      {piano && (
+        <>
+          <h2 className="ui-etiqueta">Notas</h2>
+          <div className={styles.colores}>
+            <ColorField
+              label="Mano derecha"
+              value={settings.colors.right}
+              onChange={setColor('right')}
+            />
+            <ColorField
+              label="Mano izquierda"
+              value={settings.colors.left}
+              onChange={setColor('left')}
+            />
+            <ColorField
+              label="Sin asignar"
+              value={settings.colors.unassigned}
+              onChange={setColor('unassigned')}
+            />
+          </div>
 
-      <h2 className="ui-etiqueta">Manos y dedos</h2>
-      <Switch
-        label="Números de dedo"
-        checked={settings.show.fingers}
-        onChange={(fingers) => setSettings({ show: { ...settings.show, fingers } })}
-      />
-      <Switch
-        label="Nombres de las notas"
-        checked={settings.show.noteNames}
-        onChange={(noteNames) => setSettings({ show: { ...settings.show, noteNames } })}
-      />
-      <Chips
-        label="Tamaño de mano"
-        options={HAND_SIZES}
-        value={handSize}
-        onChange={(size) => useStudio.getState().setHandSize(size)}
-      />
-      <Button
-        disabled={!hasTake}
-        onClick={() => {
-          const { edit, handSize: size } = useStudio.getState();
-          edit((t) => autoAssign(t, size));
-        }}
-      >
-        Recalcular manos y dedos
-      </Button>
-      <p className="ui-secundario">
-        Pausa y haz clic en una nota para cambiar su mano o su dedo. Lo que fijes se respeta al
-        recalcular.
-      </p>
+          <h2 className="ui-etiqueta">Manos y dedos</h2>
+          <Switch
+            label="Números de dedo"
+            checked={settings.show.fingers}
+            onChange={(fingers) => setSettings({ show: { ...settings.show, fingers } })}
+          />
+          <Switch
+            label="Nombres de las notas"
+            checked={settings.show.noteNames}
+            onChange={(noteNames) => setSettings({ show: { ...settings.show, noteNames } })}
+          />
+          <Chips
+            label="Tamaño de mano"
+            options={HAND_SIZES}
+            value={handSize}
+            onChange={(size) => useStudio.getState().setHandSize(size)}
+          />
+          <Button
+            disabled={!hasTake}
+            onClick={() => {
+              const { edit, handSize: size } = useStudio.getState();
+              edit((t) => autoAssign(t, size));
+            }}
+          >
+            Recalcular manos y dedos
+          </Button>
+          <p className="ui-secundario">
+            Pausa y haz clic en una nota para cambiar su mano o su dedo. Lo que fijes se respeta al
+            recalcular.
+          </p>
 
-      <h2 className="ui-etiqueta">Teclado</h2>
-      <Chips
-        label="Teclado"
-        options={KEYBOARDS}
-        value={keyboard}
-        onChange={(v) => setKeyboard(v as KeyboardMode)}
-      />
+          <h2 className="ui-etiqueta">Teclado</h2>
+          <Chips
+            label="Teclado"
+            options={KEYBOARDS}
+            value={keyboard}
+            onChange={(v) => setKeyboard(v as KeyboardMode)}
+          />
+        </>
+      )}
 
       <h2 className="ui-etiqueta">Efectos</h2>
       <Chips
@@ -237,16 +304,20 @@ export function SettingsPanel() {
         onChange={(beatGuides) => setEffect({ beatGuides })}
       />
 
-      <h2 className="ui-etiqueta">Pedales</h2>
-      {PEDALS.map((p) => (
-        <Switch
-          key={p.kind}
-          label={p.label}
-          checked={settings.show.pedals.includes(p.kind)}
-          onChange={togglePedal(p.kind)}
-        />
-      ))}
-      <PanelSustain />
+      {piano && (
+        <>
+          <h2 className="ui-etiqueta">Pedales</h2>
+          {PEDALS.map((p) => (
+            <Switch
+              key={p.kind}
+              label={p.label}
+              checked={settings.show.pedals.includes(p.kind)}
+              onChange={togglePedal(p.kind)}
+            />
+          ))}
+          <PanelSustain />
+        </>
+      )}
     </>
   );
 }

@@ -75,7 +75,7 @@ export function Portada() {
                 variant="primary"
                 className="ui-aparece-tecla"
                 style={delay(7)}
-                onClick={() => navigate('/estudio')}
+                onClick={() => navigate('/estudio?instrumento=piano')}
               >
                 Abrir el estudio
               </Button>
@@ -89,18 +89,32 @@ export function Portada() {
             </Instrumento>
             <Instrumento
               icon={<Guitar />}
-              name="Guitarra"
-              text="Tablaturas y video."
+              name="Guitarra y bajo"
+              text="Notas sobre el mástil con cuerda y traste, tablatura y video."
               index={5}
-              soon
-            />
+            >
+              <Button
+                className="ui-aparece-tecla"
+                style={delay(8)}
+                onClick={() => navigate('/estudio?instrumento=guitarra')}
+              >
+                Abrir con guitarra
+              </Button>
+            </Instrumento>
             <Instrumento
               icon={<Drum />}
               name="Batería"
-              text="Transcripción y tablatura de batería."
+              text="Batería electrónica por USB o el micrófono, partitura de batería y video."
               index={6}
-              soon
-            />
+            >
+              <Button
+                className="ui-aparece-tecla"
+                style={delay(9)}
+                onClick={() => navigate('/estudio?instrumento=bateria')}
+              >
+                Abrir con batería
+              </Button>
+            </Instrumento>
           </div>
         </section>
 

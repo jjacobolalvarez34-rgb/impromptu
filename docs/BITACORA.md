@@ -31,7 +31,16 @@ Una entrada por sesión, la más reciente arriba.
   - **App de PC**: abre en la pantalla principal de la web (intro animada y elegir instrumento), como pidió Jacobo, en vez de entrar directo al estudio. **Sin verificar** (no se armó el instalador de nuevo; se hará al final).
   - **Vista previa al exportar** en web y PC: miniatura animada con la forma del formato (horizontal, vertical o cuadrado) y los ajustes del video. Prueba e2e `exportar.spec.ts` (verifica la forma) y captura `test-results/capturas/exportar-escritorio.png`.
   - **"Próximamente: cuenta y nube"** en la pantalla principal de la web y la PC.
-- Pendiente: guitarra; batería; fase 10; fase 11; integrar en las tres y compilar.
+- Hecho, paso 3 (fase 9, web y PC). **Sin verificar con un instrumento real** (Jacobo no tiene guitarra MIDI ni batería electrónica; se probó con MIDIs y ritmos sintetizados):
+  - Núcleo: afinaciones y **cuerda y traste** con la mano como estado (cubre 4 trastes; solo cuesta cambiar de posición); mapa General MIDI de la batería.
+  - **Partitura**: guitarra y bajo con pentagrama y **tablatura**; batería en **pentagrama de percusión** con platillos en cruz.
+  - **Sonido sintetizado** (sin descargas ni licencias): guitarra y bajo con Karplus-Strong (nylon, acero, eléctrica) y batería por pieza. Suena en el estudio, en vivo y en el video exportado.
+  - **Video**: guitarra sobre un **mástil** (un carril por traste y una línea por cuerda, color por cuerda y punto donde se pisa); batería con **parches** por pieza que se encienden.
+  - **MIDI**: abrir reconoce batería (canal 10), guitarra (programas 24–31) y bajo (32–39); guardar los escribe igual.
+  - **Audio a notas**: guitarra y bajo con Basic Pitch y cuerda y traste; batería con un **detector propio por bandas** (los modelos de batería revisados no tienen licencia de pesos clara o son no comerciales: ADTOF es CC BY-NC-SA). En la prueba con un ritmo sintetizado acierta todos los golpes.
+  - **Estudio**: elegir instrumento (Piano, Guitarra, Bajo, Batería); la pantalla principal abre con guitarra o batería; las opciones cambian (sonido y afinación de la guitarra, sensibilidad de la batería; lo de piano se esconde).
+  - Pruebas: core 6, notación 19, audio 21, transcripción 14 (detector), MIDI 26, e2e `instrumentos.spec.ts`; capturas `test-results/capturas/estudio-{guitarra,bateria}-pieza.png`.
+- Pendiente: guitarra y batería en la app de Android; editores de tablatura y de batería (fase 10); fase 10; fase 11; integrar en las tres y compilar.
 
 ---
 

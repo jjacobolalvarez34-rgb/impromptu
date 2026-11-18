@@ -10,7 +10,7 @@ import {
   Text,
   Texture,
 } from 'pixi.js';
-import { beatGrid } from '@impromptu/core';
+import { PIEZAS_BATERIA, beatGrid } from '@impromptu/core';
 import type {
   Beat,
   Instrument,
@@ -118,6 +118,8 @@ export class Visualizer {
   private readonly active = new Map<number, NoteEvent>();
   /** Guitarra, bajo o batería (fase 9): carriles virtuales en vez de teclas. */
   private carriles: Carriles | null = null;
+  /** Nombres de las piezas sobre los parches de la batería. */
+  private readonly nombresParches = new Container();
 
   private readonly guides = new Graphics();
   private readonly beamLayer = new Container();
@@ -248,6 +250,7 @@ export class Visualizer {
       this.sparkLayer,
       this.pedal,
       this.pedalLabel,
+      this.nombresParches,
       this.insetLayer,
     );
   }
@@ -572,12 +575,14 @@ export class Visualizer {
     }
     this.sparkPool.end();
 
-    if (camera) {
+    if (camera || this.carriles) {
+      // Con cámara, o en guitarra y batería (no tienen pedal), no se dibuja.
       this.pedal.clear();
       this.pedalLabel.visible = false;
     } else {
       this.drawPedal(t);
     }
+    this.nombresParches.visible = this.carriles?.instrument === 'drums' && !camera;
     this.app.render();
   }
 
@@ -747,6 +752,23 @@ export class Visualizer {
         g.ellipse((i + 0.5) * w, top + h * 0.5, r, r * 0.8)
           .fill(activa ? color : 0x2e2e2b)
           .stroke({ width: Math.max(2, h * 0.03), color });
+        let nombre = this.nombresParches.children[i] as Text | undefined;
+        if (!nombre) {
+          nombre = new Text({
+            text: PIEZAS_BATERIA[i]!.nombre,
+            style: {
+              fontFamily: 'Archivo, sans-serif',
+              fontSize: 12,
+              fill: 0xe8e4dc,
+              align: 'center',
+            },
+          });
+          nombre.anchor.set(0.5);
+          this.nombresParches.addChild(nombre);
+        }
+        nombre.style.fontSize = Math.max(9, Math.min(16, w * 0.12, h * 0.12));
+        nombre.style.fill = activa ? 0x1c1c1a : 0xe8e4dc;
+        nombre.position.set((i + 0.5) * w, top + h * 0.5);
       }
     } else {
       const col = L.width / c.trastes;

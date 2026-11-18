@@ -27,6 +27,7 @@ export function KeyboardSection() {
   const recordMic = useLive((s) => s.recordMic);
   const setRecordMic = useLive((s) => s.setRecordMic);
   const message = STATUS_TEXT[status];
+  const instrumento = useStudio((s) => s.instrumento);
   useEffect(() => {
     void live.autoConnect();
   }, []);
@@ -36,8 +37,12 @@ export function KeyboardSection() {
       {(status === 'off' || status === 'asking') && (
         <>
           <p className="ui-secundario">
-            Conecta tu teclado por USB. Impromptu solo lee las notas y los pedales; nada sale de tu
-            equipo.
+            {instrumento === 'drums'
+              ? 'Conecta tu batería electrónica por USB.'
+              : instrumento === 'piano'
+                ? 'Conecta tu teclado por USB.'
+                : 'Conecta tu guitarra MIDI (o un teclado) por USB.'}{' '}
+            Impromptu solo lee las notas; nada sale de tu equipo.
           </p>
           <Button
             icon={<Cable />}

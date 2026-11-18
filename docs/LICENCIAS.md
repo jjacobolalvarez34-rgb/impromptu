@@ -36,6 +36,10 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 | `onnxruntime` 1.31.1 (escritorio) y `org.json` | Solo pruebas de la app de Android en la PC | MIT; dominio público | Solo desarrollo, no va en el APK |
 | Trazos de íconos de Lucide (copiados a `Iconos.kt`) | Íconos de la app de Android | ISC | Aviso de copyright |
 | Transkun V2 (paquete de pip `transkun` 2.0.1: código y pesos `pretrained/2.0.pt`) | Piano con pedal (ADR-015); espectro y decodificación portados a TS | MIT, © 2021 Yujia Yan (verificado: LICENSE y clasificador del paquete; los pesos vienen dentro del paquete) | Aviso de copyright; crédito en "Acerca de" |
+| ADTOF (batería, Zehren et al.) | Evaluado para batería (fase 9) | CC BY-NC-SA 4.0 (no comercial) | **No se usa** |
+| Omnizart (batería) | Evaluado (fase 9) | Código MIT; licencia de los pesos sin aclarar | No se usa hasta confirmar la licencia de los pesos |
+| Guitar-Transcription (ErenReyhanlioglu) | Evaluado para guitarra (fase 9) | Código MIT; pesos en otro repositorio, licencia sin aclarar | No se usa; la guitarra usa Basic Pitch (Apache-2.0) |
+| Sonidos de guitarra, bajo y batería | Síntesis propia (Karplus-Strong y percusión por código) | Código del proyecto (GPL-3.0) | Ninguna |
 | Modelo de piano de Kong et al. | Se evaluó y se dejó (ADR-014, ADR-015) | CC BY 4.0 | Ya no se usa |
 | Dexie (IndexedDB) | Almacenamiento | [VERIFICAR] | |
 | Tauri 2 | Escritorio | MIT o Apache-2.0 [VERIFICAR] | |

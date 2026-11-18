@@ -1,10 +1,10 @@
 import { LivePlayer, Piano, Sintes, takeVoices } from '@impromptu/audio';
 import type { LiveVoiceHandle, Voice } from '@impromptu/audio';
-import type { Hand, Take } from '@impromptu/core';
+import type { Hand, Take, Instrument } from '@impromptu/core';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { audioOffset, useOwnAudio } from './ownAudio';
-import { transport } from './store';
+import { transport, useStudio } from './store';
 
 /** Cuánto por delante se programa el audio y cada cuánto se revisa (s / ms). */
 const HORIZON = 0.3;
@@ -101,7 +101,13 @@ class AudioEngine {
 
   private ensureContext(): AudioContext {
     this.context ??= new AudioContext({ latencyHint: 'interactive' });
-    this.sintes ??= new Sintes(this.context);
+    if (!this.sintes) {
+      this.sintes = new Sintes(this.context);
+      this.sintes.timbreGuitarra = useStudio.getState().guitarra.timbre;
+      useStudio.subscribe((s) => {
+        if (this.sintes) this.sintes.timbreGuitarra = s.guitarra.timbre;
+      });
+    }
     return this.context;
   }
 
@@ -240,6 +246,26 @@ class AudioEngine {
         elapsed,
       );
     }
+  }
+
+  private vivas = new Map<number, ReturnType<Sintes['strike']>>();
+
+  /** En vivo con guitarra, bajo o batería (fase 9): la nota suena con el sintetizador. */
+  tocarOtro(instrumento: Instrument, pitch: number, velocity: number): void {
+    if (!useAudio.getState().enabled) return;
+    this.ensureContext();
+    const s = this.sintes!;
+    const previa = this.vivas.get(pitch);
+    if (previa && instrumento !== 'drums') s.damp(previa);
+    this.vivas.set(pitch, s.strike(instrumento, pitch, velocity));
+  }
+
+  /** La batería suena entera; la cuerda se apaga al soltar. */
+  soltarOtro(instrumento: Instrument, pitch: number): void {
+    if (instrumento === 'drums') return;
+    const v = this.vivas.get(pitch);
+    if (v) this.sintes?.damp(v);
+    this.vivas.delete(pitch);
   }
 
   /** Quién toca una voz: el piano, o el sintetizador de guitarra, bajo y batería. */

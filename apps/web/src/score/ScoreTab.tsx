@@ -13,6 +13,8 @@ import { Button, Chips } from '@impromptu/ui';
 import { Download, FileMusic, Printer } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
+import { AFINACIONES } from '@impromptu/core';
+import { instrumentoDe } from '@impromptu/render';
 import { midiFileName } from '../studio/saveMidi';
 import { transport, useStudio } from '../studio/store';
 import styles from './ScoreTab.module.css';
@@ -67,10 +69,19 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
   const score: Score | null = useMemo(() => {
     if (!take || !beats) return null;
     const [n, d] = meter.split('/').map(Number) as [number, number];
-    return buildScore(take, { beats, timeSignature: [n, d] });
+    return buildScore(take, { beats, timeSignature: [n, d], instrument: instrumentoDe(take) });
   }, [take, beats, meter]);
 
-  const xml = useMemo(() => (score ? toMusicXml(score) : null), [score]);
+  const xml = useMemo(
+    () =>
+      score && take
+        ? toMusicXml(score, {
+            instrument: instrumentoDe(take),
+            afinacion: AFINACIONES[useStudio.getState().guitarra.afinacion],
+          })
+        : null,
+    [score, take],
+  );
 
   // Dibujo con OpenSheetMusicDisplay (se carga solo al abrir esta pestaña).
   const osmd = useRef<OpenSheetMusicDisplay | null>(null);

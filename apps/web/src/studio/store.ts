@@ -1,5 +1,5 @@
 import { KEYBOARD_PRESETS, fitKeyboardRange } from '@impromptu/core';
-import type { Take } from '@impromptu/core';
+import type { Instrument, Take } from '@impromptu/core';
 import type { HandSize } from '@impromptu/practice';
 import { autoAssign, hasNoHands } from './edit';
 import { DEFAULT_SETTINGS } from '@impromptu/render';
@@ -18,6 +18,21 @@ export type View = 'take' | 'live';
 
 interface StudioState {
   take: Take | null;
+  /**
+   * Instrumento con el que se graba y se convierte (fase 9): lo que llega del teclado o la
+   * batería electrónica suena con él, y las tomas nuevas quedan con él.
+   */
+  instrumento: Instrument;
+  setInstrumento: (instrumento: Instrument) => void;
+  /** Guitarra: sonido y afinación. */
+  guitarra: {
+    timbre: 'nylon' | 'acero' | 'electrica';
+    afinacion: 'estandar' | 'drop-d' | 'medio-tono-abajo';
+  };
+  setGuitarra: (patch: Partial<StudioState['guitarra']>) => void;
+  /** Batería: qué tan fácil se dispara el detector del micrófono (0,5 a 2). */
+  sensibilidadBateria: number;
+  setSensibilidadBateria: (v: number) => void;
   /** Avisos del último archivo abierto, ya en español para el usuario. */
   notices: string[];
   settings: VisualSettings;
@@ -62,6 +77,12 @@ export const useStudio = create<StudioState>()(
   persist(
     (set, get) => ({
       take: null,
+      instrumento: 'piano',
+      setInstrumento: (instrumento) => set({ instrumento }),
+      guitarra: { timbre: 'acero', afinacion: 'estandar' },
+      setGuitarra: (patch) => set({ guitarra: { ...get().guitarra, ...patch } }),
+      sensibilidadBateria: 1,
+      setSensibilidadBateria: (sensibilidadBateria) => set({ sensibilidadBateria }),
       notices: [],
       settings: DEFAULT_SETTINGS,
       aspect: '16:9',
@@ -174,6 +195,9 @@ export const useStudio = create<StudioState>()(
         aspect: s.aspect,
         keyboard: s.keyboard,
         handSize: s.handSize,
+        instrumento: s.instrumento,
+        guitarra: s.guitarra,
+        sensibilidadBateria: s.sensibilidadBateria,
       }),
       // Ajustes guardados por una versión anterior: se completan con los valores por defecto
       // (por ejemplo, el estilo y el brillo de las notas de ADR-010).

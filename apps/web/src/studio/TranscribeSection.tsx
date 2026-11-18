@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { fraseDeEspera, prepareTranscriber, textoRestante } from '@impromptu/transcribe';
 import { onMenuAction } from '../desktop';
 import { engine } from './audio';
+import { useStudio } from './store';
 import { PIANO_MODEL_URL, avanceVisible, micStream, useTranscribe } from './transcribeStore';
 import type { Conversion } from './transcribeStore';
 import styles from './LivePanel.module.css';
@@ -18,6 +19,7 @@ const MODELS = [
 export function MicSection() {
   const state = useTranscribe((s) => s.state);
   const model = useTranscribe((s) => s.model);
+  const instrumento = useStudio((s) => s.instrumento);
   const { setModel, startMic, stopMic } = useTranscribe.getState();
 
   if (state.step === 'recording') {
@@ -48,7 +50,18 @@ export function MicSection() {
       >
         Grabar con el micrófono
       </Button>
-      {PIANO_MODEL_URL && (
+      {instrumento === 'drums' && (
+        <p className="ui-secundario">
+          Detecta bombo, caja, hi-hat, toms y platillos. Sale mejor con la batería sola.
+        </p>
+      )}
+      {(instrumento === 'guitar' || instrumento === 'bass') && (
+        <p className="ui-secundario">
+          La IA escucha las notas y elige cuerda y traste por ti. Sale mejor con el instrumento
+          solo.
+        </p>
+      )}
+      {PIANO_MODEL_URL && instrumento === 'piano' && (
         <>
           <Chips label="Modelo de IA" options={MODELS} value={model} onChange={setModel} />
           <p className="ui-secundario">

@@ -1,5 +1,6 @@
 import {
   TranscriptionCancelled,
+  detectarBateria,
   peakLevel,
   prepareTranscriber,
   takeFromTranscription,
@@ -16,6 +17,7 @@ import { refreshTakes, useLive } from './live';
 import { LiveListener } from './liveMic';
 import { saveMedia } from './mediaStore';
 import { useStudio } from './store';
+import { conInstrumento, tomaDeGolpes } from './Instrumento';
 import { saveTake } from './takesDb';
 
 /**
@@ -170,7 +172,21 @@ export const useTranscribe = create<Store>((set, get) => {
         return;
       }
       let take: Take;
-      if (get().model === 'piano' && PIANO_MODEL_URL) {
+      const instrumento = useStudio.getState().instrumento;
+      if (instrumento === 'drums') {
+        show('escuchando', null, 'Buscando los golpes de la batería');
+        const canales = Array.from({ length: buffer.numberOfChannels }, (_, i) =>
+          buffer.getChannelData(i),
+        );
+        const mono = new Float32Array(buffer.length);
+        for (const c of canales)
+          for (let i = 0; i < mono.length; i++) mono[i] = mono[i]! + c[i]! / canales.length;
+        take = tomaDeGolpes(
+          detectarBateria(mono, buffer.sampleRate, 2 - useStudio.getState().sensibilidadBateria),
+          name,
+          buffer.duration,
+        );
+      } else if (get().model === 'piano' && PIANO_MODEL_URL && instrumento === 'piano') {
         const result = await transcribeTranskun(buffer, {
           baseUrl: PIANO_MODEL_URL,
           signal: controller.signal,
@@ -195,7 +211,8 @@ export const useTranscribe = create<Store>((set, get) => {
               : show('escuchando', 0),
           onProgress: (progress) => show('escuchando', progress),
         });
-        take = takeFromTranscription(raw, name, buffer.duration);
+        // Guitarra y bajo: las notas de la IA con cuerda y traste.
+        take = conInstrumento(takeFromTranscription(raw, name, buffer.duration), instrumento);
       }
       if (take.tracks[0]!.notes.length === 0) {
         fallo(

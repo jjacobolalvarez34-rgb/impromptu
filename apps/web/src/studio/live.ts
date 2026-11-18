@@ -8,6 +8,7 @@ import { startCameraRecording, stopCameraRecording, useCamera } from './camera';
 import { saveMedia } from './mediaStore';
 import { Clicker, useMetronome } from './metronome';
 import { setTakeEditedListener, transport, useStudio } from './store';
+import { conInstrumento } from './Instrumento';
 import { listTakes, saveTake } from './takesDb';
 import type { TakeSummary } from './takesDb';
 
@@ -164,7 +165,9 @@ class LiveSession {
     if (useLive.getState().recording) this.recorder.push(e);
     switch (e.type) {
       case 'noteon': {
-        engine.live?.noteOn(e.pitch, e.velocity);
+        const instrumento = useStudio.getState().instrumento;
+        if (instrumento === 'piano') engine.live?.noteOn(e.pitch, e.velocity);
+        else engine.tocarOtro(instrumento, e.pitch, e.velocity);
         this.onPractice?.(e.pitch);
         const prev = this.open.get(e.pitch);
         if (prev) prev.end = e.time;
@@ -180,7 +183,9 @@ class LiveSession {
         break;
       }
       case 'noteoff': {
-        engine.live?.noteOff(e.pitch);
+        const instrumento = useStudio.getState().instrumento;
+        if (instrumento === 'piano') engine.live?.noteOff(e.pitch);
+        else engine.soltarOtro(instrumento, e.pitch);
         const note = this.open.get(e.pitch);
         if (note) note.end = e.time;
         this.open.delete(e.pitch);
@@ -310,7 +315,7 @@ class LiveSession {
     void this.keepScreenOn(false);
     const device = useLive.getState().device;
     const count = useLive.getState().takes.length + 1;
-    const take = this.recorder.stop(
+    const grabada = this.recorder.stop(
       liveNow(),
       `Toma ${count}`,
       device
@@ -320,6 +325,8 @@ class LiveSession {
           }
         : undefined,
     );
+    // La toma queda con el instrumento elegido (guitarra: con cuerda y traste).
+    const take = conInstrumento(grabada, useStudio.getState().instrumento);
     this.clicker.stop();
     if (this.metronome) {
       take.tempoMap = [{ time: 0, bpm: this.metronome.bpm }];

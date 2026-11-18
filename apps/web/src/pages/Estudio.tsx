@@ -27,6 +27,7 @@ import { AudioSection, openOwnAudio } from '../studio/AudioSection';
 import { EditBar, useEditShortcuts } from '../studio/EditBar';
 import { ExportDialog } from '../studio/ExportDialog';
 import { ConvertAudioButton, MicSection, TranscribeStatus } from '../studio/TranscribeSection';
+import { ElegirInstrumento, instrumentoDeTexto } from '../studio/Instrumento';
 import { saveMidi } from '../studio/saveMidi';
 import { isDesktop, onMenuAction, requestConvertAudio } from '../desktop';
 import { Welcome } from '../studio/Welcome';
@@ -157,6 +158,11 @@ export function Estudio() {
     meterLive.current = meter;
   }, [meter]);
   const [params] = useSearchParams();
+  // ?instrumento=guitarra (desde la pantalla principal) elige el instrumento.
+  useEffect(() => {
+    const i = instrumentoDeTexto(params.get('instrumento'));
+    if (i) useStudio.getState().setInstrumento(i);
+  }, [params]);
   const navigate = useNavigate();
 
   const load = async (promise: Promise<OpenedTake>) => {
@@ -353,6 +359,7 @@ export function Estudio() {
             <h2 id="bloque-grabar" className="ui-etiqueta">
               Grabar
             </h2>
+            <ElegirInstrumento />
             <KeyboardSection />
             <MicSection />
           </section>
