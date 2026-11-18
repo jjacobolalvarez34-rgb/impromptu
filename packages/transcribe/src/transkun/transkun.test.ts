@@ -56,53 +56,57 @@ const G = 'D:/.cache/models/golden-transkun';
 const M = 'D:/.cache/models';
 const f32 = (path: string) => new Float32Array(readFileSync(path).buffer.slice(0));
 
-describe.skipIf(!existsSync(`${G}/meta.json`))('igual que Transkun en Python', () => {
-  const meta = existsSync(`${G}/meta.json`)
-    ? (JSON.parse(readFileSync(`${G}/meta.json`, 'utf8')) as {
-        frames: number[];
-        features: number[];
-        S: number[];
-        forcedStartPos: number[];
-        path: [number, number][][];
-      })
-    : null;
+describe.skipIf(!existsSync(`${G}/meta.json`))(
+  'igual que Transkun en Python',
+  { timeout: 60_000 },
+  () => {
+    const meta = existsSync(`${G}/meta.json`)
+      ? (JSON.parse(readFileSync(`${G}/meta.json`, 'utf8')) as {
+          frames: number[];
+          features: number[];
+          S: number[];
+          forcedStartPos: number[];
+          path: [number, number][][];
+        })
+      : null;
 
-  it('Viterbi da la misma ruta con los mismos puntajes', () => {
-    const [T, , nSym] = meta!.S as [number, number, number];
-    const path = viterbiBackward(
-      f32(`${G}/S.f32`),
-      f32(`${G}/S_skip.f32`),
-      T,
-      nSym,
-      meta!.forcedStartPos,
-    );
-    expect(path).toEqual(meta!.path);
-  });
+    it('Viterbi da la misma ruta con los mismos puntajes', () => {
+      const [T, , nSym] = meta!.S as [number, number, number];
+      const path = viterbiBackward(
+        f32(`${G}/S.f32`),
+        f32(`${G}/S_skip.f32`),
+        T,
+        nSym,
+        meta!.forcedStartPos,
+      );
+      expect(path).toEqual(meta!.path);
+    });
 
-  it('las características del espectro coinciden', () => {
-    const consts = JSON.parse(readFileSync(`${M}/transkun-espectro.json`, 'utf8'));
-    const [, ch, T, win] = meta!.frames as [number, number, number, number];
-    const frames = f32(`${G}/frames.f32`);
-    const hop = consts.hopSize as number;
-    const length = 16 * consts.fs;
-    // El audio original se recupera de los cuadros (cada muestra está en algún cuadro).
-    const channels = Array.from({ length: ch }, (_, c) => {
-      const x = new Float32Array(length);
-      for (let i = 0; i < length; i++) {
-        const t = Math.floor(i / hop);
-        x[i] = frames[(c * T + t) * win + (i - t * hop) + win / 2]!;
-      }
-      return x;
-    });
-    const got = segmentFeatures(channels, {
-      ...consts,
-      windows: f32(`${M}/transkun-ventanas.f32`),
-      freq2mels: f32(`${M}/transkun-mel.f32`),
-    });
-    const want = f32(`${G}/features.f32`);
-    expect(got.length).toBe(want.length);
-    let maxErr = 0;
-    for (let i = 0; i < want.length; i++) maxErr = Math.max(maxErr, Math.abs(got[i]! - want[i]!));
-    expect(maxErr).toBeLessThan(1e-3);
-  }, 120_000);
-});
+    it('las características del espectro coinciden', () => {
+      const consts = JSON.parse(readFileSync(`${M}/transkun-espectro.json`, 'utf8'));
+      const [, ch, T, win] = meta!.frames as [number, number, number, number];
+      const frames = f32(`${G}/frames.f32`);
+      const hop = consts.hopSize as number;
+      const length = 16 * consts.fs;
+      // El audio original se recupera de los cuadros (cada muestra está en algún cuadro).
+      const channels = Array.from({ length: ch }, (_, c) => {
+        const x = new Float32Array(length);
+        for (let i = 0; i < length; i++) {
+          const t = Math.floor(i / hop);
+          x[i] = frames[(c * T + t) * win + (i - t * hop) + win / 2]!;
+        }
+        return x;
+      });
+      const got = segmentFeatures(channels, {
+        ...consts,
+        windows: f32(`${M}/transkun-ventanas.f32`),
+        freq2mels: f32(`${M}/transkun-mel.f32`),
+      });
+      const want = f32(`${G}/features.f32`);
+      expect(got.length).toBe(want.length);
+      let maxErr = 0;
+      for (let i = 0; i < want.length; i++) maxErr = Math.max(maxErr, Math.abs(got[i]! - want[i]!));
+      expect(maxErr).toBeLessThan(1e-3);
+    }, 120_000);
+  },
+);

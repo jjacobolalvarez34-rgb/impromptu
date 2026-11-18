@@ -15,8 +15,9 @@ export default tseslint.config(
       // Compilados de las apps (instalador, copia de la web y proyecto de Android).
       'apps/desktop/release/**',
       'apps/desktop/modelos/**',
-      'apps/mobile/www/**',
-      'apps/mobile/android/**',
+      'apps/mobile/build/**',
+      'apps/mobile/app/**',
+      'apps/mobile/.gradle/**',
     ],
   },
   js.configs.recommended,

@@ -12,5 +12,8 @@ fixtures
 # Compilados de las apps
 apps/desktop/release
 apps/desktop/modelos
-apps/mobile/www
-apps/mobile/android
+apps/mobile/build
+apps/mobile/app/build
+apps/mobile/.gradle
+apps/mobile/release
+apps/mobile/app/src/main/assets

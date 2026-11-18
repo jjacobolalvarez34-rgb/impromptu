@@ -1,4 +1,4 @@
-// Todo en D: (regla del proyecto): Java 21 (lo pide Capacitor 8), SDK de Android, Gradle y la carpeta .android.
+// Todo en D: (regla del proyecto): Java 21, SDK de Android, Gradle y la carpeta .android.
 export const androidEnv = {
   ...process.env,
   JAVA_HOME: process.env.IMPROMPTU_JAVA_HOME ?? 'D:/tools/jdk-21.0.13+9',
@@ -8,7 +8,5 @@ export const androidEnv = {
   GRADLE_USER_HOME: process.env.GRADLE_USER_HOME ?? 'D:/.cache/gradle',
   TEMP: 'D:/.cache/gradle/tmp',
   TMP: 'D:/.cache/gradle/tmp',
-  // La web compilada busca el modelo de piano dentro de la app (sin internet).
-  VITE_PIANO_MODEL_URL: '/modelos/',
 };
 androidEnv.PATH = `${androidEnv.JAVA_HOME}/bin;${process.env.PATH}`;

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Carbón de punta a punta (DESIGN §2): sin barra de título, barras del sistema oscuras. -->
+    <style name="Theme.Impromptu" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/carbon</item>
+        <item name="android:statusBarColor">@color/carbon</item>
+        <item name="android:navigationBarColor">@color/carbon</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+    <color name="carbon">#1C1C1A</color>
+</resources>
