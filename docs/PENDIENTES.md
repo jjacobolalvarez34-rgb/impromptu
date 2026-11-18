@@ -26,6 +26,20 @@ Claude Code: si algo de esta lista bloquea tu tarea, usa el valor provisional, m
 | P21 | **Dónde se publica el modelo de piano con pedal** (154 MB) para la web y las apps: Hugging Face (gratis, permite descarga desde el navegador), un release de GitHub (no permite descarga directa desde el navegador por CORS) u otro. Se descarga una sola vez y queda guardado | Solo en desarrollo, desde `D:\.cache\models` | Abierto |
 | P22 | **Destacar "de MP3 a MIDI" en la página de inicio**: para quien no sabe de dónde sacar partituras o MIDI, Impromptu saca el MIDI de un audio (Convertir un audio → Guardar MIDI). Texto y lugar en la página | Sin destacar | Abierto |
 | P20 | **Impromptu es un producto de Mamut Herd** (la empresa de Jacobo; kit de marca en `mamut-herd-kit-de-marca.zip`). Falta: (1) visto bueno de dónde va el sello "Un producto de Mamut Herd"; (2) la web de Mamut Herd (`MAMUT_HERD_URL` del kit), que da Jacobo; (3) P1 sigue abierta: el código puede ser abierto y la marca de Mamut Herd | Sello en el pie de la página de inicio y en "Acerca de"; © 2026 Mamut Herd | Decidido el dueño 2026-11-17; ubicación en espera de Jacobo |
+| P23 | **Cuenta y nube con suscripción** (idea de Jacobo, 2026-11-18): iniciar sesión y guardar las piezas en la nube, con un límite, pagando una suscripción. Choca con la regla "sin servidores de pago" (CLAUDE.md): la nube sí cuesta, así que tendría que pagarse con la suscripción. Falta decidir proveedor, precio y límite | Solo un aviso "Próximamente: cuenta y nube" en las apps | Abierto |
+
+## Lo que dijo Jacobo al probar la app nativa (2026-11-18)
+- **Funciona** (verificado por Jacobo en su celular): la conversión ya no cierra la app (BUG-004), el teclado suena sin retraso, el micrófono graba bien (probado con su piano vertical) y la partitura sale muy bien. La conversión tarda un poco más de lo que le gustaría.
+- **Pedidos, para web, PC y celular:**
+  1. **Cursor de la partitura más suave**: hoy salta de nota en nota y se ve rígido o con saltos (¿la línea verde?). Investigar cómo lo hacen otros reproductores de partitura (cursor que se desliza entre notas, a 60 fps).
+  2. **Barra de avance continua**: hoy avanza a saltos (por segmento) y parece que tarda una eternidad. Que se mueva todo el tiempo y que haya **mensajes debajo** de la barra que muestren que se está trabajando.
+  3. **Conversión en segundo plano en el celular**: poder salir de la app y que siga, como las descargas o copias de seguridad de WhatsApp (servicio en primer plano con notificación).
+  4. **Varias conversiones a la vez (cola)**: grabar una, dejarla cargando, grabar otra, y así varias, en web, PC y celular.
+  5. **"Próximamente: cuenta y nube"** (P23).
+- **Solo app de celular:**
+  6. La pantalla de grabar con el micrófono se ve fea (solo un botón gigante).
+  7. Faltan animaciones que la hagan sentir cómoda.
+- **Orden pedido por Jacobo:** (a) llevar a la web y a la PC la presentación y mejorar la pantalla principal de la PC (que se parezca a la de la web, que sí le gusta); (b) guitarra, misma idea del piano; (c) batería; (d) fase 10; (e) integrar todo en web, PC y celular; (f) compilar al final.
 
 ## Lo que queda (resumen al 2026-11-17)
 
