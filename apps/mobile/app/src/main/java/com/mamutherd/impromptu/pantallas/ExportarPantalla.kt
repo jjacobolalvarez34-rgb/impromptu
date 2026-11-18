@@ -1,6 +1,21 @@
 package com.mamutherd.impromptu.pantallas
 
 import android.content.ContentValues
+import com.mamutherd.impromptu.visual.Renderizador
+import com.mamutherd.impromptu.ui.Lcd
+import com.mamutherd.impromptu.ui.C3
+import com.mamutherd.impromptu.trabajo.ServicioTrabajos
+import com.mamutherd.impromptu.trabajo.AvanceSuave
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.border
 import android.content.Context
 import android.net.Uri
 import android.os.Build
@@ -8,7 +23,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -66,6 +80,7 @@ object Exportacion {
         }
         trabajo?.cancel()
         estado = Estado.Trabajando(pieza.id, 0f)
+        ServicioTrabajos.asegurar(context)
         trabajo = Impromptu.alcance.launch(Dispatchers.Default) {
             val carpeta = File(context.cacheDir, "exportados").apply { mkdirs() }
             val nombre = pieza.titulo.replace(Regex("[\\\\/:*?\"<>|]"), "_") + ".mp4"
@@ -114,11 +129,15 @@ object Exportacion {
 }
 
 private enum class Formato(val texto: String, val ancho: Int, val alto: Int) {
-    Horizontal("Horizontal 16:9", 1920, 1080),
-    Vertical("Vertical 9:16", 1080, 1920),
-    Cuadrado("Cuadrado 1:1", 1080, 1080),
+    Horizontal("Horizontal", 1920, 1080),
+    Vertical("Vertical", 1080, 1920),
+    Cuadrado("Cuadrado", 1080, 1080),
 }
 
+/**
+ * Exportar video (rediseñado, pedido de Jacobo 2026-11-18): una vista previa animada con la
+ * forma del formato elegido, pocas opciones y un solo botón; en tableta queda centrado.
+ */
 @Composable
 fun ExportarPantalla(id: String, nav: Navegador) {
     val pieza = Impromptu.piezas.buscar(id)
@@ -136,72 +155,121 @@ fun ExportarPantalla(id: String, nav: Navegador) {
         is Exportacion.Estado.Fallo -> estado.piezaId == id
         Exportacion.Estado.Quieta -> false
     }
+    val trabajando = estado is Exportacion.Estado.Trabajando && deEsta
 
     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
         Encabezado("Exportar video", { nav.volver() })
         Column(
-            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Panel(Modifier.fillMaxWidth()) {
-                Text(pieza.titulo, style = Tipos.TituloPanel)
+            Column(Modifier.widthIn(max = 560.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                VistaPrevia(pieza, formato, Modifier.align(Alignment.CenterHorizontally).padding(top = 4.dp))
                 Text(
-                    "${formatoTiempo(pieza.duracion)} de música, más 4 s al final con fundido para editar con holgura.",
+                    "${pieza.titulo} · ${formatoTiempo(pieza.duracion)} + 4 s de cola con fundido",
                     style = Tipos.Secundario,
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
                 )
-            }
-            if (estado is Exportacion.Estado.Trabajando && deEsta) {
-                Panel(Modifier.fillMaxWidth()) {
-                    Text(if (estado.avance < 0.1f) "Preparando el sonido…" else "Dibujando el video… ${(estado.avance * 100).toInt()} %", style = Tipos.Texto)
-                    Avance(estado.avance, Modifier.padding(vertical = 14.dp))
-                    Text("Puedes salir de esta pantalla: el video sigue armándose.", style = Tipos.Secundario)
-                    Tecla("Cancelar", Exportacion::cancelar, modifier = Modifier.padding(top = 14.dp))
-                }
-                return@Column
-            }
-            if (estado is Exportacion.Estado.Lista && deEsta) {
-                Panel(Modifier.fillMaxWidth()) {
-                    Text("Video listo.", style = Tipos.TituloPanel)
-                    Text(
-                        if (estado.enGaleria) "Quedó en tu galería, en Películas/Impromptu." else "Compártelo para guardarlo donde quieras.",
-                        style = Tipos.Secundario,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 14.dp),
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Tecla("Compartir", { compartirArchivo(context, estado.archivo, "video/mp4") }, principal = true, icono = { Icono(Iconos.Compartir, null, color = com.mamutherd.impromptu.ui.C3.Carbon, tamano = 18.dp) })
-                        Tecla("Otro formato", Exportacion::olvidar)
+                when {
+                    trabajando -> AvanceExportacion(estado as Exportacion.Estado.Trabajando)
+                    estado is Exportacion.Estado.Lista && deEsta -> Panel(Modifier.fillMaxWidth()) {
+                        Text("Video listo", style = Tipos.TituloPanel)
+                        Text(
+                            if (estado.enGaleria) "Quedó en tu galería, en Películas/Impromptu." else "Compártelo para guardarlo donde quieras.",
+                            style = Tipos.Secundario,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 14.dp),
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Tecla(
+                                "Compartir",
+                                { compartirArchivo(context, estado.archivo, "video/mp4") },
+                                principal = true,
+                                icono = { Icono(Iconos.Compartir, null, color = C3.Carbon, tamano = 18.dp) },
+                            )
+                            Tecla("Otro formato", Exportacion::olvidar)
+                        }
+                    }
+                    else -> {
+                        if (estado is Exportacion.Estado.Fallo && deEsta) {
+                            Text(estado.mensaje, style = Tipos.Texto.copy(color = C3.Ambar))
+                        }
+                        Etiqueta("Formato")
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            for (f in Formato.entries) Chip(f.texto, formato == f, { formato = f }, Modifier.weight(1f))
+                        }
+                        Etiqueta("Calidad")
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Chip("1080p", hd, { hd = true }, Modifier.weight(1f))
+                            Chip("720p · más rápido", !hd, { hd = false }, Modifier.weight(1f))
+                        }
+                        val ocupado = estado is Exportacion.Estado.Trabajando
+                        Tecla(
+                            if (ocupado) "Ya hay otro video armándose" else "Exportar video",
+                            {
+                                val escala = if (hd) 1.0 else 2.0 / 3
+                                Exportacion.iniciar(context, pieza, par(formato.ancho * escala), par(formato.alto * escala))
+                            },
+                            principal = true,
+                            habilitada = !ocupado,
+                            modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 24.dp),
+                            altura = 52.dp,
+                            icono = { Icono(Iconos.Video, null, color = C3.Carbon, tamano = 18.dp) },
+                        )
                     }
                 }
-                return@Column
             }
-            if (estado is Exportacion.Estado.Fallo && deEsta) {
-                Panel(Modifier.fillMaxWidth()) {
-                    Text(estado.mensaje, style = Tipos.Texto)
-                }
-            }
-            Etiqueta("Formato")
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                for (f in Formato.entries) Chip(f.texto, formato == f, { formato = f })
-            }
-            Etiqueta("Calidad")
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Chip("1080p", hd, { hd = true })
-                Chip("720p (más rápido)", !hd, { hd = false })
-            }
-            val ocupado = estado is Exportacion.Estado.Trabajando
-            Tecla(
-                if (ocupado) "Ya hay otro video armándose" else "Exportar video",
-                {
-                    val escala = if (hd) 1.0 else 2.0 / 3
-                    Exportacion.iniciar(context, pieza, par(formato.ancho * escala), par(formato.alto * escala))
-                },
-                principal = true,
-                habilitada = !ocupado,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                altura = 52.dp,
-            )
         }
+    }
+}
+
+/** Miniatura animada: el comienzo de la pieza cayendo, con la forma del video (pedido de Jacobo). */
+@Composable
+private fun VistaPrevia(pieza: Pieza, formato: Formato, modifier: Modifier) {
+    val renderizador = remember { Renderizador() }
+    val rango = remember(pieza) { pieza.rango() }
+    val desde = remember(pieza) { maxOf(0.0, (pieza.notas.firstOrNull()?.inicio ?: 0.0) - 1.0) }
+    val ciclo = minOf(10.0, maxOf(4.0, pieza.duracion - desde))
+    val inicio = remember { System.nanoTime() }
+    val altoMax = 220.dp
+    val proporcion = formato.ancho.toFloat() / formato.alto
+    Box(
+        modifier
+            .height(altoMax)
+            .aspectRatio(proporcion, matchHeightConstraintsFirst = true)
+            .clip(RoundedCornerShape(6.dp))
+            .border(1.dp, C3.Linea, RoundedCornerShape(6.dp)),
+    ) {
+        Lienzo(Modifier.fillMaxSize().semantics { contentDescription = "Vista previa del video" }) { c, w, h ->
+            val t = desde + ((System.nanoTime() - inicio) / 1e9) % ciclo
+            // Se dibuja como en el video (a su resolución) y se escala a la miniatura.
+            val escala = w / formato.ancho
+            c.save()
+            c.scale(escala, escala)
+            renderizador.dibujar(c, formato.ancho.toFloat(), formato.alto.toFloat(), pieza.notas, pieza.pedales, t, rango)
+            c.restore()
+        }
+        Etiqueta("Vista previa", Modifier.align(Alignment.TopStart).padding(8.dp))
+    }
+}
+
+@Composable
+private fun AvanceExportacion(e: Exportacion.Estado.Trabajando) {
+    val ahora = relojDeCuadros()
+    val avance = remember { AvanceSuave(System.currentTimeMillis(), 0.05) }
+    LaunchedEffect(e.avance) { avance.actualizar(e.avance.toDouble(), System.currentTimeMillis()) }
+    val v = avance.valor(ahora).toFloat()
+    val falta = AvanceSuave.texto(avance.restante(ahora))
+    Panel(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(if (e.avance < 0.1f) "Preparando el sonido…" else "Dibujando el video…", style = Tipos.Texto, modifier = Modifier.weight(1f))
+            Lcd("${(v * 100).toInt()} %", tamano = 12)
+        }
+        Avance(v, Modifier.padding(vertical = 12.dp))
+        Text(
+            (falta?.let { "$it · " } ?: "") + "Puedes salir de la app: el video sigue armándose.",
+            style = Tipos.Secundario,
+        )
+        Tecla("Cancelar", Exportacion::cancelar, modifier = Modifier.padding(top = 12.dp))
     }
 }
 

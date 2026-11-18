@@ -14,6 +14,23 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-18 (tarde) · Pedidos de Jacobo tras probar la app
+- Probado por Jacobo en su celular (verificado): la conversión ya no cierra la app, el teclado suena sin retraso, el micrófono graba bien con su piano vertical y la partitura sale muy bien.
+- Decisiones de Jacobo: **licencia GPL-3.0** (`LICENSE`); muestras y modelo en **Hugging Face con la cuenta de Mamut Herd** (falta que Jacobo cree la cuenta y deje el token; pasos en PENDIENTES).
+- Hecho, paso 1 (sus comentarios). **Sin verificar en el celular** salvo lo marcado:
+  - **Cursor suave de la partitura** (web y celular): ya no salta de nota en nota. Se lee una vez dónde cae cada nota y una línea ámbar propia se desliza a 60 fps (`packages/notation/src/cursor.ts`); la hoja baja con suavidad al cambiar de renglón. En el celular, Kotlin manda el reloj y la página extrapola entre avisos.
+  - **Barra continua con mensajes** (web y celular): entre avisos de la IA la barra sigue al ritmo promedio de los tramos y espera antes del final del tramo si todavía no termina (la idea de Jacobo); debajo, frases que se turnan y "Faltan unos N s". La IA ahora avisa varias veces por tramo. `packages/transcribe/src/avance.ts` y `AvanceSuave.kt`.
+  - **Cola de conversiones** (web y celular): se puede grabar otra o convertir otro audio mientras la anterior trabaja; se hacen de a una para no llenar la memoria. En el celular el audio se guarda hasta convertirse: si la app se cierra, la cola se retoma al abrirla.
+  - **Segundo plano en el celular**: servicio en primer plano con notificación de avance (como las descargas de WhatsApp) mientras hay conversiones o un video armándose.
+  - **Pantalla del micrófono nueva**: estado "Grabando" que late, tiempo grande, onda en vivo, botón con anillo, consejos y la cola debajo.
+  - **Exportar video rediseñado**: vista previa animada con la forma del formato, opciones compactas, tiempo restante; en tableta, centrado.
+  - **Animaciones**: transiciones entre pantallas, tarjetas que se hunden al tocarlas, lista de piezas animada, barra "trabajando" que va y viene. **Tableta**: inicio en dos columnas.
+  - **"Cuenta y nube · Próximamente"** en Ajustes (P23).
+- Pruebas: notación 16/16 (cursor), transcripción (avance) 4/4, web e2e de transcripción y partitura en verde; app: Gradle BUILD SUCCESSFUL y JUnit 6/6 (Transkun igual a Python, +685 MB).
+- Pendiente: llevar a la web y la PC la presentación y la pantalla principal de la PC; vista previa al exportar en web y PC; guitarra; batería; fase 10; fase 11; integrar y compilar.
+
+---
+
 ### 2026-11-18 · Fase 8 · App de Android nativa (Kotlin + Compose)
 - Hecho (ADR-019). **Todo esto está sin verificar en un celular**: no hubo teléfono conectado ni emulador (falta el controlador de virtualización de Windows).
   - Se quitó Capacitor: `apps/mobile` es ahora una app nativa en Kotlin + Jetpack Compose. Se borraron `apps/web/src/native/{install,midi}.ts` y las dependencias `@capacitor/*`; la web no cambia.

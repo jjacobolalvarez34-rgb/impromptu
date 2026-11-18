@@ -1,7 +1,7 @@
 # Graph Report - impromptu  (2026-11-18)
 
 ## Corpus Check
-- 253 files · ~124,141 words
+- 253 files · ~124,139 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 50 file(s) not represented in the graph (top: .css 32, .xml 7, (none) 5)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c73a60e6`
+- Built from commit: `099324ef`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -607,16 +607,16 @@ Cohesion: 0.43
 Nodes (5): post(), prepare(), run(), WorkerMessage, WorkerRequest
 
 ## Knowledge Gaps
-- **50 isolated node(s):** `ADR-0019`, `ADR-0013`, `ADR-0014`, `ADR-0015`, `ADR-0015` (+45 more)
+- **50 isolated node(s):** `Ia`, `Quieta`, `Inactiva`, `Preparando`, `On` (+45 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 943 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **56 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `alignAudioToNotes()` connect `align.ts` to `ExportDialog.tsx`, `VideoSection.tsx`?**
-  _High betweenness centrality (0.241) - this node is a cross-community bridge._
-- **What connects `ADR-0019`, `ADR-0013`, `ADR-0014` to the rest of the system?**
+- **Why does `BUG-002 · Celular: al cancelar la conversión de una grabación, la app se queda "grabando" y se traba` connect `align.ts` to `Impromptu.kt`?**
+  _High betweenness centrality (0.254) - this node is a cross-community bridge._
+- **What connects `Ia`, `Quieta`, `Inactiva` to the rest of the system?**
   _50 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ui/src/index.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.10227272727272728 - nodes in this community are weakly interconnected._

@@ -5,11 +5,15 @@ import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -25,6 +29,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -32,20 +39,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.mamutherd.impromptu.Conversion
 import com.mamutherd.impromptu.Impromptu
 import com.mamutherd.impromptu.Navegador
 import com.mamutherd.impromptu.Pantalla
-import com.mamutherd.impromptu.datos.Origen
 import com.mamutherd.impromptu.datos.Pieza
 import com.mamutherd.impromptu.datos.Smf
 import com.mamutherd.impromptu.datos.formatoTiempo
@@ -59,6 +66,7 @@ import com.mamutherd.impromptu.ui.Logo
 import com.mamutherd.impromptu.ui.PuntoRec
 import com.mamutherd.impromptu.ui.Tecla
 import com.mamutherd.impromptu.ui.Tipos
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -70,6 +78,8 @@ import java.util.Locale
 @Composable
 fun InicioPantalla(nav: Navegador) {
     val context = LocalContext.current
+    val alcance = rememberCoroutineScope()
+    val pedirNotificaciones = rememberPedirNotificaciones()
     var menu by remember { mutableStateOf<String?>(null) }
     var renombrar by remember { mutableStateOf<Pieza?>(null) }
     var borrar by remember { mutableStateOf<Pieza?>(null) }
@@ -82,8 +92,11 @@ fun InicioPantalla(nav: Navegador) {
             return@rememberLauncherForActivityResult
         }
         val nombre = nombreDe(context, uri) ?: Impromptu.piezas.siguienteTitulo("Audio")
-        Impromptu.convertir(nombre, Origen.Audio, uri = uri)
-        nav.ir(Pantalla.Convirtiendo)
+        pedirNotificaciones()
+        alcance.launch {
+            runCatching { Impromptu.conversiones.encolarArchivo(uri, nombre) }
+                .onFailure { Toast.makeText(context, "No se pudo leer ese audio.", Toast.LENGTH_LONG).show() }
+        }
     }
     val abrirMidi = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) importarMidi(context, uri)?.let { nav.ir(Pantalla.Pieza(it)) }
@@ -97,42 +110,35 @@ fun InicioPantalla(nav: Navegador) {
             .onFailure { Toast.makeText(context, "No se pudo guardar el MIDI.", Toast.LENGTH_LONG).show() }
     }
 
-    LazyColumn(
-        Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
-            Row(Modifier.fillMaxWidth().height(64.dp), verticalAlignment = Alignment.CenterVertically) {
-                Logo(tamano = 24, modifier = Modifier.weight(1f))
-                BotonIcono(Iconos.Ajustes, "Ajustes", { nav.ir(Pantalla.Ajustes) })
-            }
-        }
-        item { EstadoTeclado() }
-        item { AvisoConversion(nav) }
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Accion(Iconos.Teclado, "Grabar", "Con tu teclado por USB", Modifier.weight(1f), destacada = true) { nav.ir(Pantalla.Grabar) }
-                    Accion(Iconos.Microfono, "Micrófono", "Toca y la app escribe", Modifier.weight(1f)) { nav.ir(Pantalla.Microfono) }
+    val acciones: @Composable (Int) -> Unit = { columnas ->
+        val lista = listOf<@Composable (Modifier) -> Unit>(
+            { m -> Accion(Iconos.Teclado, "Grabar", "Con tu teclado por USB", m, destacada = true) { nav.ir(Pantalla.Grabar) } },
+            { m -> Accion(Iconos.Microfono, "Micrófono", "Toca y la app escribe", m) { nav.ir(Pantalla.Microfono) } },
+            { m -> Accion(Iconos.ArchivoAudio, "Audio a notas", "MP3, WAV o M4A", m) { abrirAudio.launch(arrayOf("audio/*")) } },
+            { m ->
+                Accion(Iconos.Abrir, "Abrir MIDI", "Archivo .mid", m) {
+                    abrirMidi.launch(arrayOf("audio/midi", "audio/x-midi", "audio/mid", "application/octet-stream"))
                 }
+            },
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            for (fila in lista.chunked(columnas)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Accion(Iconos.ArchivoAudio, "Audio a notas", "MP3, WAV o M4A", Modifier.weight(1f)) { abrirAudio.launch(arrayOf("audio/*")) }
-                    Accion(Iconos.Abrir, "Abrir MIDI", "Archivo .mid", Modifier.weight(1f)) {
-                        abrirMidi.launch(arrayOf("audio/midi", "audio/x-midi", "audio/mid", "application/octet-stream"))
-                    }
+                    for (a in fila) a(Modifier.weight(1f))
                 }
             }
         }
-        item {
-            Row(Modifier.padding(top = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+    }
+    val piezas: LazyListScope.() -> Unit = {
+        item(key = "titulo-piezas") {
+            Row(Modifier.padding(top = 18.dp).animateItem(), verticalAlignment = Alignment.CenterVertically) {
                 Etiqueta("Tus piezas", Modifier.weight(1f))
                 Etiqueta("${Impromptu.piezas.lista.size}")
             }
         }
         if (Impromptu.piezas.lista.isEmpty()) {
-            item {
-                Panel(Modifier.fillMaxWidth()) {
+            item(key = "vacio") {
+                Panel(Modifier.fillMaxWidth().animateItem()) {
                     Text("Todavía no hay piezas.", style = Tipos.Texto)
                     Text("Graba con el teclado, usa el micrófono o abre un MIDI.", style = Tipos.Secundario, modifier = Modifier.padding(top = 4.dp))
                 }
@@ -151,7 +157,49 @@ fun InicioPantalla(nav: Navegador) {
                 },
                 alVideo = { nav.ir(Pantalla.Exportar(p.id)) },
                 alBorrar = { borrar = p },
+                modifier = Modifier.animateItem(),
             )
+        }
+    }
+    val cabecera: @Composable () -> Unit = {
+        Row(Modifier.fillMaxWidth().height(64.dp), verticalAlignment = Alignment.CenterVertically) {
+            Logo(tamano = 24, modifier = Modifier.weight(1f))
+            BotonIcono(Iconos.Ajustes, "Ajustes", { nav.ir(Pantalla.Ajustes) })
+        }
+    }
+
+    BoxWithConstraints(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+        if (maxWidth >= 720.dp) {
+            // Tableta: a la izquierda crear (y la cola); a la derecha las piezas.
+            Row(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                Column(
+                    Modifier.weight(0.45f).verticalScroll(rememberScrollState()).padding(bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    cabecera()
+                    EstadoTeclado()
+                    acciones(2)
+                    ColaConversiones(nav, Modifier.fillMaxWidth())
+                }
+                LazyColumn(
+                    Modifier.weight(0.55f),
+                    contentPadding = PaddingValues(top = 46.dp, bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    content = piezas,
+                )
+            }
+        } else {
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item(key = "cabecera") { cabecera() }
+                item(key = "teclado") { EstadoTeclado() }
+                item(key = "cola") { ColaConversiones(nav, Modifier.fillMaxWidth()) }
+                item(key = "acciones") { acciones(2) }
+                piezas()
+            }
         }
     }
 
@@ -195,38 +243,19 @@ private fun EstadoTeclado() {
 }
 
 @Composable
-private fun AvisoConversion(nav: Navegador) {
-    when (val c = Impromptu.conversion) {
-        is Conversion.Leyendo, Conversion.Preparando, is Conversion.Escuchando -> Panel(Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Convirtiendo audio a notas…", style = Tipos.Texto, modifier = Modifier.weight(1f))
-                Tecla("Ver", { nav.ir(Pantalla.Convirtiendo) }, altura = 40.dp)
-            }
-            Avance((c as? Conversion.Escuchando)?.avance, Modifier.padding(top = 10.dp))
-        }
-        is Conversion.Lista -> Panel(Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("La conversión está lista.", style = Tipos.Texto, modifier = Modifier.weight(1f))
-                Tecla("Abrir", { Impromptu.olvidarConversion(); nav.ir(Pantalla.Pieza(c.piezaId)) }, principal = true, altura = 40.dp)
-            }
-        }
-        is Conversion.Fallo -> Panel(Modifier.fillMaxWidth()) {
-            Text(c.mensaje, style = Tipos.Texto)
-            Tecla("Entendido", Impromptu::olvidarConversion, modifier = Modifier.padding(top = 10.dp), altura = 40.dp)
-        }
-        Conversion.Inactiva -> {}
-    }
-}
-
-@Composable
 private fun Accion(icono: ImageVector, titulo: String, detalle: String, modifier: Modifier, destacada: Boolean = false, onClick: () -> Unit) {
+    // Al tocarla se hunde un poco, como una tecla.
+    val toque = remember { MutableInteractionSource() }
+    val apretada by toque.collectIsPressedAsState()
+    val escala by animateFloatAsState(if (apretada) 0.96f else 1f, label = "escala")
     Column(
         modifier
+            .scale(escala)
             .heightIn(min = 112.dp)
             .clip(RoundedCornerShape(6.dp))
             .background(if (destacada) C3.PanelAlto else C3.Panel)
             .border(1.dp, if (destacada) C3.LcdBorde else C3.Linea, RoundedCornerShape(6.dp))
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(interactionSource = toque, indication = null, role = Role.Button, onClick = onClick)
             .padding(14.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -256,9 +285,10 @@ private fun FilaPieza(
     alGuardarMidi: () -> Unit,
     alVideo: () -> Unit,
     alBorrar: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        Modifier
+        modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(6.dp))
             .background(C3.Panel)

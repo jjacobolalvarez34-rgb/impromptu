@@ -1,5 +1,12 @@
 package com.mamutherd.impromptu.pantallas
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,6 +32,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -83,14 +92,21 @@ fun Panel(modifier: Modifier = Modifier, contenido: @Composable ColumnScope.() -
     )
 }
 
-/** Barra de avance en ámbar (sin animaciones de relleno falsas: muestra el avance real). */
+/**
+ * Barra de avance en ámbar. Con `valor` null (todavía sin avance real) un tramo corto va y
+ * viene, para que se note que trabaja.
+ */
 @Composable
 fun Avance(valor: Float?, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(C3.Linea)) {
+    val vaiven = rememberInfiniteTransition(label = "vaiven")
+    val x by vaiven.animateFloat(0f, 1f, infiniteRepeatable(tween(1200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "x")
+    Canvas(modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp))) {
+        drawRect(C3.Linea)
         if (valor != null) {
-            Box(Modifier.fillMaxWidth(valor.coerceIn(0f, 1f)).fillMaxHeight().background(C3.Ambar))
+            drawRect(C3.Ambar, size = Size(size.width * valor.coerceIn(0f, 1f), size.height))
         } else {
-            Box(Modifier.fillMaxWidth(0.25f).fillMaxHeight().background(C3.LcdBorde))
+            val w = size.width * 0.28f
+            drawRect(C3.Ambar.copy(alpha = 0.7f), topLeft = Offset((size.width - w) * x, 0f), size = Size(w, size.height))
         }
     }
 }

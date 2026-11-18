@@ -81,8 +81,11 @@ class Transkun internal constructor(
         runCatching { opcionesCorrida.close() }
     }
 
-    /** Transcribe audio mono a 44,1 kHz por segmentos de 16 s que avanzan de a 8 s. */
-    fun transcribir(muestras: FloatArray, progreso: (Float) -> Unit): List<Evento> {
+    /**
+     * Transcribe audio mono a 44,1 kHz por segmentos de 16 s que avanzan de a 8 s. `progreso`
+     * recibe el avance (0 a 1) y el tamaño de un segmento, varias veces por segmento.
+     */
+    fun transcribir(muestras: FloatArray, progreso: (Float, Double) -> Unit): List<Evento> {
         cancelada = false
         opcionesCorrida.setTerminate(false)
         val nSym = c.simbolos.size
@@ -108,9 +111,11 @@ class Transkun internal constructor(
         val tCtx = OnnxTensor.createTensor(env, bufCtx, longArrayOf(nSym.toLong(), T.toLong(), D.toLong()))
         val segmento = FloatArray(largoSeg)
         try {
-            progreso(0f)
             var i = 0
             var s = 0
+            val tramo = 1.0 / pasos
+            fun avisar(f: Double) = progreso(((s + f) / pasos).toFloat(), tramo)
+            progreso(0f, tramo)
             while (i < total) {
                 if (cancelada) throw Cancelada()
                 // Segmento con el relleno de silencio al comienzo y al final.
@@ -121,10 +126,12 @@ class Transkun internal constructor(
                 }
                 val inicioSeg = i.toDouble() / c.fs - padInicio
                 val feats = Espectro.caracteristicas(segmento, c) { cancelada }
+                avisar(0.1)
                 entrada.clear()
                 entrada.put(feats)
                 entrada.rewind()
                 correr { red.run(mapOf("features" to tEntrada), setOf(), mapOf("ctx" to tCtx), opcionesCorrida).close() }
+                avisar(0.8)
                 val intervalos = ArrayList<List<Pair<Int, Int>>>(nSym)
                 var s0 = 0
                 while (s0 < nSym) {
@@ -141,6 +148,7 @@ class Transkun internal constructor(
                     }
                     intervalos += Decodificacion.viterbi(bufS, bufSkip, T, n, inicioForzado.copyOfRange(s0, s0 + n))
                     s0 += n
+                    avisar(0.8 + 0.15 * s0 / nSym)
                 }
                 val n = intervalos.sumOf { it.size }
                 var fuerza = FloatArray(0)
@@ -178,7 +186,7 @@ class Transkun internal constructor(
                 }
                 Decodificacion.unir(porTipo, notas)
                 s++
-                progreso(s.toFloat() / pasos)
+                progreso(s.toFloat() / pasos, tramo)
                 i += paso
             }
             return Decodificacion.cerrar(porTipo)

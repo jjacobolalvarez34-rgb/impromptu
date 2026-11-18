@@ -67,11 +67,8 @@ fun PartituraPantalla(id: String, nav: Navegador) {
     var web by remember { mutableStateOf<WebView?>(null) }
 
     DisposableEffect(pieza) {
-        motor?.cargar(pieza)
-        onDispose {
-            motor?.pausar()
-            motor?.cargar(null)
-        }
+        val ficha = motor?.cargar(pieza)
+        onDispose { if (ficha != null) motor.soltar(ficha) }
     }
     LaunchedEffect(web, compas) {
         val w = web ?: return@LaunchedEffect

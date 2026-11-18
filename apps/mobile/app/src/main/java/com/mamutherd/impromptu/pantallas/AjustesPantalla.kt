@@ -3,6 +3,8 @@ package com.mamutherd.impromptu.pantallas
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -27,6 +30,7 @@ import com.mamutherd.impromptu.Navegador
 import com.mamutherd.impromptu.Pantalla
 import com.mamutherd.impromptu.ui.Chip
 import com.mamutherd.impromptu.ui.Etiqueta
+import com.mamutherd.impromptu.ui.Lcd
 import com.mamutherd.impromptu.ui.Tecla
 import com.mamutherd.impromptu.ui.Tipos
 
@@ -39,7 +43,7 @@ fun AjustesPantalla(nav: Navegador) {
     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
         Encabezado("Ajustes", { nav.volver() })
         Column(
-            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
+            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp).widthIn(max = 640.dp).align(Alignment.CenterHorizontally),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Panel(Modifier.fillMaxWidth()) {
@@ -67,6 +71,17 @@ fun AjustesPantalla(nav: Navegador) {
                     modifier = Modifier.padding(top = 6.dp, bottom = 12.dp),
                 )
                 Tecla("Ver instrumentos", { nav.ir(Pantalla.Paquetes(primeraVez = false)) })
+            }
+            Panel(Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Cuenta y nube", style = Tipos.TituloPanel, modifier = Modifier.weight(1f))
+                    Lcd("PRONTO", tamano = 11)
+                }
+                Text(
+                    "Inicia sesión y guarda tus piezas en la nube para abrirlas en el celular, el computador o la web, sin ocupar espacio. Será con una suscripción y un límite de espacio.",
+                    style = Tipos.Secundario,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
             }
             Panel(Modifier.fillMaxWidth()) {
                 Text("Acerca de Impromptu", style = Tipos.TituloPanel)

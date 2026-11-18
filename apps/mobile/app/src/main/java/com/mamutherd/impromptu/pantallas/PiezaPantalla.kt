@@ -84,11 +84,8 @@ fun PiezaPantalla(id: String, nav: Navegador) {
     var controles by remember { mutableStateOf(true) }
 
     DisposableEffect(pieza) {
-        motor?.cargar(pieza)
-        onDispose {
-            motor?.pausar()
-            motor?.cargar(null)
-        }
+        val ficha = motor?.cargar(pieza)
+        onDispose { if (ficha != null) motor.soltar(ficha) }
     }
     // Tiempo de la interfaz (LCD y barra): unas 15 veces por segundo basta.
     LaunchedEffect(motor) {

@@ -11,11 +11,20 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -25,7 +34,6 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.mamutherd.impromptu.datos.Origen
 import com.mamutherd.impromptu.datos.Smf
 import com.mamutherd.impromptu.pantallas.AjustesPantalla
-import com.mamutherd.impromptu.pantallas.ConvirtiendoPantalla
 import com.mamutherd.impromptu.pantallas.ExportarPantalla
 import com.mamutherd.impromptu.pantallas.GrabarPantalla
 import com.mamutherd.impromptu.pantallas.InicioPantalla
@@ -47,7 +55,6 @@ sealed interface Pantalla {
     data class Pieza(val id: String) : Pantalla { override val horizontal get() = true }
     data object Grabar : Pantalla { override val horizontal get() = true }
     data object Microfono : Pantalla
-    data object Convirtiendo : Pantalla
     data class Partitura(val id: String) : Pantalla { override val horizontal get() = true }
     data class Exportar(val id: String) : Pantalla
     data object Ajustes : Pantalla
@@ -158,11 +165,23 @@ fun importarMidi(context: Context, uri: Uri): String? = try {
 fun App(nav: Navegador, actividad: MainActivity) {
     val actual = nav.actual
     LaunchedEffect(actual.horizontal) { actividad.orientar(actual.horizontal) }
-    BackHandler(enabled = nav.pila.size > 1) {
-        // Salir de "convirtiendo" con atrás no cancela: la conversión sigue y se ve en el inicio.
-        nav.volver()
-    }
-    Box(Modifier.fillMaxSize().background(C3.Carbon)) {
+    BackHandler(enabled = nav.pila.size > 1) { nav.volver() }
+    // Transición suave entre pantallas: hacia adelante entra desde la derecha; al volver, desde
+    // la izquierda.
+    val tamano = nav.pila.size
+    val previo = remember { mutableIntStateOf(tamano) }
+    val adelante = tamano >= previo.intValue
+    SideEffect { previo.intValue = tamano }
+    AnimatedContent(
+        targetState = actual,
+        modifier = Modifier.fillMaxSize().background(C3.Carbon),
+        transitionSpec = {
+            val d = if (adelante) 1 else -1
+            (slideInHorizontally(tween(260)) { it / 10 * d } + fadeIn(tween(260))) togetherWith
+                (slideOutHorizontally(tween(200)) { -it / 10 * d } + fadeOut(tween(160)))
+        },
+        label = "pantallas",
+    ) { actual ->
         when (actual) {
             Pantalla.Presentacion -> PresentacionPantalla {
                 actividad.getSharedPreferences("app", Context.MODE_PRIVATE).edit().putBoolean("presentada", true).apply()
@@ -177,7 +196,6 @@ fun App(nav: Navegador, actividad: MainActivity) {
             is Pantalla.Pieza -> PiezaPantalla(actual.id, nav)
             Pantalla.Grabar -> GrabarPantalla(nav)
             Pantalla.Microfono -> MicrofonoPantalla(nav)
-            Pantalla.Convirtiendo -> ConvirtiendoPantalla(nav)
             is Pantalla.Partitura -> PartituraPantalla(actual.id, nav)
             is Pantalla.Exportar -> ExportarPantalla(actual.id, nav)
             Pantalla.Ajustes -> AjustesPantalla(nav)

@@ -110,7 +110,23 @@ class Motor(context: Context, banco: Banco) {
     fun notaOff(tecla: Int) = orden { it.notaOff(tecla) }
     fun pedal(cc: Int, valor: Int) = orden { it.pedal(cc, valor) }
 
-    fun cargar(pieza: Pieza?) = orden {
+    /** Ficha de quien cargó la pieza: solo ese puede soltarla (las pantallas se cruzan al animar). */
+    private var ficha = 0
+
+    /** Carga una pieza para tocarla y devuelve su ficha. */
+    fun cargar(pieza: Pieza?): Int {
+        ordenCargar(pieza)
+        return ++ficha
+    }
+
+    /** Suelta la pieza si nadie la cargó después (al salir de una pantalla). */
+    fun soltar(f: Int) {
+        if (f != ficha) return
+        pausar()
+        ordenCargar(null)
+    }
+
+    private fun ordenCargar(pieza: Pieza?) = orden {
         it.silencio()
         secuencia = pieza?.let(::Secuencia)
         reproduciendo = false

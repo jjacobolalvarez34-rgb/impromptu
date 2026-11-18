@@ -89,7 +89,7 @@ class TranskunTest {
             }
         }.apply { isDaemon = true; start() }
         val inicio = System.nanoTime()
-        val eventos = tk.use { it.transcribir(audio) {} }
+        val eventos = tk.use { it.transcribir(audio) { _, _ -> } }
         val segundos = (System.nanoTime() - inicio) / 1e9
         vigia.interrupt()
         println("Memoria: antes %d MB, pico %d MB (+%d MB)".format(base shr 20, pico shr 20, (pico - base) shr 20))
