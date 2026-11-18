@@ -5,8 +5,18 @@
   "description": "App de Android nativa de Impromptu (Kotlin + Jetpack Compose, ADR-019).",
   "type": "module",
   "scripts": {
-    "apk": "node scripts/gradle.mjs assembleDebug",
-    "apk:firmado": "node scripts/release.mjs",
+    "partitura": "vite build --config partitura/vite.config.ts",
+    "typecheck": "tsc -p .",
+    "apk": "pnpm partitura && node scripts/gradle.mjs assembleDebug",
+    "apk:firmado": "pnpm partitura && node scripts/release.mjs",
     "pruebas": "node scripts/gradle.mjs testDebugUnitTest"
+  },
+  "devDependencies": {
+    "@impromptu/core": "workspace:*",
+    "@impromptu/notation": "workspace:*",
+    "@types/node": "catalog:",
+    "opensheetmusicdisplay": "2.2.1",
+    "typescript": "catalog:",
+    "vite": "catalog:"
   }
 }

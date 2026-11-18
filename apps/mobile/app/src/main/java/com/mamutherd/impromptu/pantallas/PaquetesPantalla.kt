@@ -98,7 +98,7 @@ fun PaquetesPantalla(primeraVez: Boolean, alVolver: () -> Unit, alTerminar: () -
                 )
             }
             Panel(Modifier.fillMaxWidth()) {
-                Cabeza(Iconos.Piano, "Piano", if (instalado) "INSTALADO" else "UNOS 80 MB")
+                Cabeza(Iconos.Piano, "Piano", if (instalado) "INSTALADO" else "UNOS 90 MB")
                 Text(
                     "Todo lo del piano: el sonido de un piano de cola (Salamander) y la IA que convierte audio en notas con pedal (Transkun).",
                     style = Tipos.Secundario,

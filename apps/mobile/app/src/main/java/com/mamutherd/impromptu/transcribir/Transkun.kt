@@ -35,8 +35,8 @@ import kotlin.math.sqrt
  * Memoria (BUG-004): las salidas grandes de la red (S ocupa 172 MB por segmento) se escriben en
  * búferes directos reservados una sola vez, fuera del montón de Java, y se reutilizan.
  */
-class Transkun private constructor(
-    private val env: OrtEnvironment,
+class Transkun internal constructor(
+    private val env: OrtEnvironment = OrtEnvironment.getEnvironment(),
     private val red: OrtSession,
     private val cabezas: OrtSession,
     private val c: Constantes,
@@ -209,9 +209,18 @@ class Transkun private constructor(
             }
             val red = env.createSession(mapear(context, "transkun-red.onnx"), opciones)
             val cabezas = env.createSession(mapear(context, "transkun-cabezas.onnx"), opciones)
-            val meta = JSONObject(context.assets.open("modelos/transkun-espectro.json").bufferedReader().readText())
+            val c = constantes(
+                JSONObject(context.assets.open("modelos/transkun-espectro.json").bufferedReader().readText()),
+                floats(context, "transkun-ventanas.f32"),
+                floats(context, "transkun-mel.f32"),
+            )
+            return Transkun(env, red, cabezas, c)
+        }
+
+        /** Constantes del espectro (transkun-espectro.json y las tablas .f32). */
+        internal fun constantes(meta: JSONObject, ventanas: FloatArray, mel: FloatArray): Constantes {
             val sims = meta.getJSONArray("symbols")
-            val c = Constantes(
+            return Constantes(
                 fs = meta.getInt("fs"),
                 hop = meta.getInt("hopSize"),
                 win = meta.getInt("windowSize"),
@@ -220,10 +229,9 @@ class Transkun private constructor(
                 segmento = meta.getDouble("segmentSize"),
                 avance = meta.getDouble("segmentHop"),
                 simbolos = IntArray(sims.length()) { sims.getInt(it) },
-                ventanas = floats(context, "transkun-ventanas.f32"),
-                mel = floats(context, "transkun-mel.f32"),
+                ventanas = ventanas,
+                mel = mel,
             )
-            return Transkun(env, red, cabezas, c)
         }
 
         /** Notas y pedales para una pieza: -64 es el sustain y -67 la una corda. */

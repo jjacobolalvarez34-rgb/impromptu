@@ -107,4 +107,17 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.31.1")
     testImplementation("junit:junit:4.13.2")
+    // Pruebas en la PC: org.json real y ONNX Runtime de escritorio en vez del de Android.
+    testImplementation("org.json:json:20250517")
+    testImplementation("com.microsoft.onnxruntime:onnxruntime:1.31.1")
+}
+
+configurations.matching { it.name.startsWith("test") && it.name.endsWith("RuntimeClasspath") }.configureEach {
+    exclude(group = "com.microsoft.onnxruntime", module = "onnxruntime-android")
+}
+
+tasks.withType<Test>().configureEach {
+    maxHeapSize = "2g"
+    jvmArgs("-XX:MaxDirectMemorySize=2g")
+    testLogging { showStandardStreams = true }
 }

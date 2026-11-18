@@ -49,6 +49,9 @@ object Impromptu {
         private set
     var motor: Motor? = null
         private set
+    /** Muestras del piano (para exportar video sin tocar el motor en vivo). */
+    var banco: Banco? = null
+        private set
 
     val alcance = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -78,6 +81,7 @@ object Impromptu {
         if (!paquetes.pianoInstalado) return null
         val banco = Banco(paquetes.carpetaPiano)
         if (!banco.completo) return null
+        this.banco = banco
         return Motor(app, banco).also {
             it.sampler.panelSustain = app.getSharedPreferences("ajustes", Context.MODE_PRIVATE).getFloat("panelSustain", 0f).toDouble()
             it.encender()

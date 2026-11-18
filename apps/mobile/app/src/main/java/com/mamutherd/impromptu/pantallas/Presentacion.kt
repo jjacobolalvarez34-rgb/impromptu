@@ -120,5 +120,3 @@ private fun DrawScope.notasCayendo(p: Float) {
     }
 }
 
-@Suppress("unused")
-private val tamanoIcono = Modifier.size(22.dp)

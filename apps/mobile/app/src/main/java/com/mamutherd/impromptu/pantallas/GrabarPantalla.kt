@@ -111,7 +111,7 @@ fun GrabarPantalla(nav: Navegador) {
             Text(
                 when {
                     teclado.nombre == null -> "Conecta tu teclado por USB (cable OTG)"
-                    grabacion != null -> "Grabando: toca y suelta el pedal cuando quieras"
+                    grabacion != null -> "Grabando…"
                     else -> teclado.nombre!!
                 },
                 style = Tipos.Texto,

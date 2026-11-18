@@ -4,3 +4,4 @@ app/build/
 local.properties
 release/
 *.jks
+app/src/main/assets/partitura/
