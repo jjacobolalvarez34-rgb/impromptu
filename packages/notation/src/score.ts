@@ -1,5 +1,5 @@
 import { isPedalDown } from '@impromptu/core';
-import type { NoteEvent, PedalEvent, Take } from '@impromptu/core';
+import type { Instrument, NoteEvent, PedalEvent, Take } from '@impromptu/core';
 import { estimateKey } from './key';
 import type { Beats } from './tempo';
 
@@ -56,6 +56,11 @@ export interface ScoreOptions {
   timeSignature?: [number, number];
   /** Hueco máximo que se rellena alargando la nota anterior (divisiones). Por defecto, una negra. */
   legatoGap?: number;
+  /**
+   * Instrumento que se escribe (fase 9). El piano va en dos pentagramas por mano; guitarra, bajo
+   * y batería en uno solo (todo en `staves[0]`), sin pedal.
+   */
+  instrument?: Instrument;
 }
 
 /** Posición en negras (con decimales) de un tiempo, según los pulsos. */
@@ -286,11 +291,13 @@ export function buildScore(take: Take, options: ScoreOptions): Score {
   const time = options.timeSignature ?? take.timeSignature ?? [4, 4];
   const measureLength = Math.round(time[0] * (4 / time[1]) * DIV);
   const legatoGap = options.legatoGap ?? DIV;
-  const notes = take.tracks.filter((t) => t.instrument === 'piano').flatMap((t) => t.notes);
-  const pedals = take.tracks.flatMap((t) => t.pedals);
+  const instrument = options.instrument ?? 'piano';
+  const piano = instrument === 'piano';
+  const notes = take.tracks.filter((t) => t.instrument === instrument).flatMap((t) => t.notes);
+  const pedals = piano ? take.tracks.flatMap((t) => t.pedals) : [];
   const sustain = sustainRanges(pedals, times);
-  const right = notes.filter((n) => (n.hand ? n.hand === 'R' : n.pitch >= 60));
-  const left = notes.filter((n) => (n.hand ? n.hand === 'L' : n.pitch < 60));
+  const right = piano ? notes.filter((n) => (n.hand ? n.hand === 'R' : n.pitch >= 60)) : notes;
+  const left = piano ? notes.filter((n) => (n.hand ? n.hand === 'L' : n.pitch < 60)) : [];
   const spans: [Span[], Span[]] = [
     staffSpans(right, times, sustain, legatoGap),
     staffSpans(left, times, sustain, legatoGap),
