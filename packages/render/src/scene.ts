@@ -6,7 +6,7 @@ import { BLACK_LENGTH } from './keyboard-layout';
 /** Lo que el visualizador necesita de un VisualProject. */
 export type VisualSettings = Pick<
   VisualProject,
-  'themeId' | 'effects' | 'show' | 'colors' | 'layout' | 'background'
+  'themeId' | 'effects' | 'show' | 'colors' | 'layout' | 'background' | 'estilo'
 >;
 
 /** Segundos que tarda una nota en caer de arriba a la línea con fallSpeed = 1. */
@@ -32,10 +32,14 @@ export function frameLayout(
   fallSpeed: number,
   /** Pedal grande (tutoriales): la franja del pedal ocupa más del doble. */
   bigPedal = false,
+  /** Teclado subido, en fracción del alto (pedido 41): deja lugar abajo para las manos. */
+  elevacion = 0,
 ): FrameLayout {
   const pedalHeight = Math.round(Math.max(bigPedal ? 32 : 14, height * (bigPedal ? 0.07 : 0.03)));
   const keyboardHeight = Math.round(Math.min(Math.max(height * 0.15, 48), width * 0.12));
-  const keyLineY = height - pedalHeight - keyboardHeight;
+  const keyLineY = Math.round(
+    height - pedalHeight - keyboardHeight - Math.min(0.4, Math.max(0, elevacion)) * height,
+  );
   const lookahead = BASE_LOOKAHEAD / Math.max(0.1, fallSpeed);
   return {
     width,

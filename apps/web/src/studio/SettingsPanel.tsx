@@ -26,6 +26,25 @@ const SENSIBILIDAD = [
   { value: '1.4', label: 'Alta' },
 ] as const;
 
+/** Pedido 42: un color por mano o el mismo para todas las notas. */
+const MODOS_COLOR = [
+  { value: 'mano', label: 'Por mano' },
+  { value: 'uno', label: 'Uno solo' },
+] as const;
+
+/** Pedido 41: qué sale al tocar. */
+const PARTICULAS = [
+  { value: 'ambas', label: 'Chispas y humo' },
+  { value: 'chispas', label: 'Chispas' },
+  { value: 'humo', label: 'Humo' },
+  { value: 'ninguna', label: 'Nada' },
+] as const;
+
+const ESTILOS_TECLADO = [
+  { value: 'realista', label: 'Realista' },
+  { value: 'plano', label: 'Plano' },
+] as const;
+
 /** Fase 11 (pedido 17): carriles o una batería como la de verdad. */
 const VISTAS_BATERIA = [
   { value: 'carriles', label: 'Carriles' },
@@ -93,6 +112,8 @@ export function SettingsPanel() {
   const setEffect = (patch: Partial<typeof settings.effects>) =>
     setSettings({ effects: { ...settings.effects, ...patch } });
   // Lee los colores del estado al aplicar, no del render: así no se pierde un cambio.
+  const setEstilo = (patch: NonNullable<typeof settings.estilo>) =>
+    setSettings({ estilo: { ...useStudio.getState().settings.estilo, ...patch } });
   const setColor = (hand: keyof typeof settings.colors) => (hex: string) => {
     const current = useStudio.getState().settings.colors;
     setSettings({ colors: { ...current, [hand]: hex } });
@@ -216,22 +237,41 @@ export function SettingsPanel() {
       {piano && (
         <>
           <h2 className="ui-etiqueta">Notas</h2>
+          {/* Pedido 42: un color por mano o el mismo para las dos. */}
+          <Chips
+            label="Color de las notas"
+            options={MODOS_COLOR}
+            value={settings.estilo?.colorUnico ? 'uno' : 'mano'}
+            onChange={(modo) =>
+              setEstilo({ colorUnico: modo === 'uno' ? settings.colors.right : null })
+            }
+          />
           <div className={styles.colores}>
-            <ColorField
-              label="Mano derecha"
-              value={settings.colors.right}
-              onChange={setColor('right')}
-            />
-            <ColorField
-              label="Mano izquierda"
-              value={settings.colors.left}
-              onChange={setColor('left')}
-            />
-            <ColorField
-              label="Sin asignar"
-              value={settings.colors.unassigned}
-              onChange={setColor('unassigned')}
-            />
+            {settings.estilo?.colorUnico ? (
+              <ColorField
+                label="Color de todas las notas"
+                value={settings.estilo.colorUnico}
+                onChange={(colorUnico) => setEstilo({ colorUnico })}
+              />
+            ) : (
+              <>
+                <ColorField
+                  label="Mano derecha"
+                  value={settings.colors.right}
+                  onChange={setColor('right')}
+                />
+                <ColorField
+                  label="Mano izquierda"
+                  value={settings.colors.left}
+                  onChange={setColor('left')}
+                />
+                <ColorField
+                  label="Sin asignar"
+                  value={settings.colors.unassigned}
+                  onChange={setColor('unassigned')}
+                />
+              </>
+            )}
           </div>
 
           <h2 className="ui-etiqueta">Manos y dedos</h2>
@@ -291,12 +331,48 @@ export function SettingsPanel() {
           format={(v) => `${v} %`}
         />
       )}
+      {/* Pedidos 41 y 42: el acabado de las notas, partículas y teclado, por partes. */}
       <Slider
-        label="Chispas al tocar"
+        label="Redondeo de las notas"
+        max={100}
+        value={settings.estilo?.redondeo ?? 55}
+        onChange={(redondeo) => setEstilo({ redondeo })}
+        format={(v) => `${v} %`}
+      />
+      <Slider
+        label="Brillo dentro de la nota"
+        max={100}
+        value={settings.estilo?.brilloInterno ?? 60}
+        onChange={(brilloInterno) => setEstilo({ brilloInterno })}
+        format={(v) => `${v} %`}
+      />
+      <Chips
+        label="Al tocar"
+        options={PARTICULAS}
+        value={settings.estilo?.particulas ?? 'ambas'}
+        onChange={(particulas) => setEstilo({ particulas })}
+      />
+      <Slider
+        label="Cantidad de chispas y humo"
         max={200}
         value={settings.effects.sparks}
         onChange={(sparks) => setEffect({ sparks })}
         format={(v) => `${v} %`}
+      />
+      {piano && (
+        <Chips
+          label="Teclado"
+          options={ESTILOS_TECLADO}
+          value={settings.estilo?.teclado ?? 'realista'}
+          onChange={(teclado) => setEstilo({ teclado })}
+        />
+      )}
+      <Slider
+        label="Altura del teclado"
+        max={40}
+        value={Math.round((settings.estilo?.elevacion ?? 0) * 100)}
+        onChange={(v) => setEstilo({ elevacion: v / 100 })}
+        format={(v) => (v === 0 ? 'Abajo' : `${v} % más arriba`)}
       />
       <Slider
         label="Brillo de la tecla"

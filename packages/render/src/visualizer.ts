@@ -73,9 +73,31 @@ export const DEFAULT_SETTINGS: VisualSettings = {
   layout: 'visualizer',
   show: { fingers: false, noteNames: false, pedals: ['sustain', 'sostenuto', 'soft'] },
   colors: { right: '#FF9F1C', left: '#E8E4DC', unassigned: '#9A968C' },
+  estilo: {
+    colorUnico: null,
+    redondeo: 55,
+    brilloInterno: 60,
+    particulas: 'ambas',
+    teclado: 'realista',
+    elevacion: 0,
+  },
 };
 
 const MAX_SPARKS = 4000;
+/** Humo (pedido 41): cuánto dura cada bocanada y cuántas a la vez. */
+const HUMO_VIDA = 1.6;
+const MAX_HUMO = 500;
+
+/** Número fijo por nota (el humo sale igual cada vez: video determinista). */
+function hashId(id: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return (h >>> 0) / 4294967296;
+}
+function azar(semilla: number, k: number): number {
+  const x = Math.sin(semilla * 9973.13 + k * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
 /** Franja derecha para el panel de rasgueo (pedido 31). */
 const PANEL_RASGUEO = 0.09;
 /** Borde (px) de la textura del halo que no se estira. */
@@ -169,6 +191,17 @@ export class Visualizer {
   private readonly haloPool: Pool<NineSliceSprite>;
   private readonly beamPool: Pool<Sprite>;
   private readonly noteTextures: Record<'flat' | 'glow', Texture>;
+  /** Pedido 41: notas con el redondeo elegido (una textura por radio) y brillo por dentro. */
+  private readonly texturasNota = new Map<string, Texture>();
+  private readonly nucleoLayer = new Container();
+  private readonly nucleoPool: Pool<Sprite>;
+  /** Teclado realista: teclas con sombras que bajan al tocarlas. */
+  private readonly teclasLayer = new Container();
+  private readonly teclaPool: Pool<Sprite>;
+  private readonly texTecla: Record<'blanca' | 'negra' | 'negraLuz' | 'sombra', Texture>;
+  /** Humo que sube de las teclas, con el color de la nota. */
+  private readonly humoLayer = new Container();
+  private readonly humoPool: Pool<Sprite>;
   private readonly sparkTints: number[] = [];
   /** Pulsos y compases de la toma (vacío si no tiene tempo). */
   private beats: Beat[] = [];
@@ -226,6 +259,21 @@ export class Visualizer {
       new Graphics().roundRect(0, 0, 16, 16, NOTE_RADIUS).fill(0xffffff),
     );
     this.noteTextures = { flat: noteTexture, glow: makeNoteTexture() };
+    const nucleo = makeNucleoTexture();
+    this.nucleoPool = new Pool(this.nucleoLayer, () => {
+      const n = new Sprite(nucleo);
+      n.blendMode = 'add';
+      return n;
+    });
+    this.texTecla = makeTeclaTextures();
+    this.teclaPool = new Pool(this.teclasLayer, () => new Sprite(Texture.WHITE));
+    const humo = makeHumoTexture();
+    this.humoPool = new Pool(this.humoLayer, () => {
+      const h = new Sprite(humo);
+      h.anchor.set(0.5);
+      h.blendMode = 'add';
+      return h;
+    });
     const glowTexture = makeGlowTexture();
     const haloTexture = makeHaloTexture();
     const beamTexture = makeBeamTexture();
@@ -304,13 +352,16 @@ export class Visualizer {
       this.beamLayer,
       this.haloLayer,
       this.noteLayer,
+      this.nucleoLayer,
       this.insignias,
       this.noteLabels,
       this.flechas,
       this.textoRasgueo,
       this.selectionOutline,
+      this.teclasLayer,
       this.keys,
       this.glowLayer,
+      this.humoLayer,
       this.sparkLayer,
       this.pedal,
       this.pedalLabel,
@@ -428,6 +479,7 @@ export class Visualizer {
       this.layout.height,
       settings.effects.fallSpeed,
       settings.show.bigPedal === true,
+      settings.estilo?.elevacion ?? 0,
     );
   }
 
@@ -457,6 +509,7 @@ export class Visualizer {
       height,
       this.settings.effects.fallSpeed,
       this.settings.show.bigPedal === true,
+      this.settings.estilo?.elevacion ?? 0,
     );
   }
 
@@ -556,7 +609,11 @@ export class Visualizer {
 
     // Notas que caen
     this.notePool.begin();
+    this.nucleoPool.begin();
     this.haloPool.begin();
+    const estilo = this.settings.estilo ?? {};
+    const radio = Math.round(1 + ((estilo.redondeo ?? 55) / 100) * 15);
+    const brilloInterno = (estilo.brilloInterno ?? 60) / 100;
     this.noteLabelPool.begin();
     this.insigniaPool.begin();
     const { fingers: showFingers, noteNames: showNames } = this.settings.show;
@@ -617,12 +674,22 @@ export class Visualizer {
             .stroke({ width: Math.max(3, 5 * scale), color: tint, alpha: 0.75 + 0.25 * v });
         }
         const sprite = this.notePool.next();
-        sprite.texture = noteTexture;
+        sprite.texture = this.texturaNota(radio, glowStyle) ?? noteTexture;
+        sprite.leftWidth = sprite.rightWidth = sprite.topHeight = sprite.bottomHeight = radio + 1;
         sprite.position.set(rect.x, rect.y);
         sprite.width = rect.width;
         sprite.height = rect.height;
         sprite.tint = tint;
         sprite.alpha = abierto ? 0.12 : esBateria ? 0.55 + 0.45 * v : 0.72 + 0.28 * v;
+        if (brilloInterno > 0 && !abierto && rect.height > 4) {
+          // Brillo hacia adentro (pedido 41): una franja clara en el centro de la nota.
+          const n = this.nucleoPool.next();
+          n.position.set(rect.x + rect.width * 0.2, rect.y + Math.min(2, rect.height * 0.1));
+          n.width = rect.width * 0.6;
+          n.height = Math.max(1, rect.height - Math.min(4, rect.height * 0.2));
+          n.tint = lighten(tint, 0.7);
+          n.alpha = Math.min(1, brilloInterno * (0.35 + 0.45 * v));
+        }
         if (esCuerda) {
           const traste = this.carriles?.meta.get(note.id)?.etiqueta;
           if (traste) this.insignia(traste, rect, tint, scale);
@@ -640,13 +707,17 @@ export class Visualizer {
       if (isSounding(note, t)) this.active.set(note.pitch, note);
     });
     this.notePool.end();
+    this.nucleoPool.end();
     this.haloPool.end();
     this.noteLabelPool.end();
     this.insigniaPool.end();
     this.drawFlechas(t, scale);
 
-    if (camera) this.keys.clear();
-    else this.drawKeyboard(colors);
+    if (camera) {
+      this.keys.clear();
+      this.teclaPool.begin();
+      this.teclaPool.end();
+    } else this.drawKeyboard(colors);
 
     // Brillo sobre las teclas que suenan
     this.glowPool.begin();
@@ -692,7 +763,8 @@ export class Visualizer {
 
     // Chispas
     this.sparks.length = 0;
-    if (effects.sparks > 0 && !kit) {
+    const particulas = this.settings.estilo?.particulas ?? 'ambas';
+    if (effects.sparks > 0 && !kit && (particulas === 'chispas' || particulas === 'ambas')) {
       forEachNoteIn(this.index, t - SPARK_LIFE, t, (note) => {
         const key = this.keyboard.key(note.pitch);
         if (!key || this.sparks.length > MAX_SPARKS) return;
@@ -714,6 +786,7 @@ export class Visualizer {
         for (let i = first; i < this.sparks.length; i++) this.sparkTints[i] = tint;
       });
     }
+    this.drawHumo(t, scale, particulas === 'humo' || particulas === 'ambas', kit);
     this.sparkPool.begin();
     const grow = 0.8 + 0.35 * (effects.sparks / 100);
     const count = Math.min(this.sparks.length, MAX_SPARKS);
@@ -1024,7 +1097,109 @@ export class Visualizer {
   /** Color de una nota: por mano (piano), por cuerda (guitarra) o por pieza (batería). */
   private colorNota(note: NoteEvent, colors: VisualSettings['colors']): number {
     const propio = this.carriles?.meta.get(note.id)?.color;
-    return this.color(propio ?? noteColor(note, colors));
+    // Pedido 42: un solo color para todas las notas, si se eligió.
+    const unico = this.settings.estilo?.colorUnico;
+    return this.color(propio ?? unico ?? noteColor(note, colors));
+  }
+
+  /** Textura de nota con el radio pedido (se arma una vez por radio). */
+  private texturaNota(radio: number, brillante: boolean): Texture | null {
+    const clave = `${radio}:${brillante}`;
+    let t = this.texturasNota.get(clave);
+    if (!t) {
+      t = makeRoundedNoteTexture(radio, brillante);
+      this.texturasNota.set(clave, t);
+    }
+    return t;
+  }
+
+  /**
+   * Teclado realista (pedido 41): blancas con sombra y canto, negras con brillo; la tecla que
+   * suena toma el color de su nota y baja un poco. Arriba, la sombra de la tapa.
+   */
+  private drawTecladoRealista(colors: VisualSettings['colors']): void {
+    const L = this.layout;
+    const g = this.keys.clear();
+    const kh = L.keyboardHeight;
+    const baja = Math.max(1, kh * 0.03);
+    const lineH = Math.max(2, Math.round(L.height * 0.003));
+    for (const negras of [false, true]) {
+      for (const key of this.keyboard.keys) {
+        if (key.black !== negras) continue;
+        const x = key.x * L.width;
+        const w = key.width * L.width;
+        const note = this.active.get(key.pitch);
+        const lit = note ? this.colorNota(note, colors) : undefined;
+        const a = this.aparecer(key.x, 1);
+        const dy = (1 - a) * kh * 0.7 + (lit !== undefined ? baja : 0);
+        const s = this.teclaPool.next();
+        if (!negras) {
+          s.texture = this.texTecla.blanca;
+          s.position.set(x + 0.5, L.keyLineY + dy);
+          s.width = Math.max(1, w - 1);
+          s.height = kh;
+        } else {
+          s.texture = lit !== undefined ? this.texTecla.negraLuz : this.texTecla.negra;
+          s.position.set(x, L.keyLineY + dy);
+          s.width = w;
+          s.height = L.blackKeyHeight;
+        }
+        s.tint = lit ?? 0xffffff;
+        s.alpha = a;
+      }
+    }
+    const sombra = this.teclaPool.next();
+    sombra.texture = this.texTecla.sombra;
+    sombra.position.set(0, L.keyLineY);
+    sombra.width = L.width;
+    sombra.height = kh * 0.16;
+    sombra.tint = 0xffffff;
+    sombra.alpha = 0.9;
+    g.rect(0, L.keyLineY - lineH, L.width, lineH).fill(this.theme.keyLine);
+  }
+
+  /**
+   * Humo (pedido 41): bocanadas suaves que suben de la tecla mientras suena, crecen y se
+   * apagan con el color de la nota. Determinista (sale igual en el video).
+   */
+  private drawHumo(t: number, scale: number, activo: boolean, kit: boolean): void {
+    this.humoPool.begin();
+    if (activo && !kit && this.settings.effects.sparks > 0) {
+      const L = this.layout;
+      const cantidad = this.settings.effects.sparks / 100;
+      let n = 0;
+      forEachNoteIn(this.index, t - HUMO_VIDA - 1.2, t, (note) => {
+        if (n > MAX_HUMO) return;
+        const key = this.keyboard.key(note.pitch);
+        if (!key) return;
+        const w = key.width * L.width;
+        const cx = key.x * L.width + w / 2;
+        const tint = this.colorNota(note, this.settings.colors);
+        const v = note.velocity / 127;
+        const semilla = hashId(note.id);
+        const hasta = Math.min(note.end, note.start + 1.2);
+        for (let i = 0; i < 8; i++) {
+          const nace = note.start + i * 0.15;
+          if (nace > hasta) break;
+          const edad = t - nace;
+          if (edad < 0 || edad > HUMO_VIDA) continue;
+          const r1 = azar(semilla, i * 3);
+          const r2 = azar(semilla, i * 3 + 1);
+          const r3 = azar(semilla, i * 3 + 2);
+          const p = this.humoPool.next();
+          n++;
+          const sube = (35 + 45 * r2) * Math.max(scale, 0.4) * edad;
+          p.position.set(
+            cx + (r1 - 0.5) * w * 1.2 + (r3 - 0.5) * 40 * scale * edad,
+            L.keyLineY - sube - 4 * scale,
+          );
+          p.width = p.height = (w * 1.8 + 90 * scale * edad) * (0.7 + 0.6 * r3);
+          p.tint = tint;
+          p.alpha = 0.3 * cantidad * (0.5 + 0.5 * v) * Math.pow(1 - edad / HUMO_VIDA, 1.6);
+        }
+      });
+    }
+    this.humoPool.end();
   }
 
   /** Nombre de una pieza sobre su parche (se crea una vez). */
@@ -1158,10 +1333,18 @@ export class Visualizer {
   }
 
   private drawKeyboard(colors: VisualSettings['colors']): void {
+    this.teclaPool.begin();
     if (this.carriles) {
+      this.teclaPool.end();
       this.drawCarriles(this.carriles);
       return;
     }
+    if ((this.settings.estilo?.teclado ?? 'realista') === 'realista') {
+      this.drawTecladoRealista(colors);
+      this.teclaPool.end();
+      return;
+    }
+    this.teclaPool.end();
     const L = this.layout;
     const g = this.keys.clear();
     const th = this.theme;
@@ -1272,6 +1455,125 @@ function makeNoteTexture(): Texture {
   ctx.roundRect(1, 1, size - 2, size - 2, r - 1);
   ctx.stroke();
   return Texture.from(canvas);
+}
+
+/** Nota redondeada (pedido 41): el radio que se pidió; con brillo, un degradé suave. */
+function makeRoundedNoteTexture(radio: number, brillante: boolean): Texture {
+  const size = Math.max(16, radio * 2 + 12);
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  if (brillante) {
+    const g = ctx.createLinearGradient(0, 0, size, 0);
+    g.addColorStop(0, 'rgb(215,215,215)');
+    g.addColorStop(0.5, 'rgb(255,255,255)');
+    g.addColorStop(1, 'rgb(215,215,215)');
+    ctx.fillStyle = g;
+  } else ctx.fillStyle = 'rgb(255,255,255)';
+  ctx.beginPath();
+  ctx.roundRect(0, 0, size, size, radio);
+  ctx.fill();
+  return Texture.from(canvas);
+}
+
+/** Núcleo del brillo interno: una franja clara que se apaga hacia los bordes y las puntas. */
+function makeNucleoTexture(): Texture {
+  const w = 32;
+  const h = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d')!;
+  const gx = ctx.createLinearGradient(0, 0, w, 0);
+  gx.addColorStop(0, 'rgba(255,255,255,0)');
+  gx.addColorStop(0.5, 'rgba(255,255,255,0.95)');
+  gx.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gx;
+  ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = 'destination-in';
+  const gy = ctx.createLinearGradient(0, 0, 0, h);
+  gy.addColorStop(0, 'rgba(0,0,0,0)');
+  gy.addColorStop(0.12, 'rgba(0,0,0,1)');
+  gy.addColorStop(0.88, 'rgba(0,0,0,1)');
+  gy.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gy;
+  ctx.fillRect(0, 0, w, h);
+  return Texture.from(canvas);
+}
+
+/** Bocanada de humo: un círculo muy suave. */
+function makeHumoTexture(): Texture {
+  const size = 96;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, 'rgba(255,255,255,0.9)');
+  g.addColorStop(0.35, 'rgba(255,255,255,0.45)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  return Texture.from(canvas);
+}
+
+/** Teclas realistas (pedido 41): blanca con sombra y canto, negra con brillo, y la sombra de arriba. */
+function makeTeclaTextures(): Record<'blanca' | 'negra' | 'negraLuz' | 'sombra', Texture> {
+  const lienzo = (w: number, h: number, pintar: (c: CanvasRenderingContext2D) => void) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    pintar(canvas.getContext('2d')!);
+    return Texture.from(canvas);
+  };
+  const blanca = lienzo(32, 256, (c) => {
+    const g = c.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0, 'rgb(200,197,190)');
+    g.addColorStop(0.05, 'rgb(246,244,239)');
+    g.addColorStop(0.8, 'rgb(238,235,228)');
+    g.addColorStop(0.92, 'rgb(222,218,210)');
+    g.addColorStop(0.93, 'rgb(178,174,166)');
+    g.addColorStop(1, 'rgb(212,208,200)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, 32, 256);
+    const lado = c.createLinearGradient(0, 0, 32, 0);
+    lado.addColorStop(0, 'rgba(0,0,0,0.12)');
+    lado.addColorStop(0.12, 'rgba(0,0,0,0)');
+    lado.addColorStop(0.88, 'rgba(0,0,0,0)');
+    lado.addColorStop(1, 'rgba(0,0,0,0.16)');
+    c.fillStyle = lado;
+    c.fillRect(0, 0, 32, 256);
+  });
+  const negraDe = (claro: [number, number, number], oscuro: [number, number, number]) =>
+    lienzo(32, 160, (c) => {
+      const g = c.createLinearGradient(0, 0, 0, 160);
+      g.addColorStop(0, `rgb(${oscuro.join(',')})`);
+      g.addColorStop(0.85, `rgb(${claro.join(',')})`);
+      g.addColorStop(0.86, `rgb(${claro.map((v) => Math.min(255, v + 25)).join(',')})`);
+      g.addColorStop(1, `rgb(${claro.map((v) => Math.min(255, v + 10)).join(',')})`);
+      c.fillStyle = g;
+      c.fillRect(0, 0, 32, 160);
+      // Brillo a lo largo (laca) y bordes con relieve.
+      const brillo = c.createLinearGradient(0, 0, 32, 0);
+      brillo.addColorStop(0, 'rgba(255,255,255,0.10)');
+      brillo.addColorStop(0.25, 'rgba(255,255,255,0.22)');
+      brillo.addColorStop(0.45, 'rgba(255,255,255,0)');
+      brillo.addColorStop(0.9, 'rgba(0,0,0,0.25)');
+      c.fillStyle = brillo;
+      c.fillRect(0, 0, 32, 136);
+    });
+  const sombra = lienzo(4, 64, (c) => {
+    const g = c.createLinearGradient(0, 0, 0, 64);
+    g.addColorStop(0, 'rgba(0,0,0,0.75)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, 4, 64);
+  });
+  return {
+    blanca,
+    negra: negraDe([40, 40, 38], [16, 16, 15]),
+    negraLuz: negraDe([210, 210, 206], [140, 140, 136]),
+    sombra,
+  };
 }
 
 /** Halo suave alrededor de una nota (rectángulo redondeado desenfocado). */

@@ -96,5 +96,23 @@ export interface VisualProject {
     strums?: boolean; // fase 11: flechas de rasgueo en la guitarra (encendidas si falta)
   };
   colors: { right: string; left: string; unassigned: string };
+  /**
+   * Estilo del visualizador (pedidos 41 y 42 de Jacobo: acabado de calidad y un editor por
+   * partes). Todo es opcional: lo que falta toma el valor por defecto.
+   */
+  estilo?: {
+    /** Un solo color para todas las notas (en vez de uno por mano). */
+    colorUnico?: string | null;
+    /** Redondeo de las notas, 0 (rectas) a 100 (muy redondas). */
+    redondeo?: number;
+    /** Brillo dentro de la nota, 0 a 100 (el halo de afuera es effects.noteGlow). */
+    brilloInterno?: number;
+    /** Qué sale al tocar: chispas, humo, las dos o nada. */
+    particulas?: 'chispas' | 'humo' | 'ambas' | 'ninguna';
+    /** Teclado realista (con sombras y teclas que bajan) o plano. */
+    teclado?: 'realista' | 'plano';
+    /** Cuánto se sube el teclado, en fracción del alto (0 a 0,4): deja lugar para las manos. */
+    elevacion?: number;
+  };
   background?: { kind: 'color' | 'image' | 'video' | 'blur'; value: string };
 }

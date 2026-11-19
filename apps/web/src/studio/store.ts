@@ -216,6 +216,7 @@ export const useStudio = create<StudioState>()(
             effects: { ...DEFAULT_SETTINGS.effects, ...settings.effects },
             show: { ...DEFAULT_SETTINGS.show, ...settings.show },
             colors: { ...DEFAULT_SETTINGS.colors, ...settings.colors },
+            estilo: { ...DEFAULT_SETTINGS.estilo, ...settings.estilo },
           },
         };
       },

@@ -74,3 +74,66 @@ test('calidad del piano: elegir Alta baja más capas (pedido 33)', async ({ page
     .poll(() => ['3', '7', '11'].every((c) => pedidas.has(c)), { timeout: 60_000 })
     .toBe(true);
 });
+
+/** MIDI de piano: arpegios en la izquierda y acordes con melodía en la derecha (4 compases). */
+function midiPiano(): Buffer {
+  const vlq = (n: number) => {
+    const b = [n & 0x7f];
+    while ((n >>= 7)) b.unshift((n & 0x7f) | 0x80);
+    return b;
+  };
+  const eventos: [number, number, number][] = []; // [tick, nota, 1 prende / 0 apaga]
+  const acordes = [
+    [48, 55, 60, 64, 72, 76, 79],
+    [43, 50, 55, 59, 71, 74, 79],
+    [45, 52, 57, 60, 72, 76, 81],
+    [41, 48, 53, 57, 69, 72, 77],
+  ];
+  acordes.forEach((a, c) => {
+    for (let k = 0; k < 8; k++) {
+      const t = c * 1920 + k * 240;
+      const nota = a[k % 4]!;
+      eventos.push([t, nota, 1], [t + 230, nota, 0]);
+    }
+    for (const nota of a.slice(4)) eventos.push([c * 1920, nota, 1], [c * 1920 + 1800, nota, 0]);
+  });
+  eventos.sort((x, y) => x[0] - y[0] || x[2] - y[2]);
+  const datos: number[] = [0x00, 0xff, 0x51, 0x03, 0x07, 0xa1, 0x20];
+  let antes = 0;
+  for (const [t, nota, on] of eventos) {
+    datos.push(...vlq(t - antes), on ? 0x90 : 0x80, nota, on ? 92 : 0);
+    antes = t;
+  }
+  datos.push(0x00, 0xff, 0x2f, 0x00);
+  const cabeza = Buffer.from([0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, 0x01, 0xe0]);
+  const largo = Buffer.alloc(4);
+  largo.writeUInt32BE(datos.length);
+  return Buffer.concat([cabeza, Buffer.from('MTrk'), largo, Buffer.from(datos)]);
+}
+
+test('piano con acabado de calidad: notas redondeadas, teclado realista, humo (pedido 41)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'celular', 'Capturas de escritorio');
+  test.setTimeout(120_000);
+  await page.goto('/estudio?instrumento=piano');
+  await page.locator('input[accept=".mid,.midi,audio/midi"]').setInputFiles({
+    name: 'acordes.mid',
+    mimeType: 'audio/midi',
+    buffer: midiPiano(),
+  });
+  await expect(page.getByRole('button', { name: 'Reproducir', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Reproducir', exact: true }).click();
+  await page.waitForTimeout(2600);
+  await page.getByRole('button', { name: 'Pausar', exact: true }).click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: 'test-results/capturas/fase11-piano.png' });
+  // El teclado más arriba (deja lugar para las manos).
+  const altura = page.getByRole('slider', { name: 'Altura del teclado' });
+  await altura.focus();
+  for (let i = 0; i < 25; i++) await page.keyboard.press('ArrowRight');
+  await page.getByRole('button', { name: 'Reproducir', exact: true }).click();
+  await page.waitForTimeout(1200);
+  await page.getByRole('button', { name: 'Pausar', exact: true }).click();
+  await page.screenshot({ path: 'test-results/capturas/fase11-piano-arriba.png' });
+});
