@@ -26,7 +26,7 @@ test('guitarra: números de traste legibles', async ({ page }, info) => {
   test.skip(info.project.name === 'celular', 'Capturas de escritorio');
   test.setTimeout(120_000);
   // Al final de la pieza hay rasgueos: flechas hacia abajo (ámbar) y hacia arriba (verde).
-  await abrirPrueba(page, /arpegios/, /Guitarra/, 22);
+  await abrirPrueba(page, /rasgueo/, /Guitarra/, 2);
   await page.screenshot({ path: 'test-results/capturas/fase11-guitarra.png' });
 });
 

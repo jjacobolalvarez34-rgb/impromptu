@@ -225,17 +225,34 @@ export function Estudio() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (
-        e.code !== 'Space' ||
-        target.closest('input, textarea, button, [role="radio"], [role="tab"]')
-      )
-        return;
+      // Pedido de Jacobo: el espacio pausa siempre, salvo mientras se escribe en un campo de
+      // texto (los botones y opciones se activan con Enter).
+      const escribiendo =
+        target.isContentEditable ||
+        !!target.closest('textarea, select') ||
+        (target instanceof HTMLInputElement &&
+          !['range', 'checkbox', 'radio', 'button', 'color'].includes(target.type));
+      if (e.code !== 'Space' || escribiendo || e.repeat) return;
       e.preventDefault();
       void engine.start();
       useStudio.getState().togglePlay();
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // En la fase de captura: así gana antes que el botón u opción que tenga el foco.
+    // El botón con foco se activaría al soltar el espacio: también se frena ahí.
+    const alSoltar = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        e.code === 'Space' &&
+        target.closest('button, [role="radio"], [role="tab"], [role="switch"]')
+      )
+        e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey, true);
+    window.addEventListener('keyup', alSoltar, true);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      window.removeEventListener('keyup', alSoltar, true);
+    };
   }, []);
 
   const onFrame = useCallback((t: number) => {

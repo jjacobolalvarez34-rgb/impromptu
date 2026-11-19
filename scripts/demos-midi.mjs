@@ -121,7 +121,44 @@ for (let c = 0; c < 8; c++) {
   for (const k of [1.75, 2.25, 3.75]) funk.push([38, b + k, 0.2, 35]);
 }
 
+// Guitarra: rasgueo clásico (pedido de Jacobo, para ver las flechas): abajo, abajo-arriba,
+// arriba-abajo-arriba, sobre Sol, Do, Re y Mim; abajo de la 6.ª a la 1.ª cuerda, arriba al revés.
+const rasgueoAcordes = [
+  [43, 47, 50, 55, 59, 67], // Sol
+  [48, 52, 55, 60, 64], // Do
+  [50, 57, 62, 66], // Re
+  [40, 47, 52, 55, 59, 64], // Mim
+];
+const rasgueo = [];
+let tr = 0;
+for (let vuelta = 0; vuelta < 2; vuelta++) {
+  for (const acorde of rasgueoAcordes) {
+    for (const [pulso, abajo] of [
+      [0, true],
+      [1, true],
+      [1.5, false],
+      [2.5, false],
+      [3, true],
+      [3.5, false],
+    ]) {
+      const cuerdas = abajo ? acorde : [...acorde].reverse().slice(0, 4);
+      cuerdas.forEach((p, i) =>
+        rasgueo.push([p, tr + pulso * 0.5 + i * 0.015, 0.4, abajo ? 100 : 75]),
+      );
+    }
+    tr += 2;
+  }
+}
+
 const piezas = [
+  {
+    archivo: 'guitarra-rasgueo',
+    nombre: 'Guitarra: rasgueo',
+    canal: 0,
+    programa: 25,
+    bpm: 120,
+    notas: rasgueo,
+  },
   {
     archivo: 'guitarra-arpegios',
     nombre: 'Guitarra: arpegios',

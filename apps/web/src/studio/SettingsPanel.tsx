@@ -1,6 +1,7 @@
 import type { PedalKind } from '@impromptu/core';
 import { THEMES, instrumentoDe } from '@impromptu/render';
 import { Button, Chips, Slider, Switch } from '@impromptu/ui';
+import type { Instrument } from '@impromptu/core';
 import { useAudio } from './audio';
 import { autoAssign } from './edit';
 import { ColorField } from './ColorField';
@@ -25,6 +26,20 @@ const SENSIBILIDAD = [
   { value: '1', label: 'Media' },
   { value: '1.4', label: 'Alta' },
 ] as const;
+
+/** Lo de abajo de la pantalla y su brillo, con el nombre de cada instrumento. */
+const PARTE_DE_ABAJO: Record<Instrument, string> = {
+  piano: 'del teclado',
+  guitar: 'del mástil',
+  bass: 'del mástil',
+  drums: 'de los parches',
+};
+const BRILLO_DE: Record<Instrument, string> = {
+  piano: 'Brillo de la tecla',
+  guitar: 'Brillo del traste',
+  bass: 'Brillo del traste',
+  drums: 'Brillo del parche',
+};
 
 /** Pedido 42: un color por mano o el mismo para todas las notas. */
 const MODOS_COLOR = [
@@ -338,20 +353,25 @@ export function SettingsPanel() {
         />
       )}
       {/* Pedidos 41 y 42: el acabado de las notas, partículas y teclado, por partes. */}
-      <Slider
-        label="Redondeo de las notas"
-        max={100}
-        value={settings.estilo?.redondeo ?? 55}
-        onChange={(redondeo) => setEstilo({ redondeo })}
-        format={(v) => `${v} %`}
-      />
-      <Slider
-        label="Brillo dentro de la nota"
-        max={100}
-        value={settings.estilo?.brilloInterno ?? 60}
-        onChange={(brilloInterno) => setEstilo({ brilloInterno })}
-        format={(v) => `${v} %`}
-      />
+      {/* En la batería los golpes son barras propias: el redondeo y el brillo interno no aplican. */}
+      {instrumento !== 'drums' && (
+        <>
+          <Slider
+            label="Redondeo de las notas"
+            max={100}
+            value={settings.estilo?.redondeo ?? 55}
+            onChange={(redondeo) => setEstilo({ redondeo })}
+            format={(v) => `${v} %`}
+          />
+          <Slider
+            label="Brillo dentro de la nota"
+            max={100}
+            value={settings.estilo?.brilloInterno ?? 60}
+            onChange={(brilloInterno) => setEstilo({ brilloInterno })}
+            format={(v) => `${v} %`}
+          />
+        </>
+      )}
       <Chips
         label="Al tocar"
         options={PARTICULAS}
@@ -373,15 +393,17 @@ export function SettingsPanel() {
           onChange={(teclado) => setEstilo({ teclado })}
         />
       )}
+      {!(instrumento === 'drums' && settings.show.drumView === 'kit') && (
+        <Slider
+          label={`Altura ${PARTE_DE_ABAJO[instrumento]}`}
+          max={40}
+          value={Math.round((settings.estilo?.elevacion ?? 0) * 100)}
+          onChange={(v) => setEstilo({ elevacion: v / 100 })}
+          format={(v) => (v === 0 ? 'Abajo' : `${v} % más arriba`)}
+        />
+      )}
       <Slider
-        label="Altura del teclado"
-        max={40}
-        value={Math.round((settings.estilo?.elevacion ?? 0) * 100)}
-        onChange={(v) => setEstilo({ elevacion: v / 100 })}
-        format={(v) => (v === 0 ? 'Abajo' : `${v} % más arriba`)}
-      />
-      <Slider
-        label="Brillo de la tecla"
+        label={BRILLO_DE[instrumento]}
         max={200}
         value={settings.effects.keyGlow}
         onChange={(keyGlow) => setEffect({ keyGlow })}
@@ -396,11 +418,13 @@ export function SettingsPanel() {
         onChange={(fallSpeed) => setEffect({ fallSpeed })}
         format={(v) => `${v.toFixed(1)}×`}
       />
-      <Switch
-        label="Guías de octava"
-        checked={settings.effects.octaveGuides}
-        onChange={(octaveGuides) => setEffect({ octaveGuides })}
-      />
+      {piano && (
+        <Switch
+          label="Guías de octava"
+          checked={settings.effects.octaveGuides}
+          onChange={(octaveGuides) => setEffect({ octaveGuides })}
+        />
+      )}
       <Switch
         label="Compases y pulsos"
         checked={settings.effects.beatGuides}

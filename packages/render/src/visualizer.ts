@@ -4,6 +4,7 @@ import {
   BitmapText,
   BlurFilter,
   Container,
+  FillGradient,
   Graphics,
   NineSliceSprite,
   Sprite,
@@ -376,8 +377,8 @@ export class Visualizer {
       this.flechas,
       this.textoRasgueo,
       this.selectionOutline,
-      this.teclasLayer,
       this.keys,
+      this.teclasLayer,
       this.glowLayer,
       this.humoLayer,
       this.sparkLayer,
@@ -719,7 +720,7 @@ export class Visualizer {
           const baqueta = this.carriles?.meta.get(note.id)?.baqueta;
           if (baqueta) this.insignia(baqueta, rect, COLOR_BAQUETA[baqueta], scale);
         }
-        if (esCuerda) {
+        if (esCuerda && note.start > t) {
           const traste = this.carriles?.meta.get(note.id)?.etiqueta;
           if (traste) this.insignia(traste, rect, tint, scale);
           // Bajo: el dedo que pulsa (i índice, m medio), encima del número de traste.
@@ -733,7 +734,7 @@ export class Visualizer {
               scale,
             );
           }
-        } else if (!esBateria) {
+        } else if (!esBateria && !esCuerda) {
           const text = labelFor(note, showFingers, showNames);
           if (text) this.placeLabel(text, rect, tint, scale);
         }
@@ -746,7 +747,7 @@ export class Visualizer {
       }
       if (isSounding(note, t)) this.active.set(note.pitch, note);
     });
-    if (esBateria) {
+    if (esBateria || esCuerda) {
       forEachNoteIn(this.index, t - ESTALLIDO, t, (note) => {
         const edad = t - note.start;
         if (edad < 0 || edad > ESTALLIDO) return;
@@ -1009,7 +1010,8 @@ export class Visualizer {
     tint: number,
     scale: number,
   ): void {
-    const d = Math.max(18, (text.length > 1 ? 34 : 30) * scale);
+    const base = Math.max(18, (text.length > 1 ? 34 : 30) * scale);
+    const d = Math.max(14, Math.min(base, rect.height + 6 * scale));
     const cx = rect.x + rect.width / 2;
     const cy = this.direction === 'fall' ? rect.y + rect.height - d / 2 : rect.y + d / 2;
     const c = this.insigniaPool.next();
@@ -1193,12 +1195,44 @@ export class Visualizer {
    * Teclado realista (pedido 41): blancas con sombra y canto, negras con brillo; la tecla que
    * suena toma el color de su nota y baja un poco. Arriba, la sombra de la tapa.
    */
+  /** Degradados del teclado (se arman una vez; espacio local de cada tecla). */
+  private gradTeclas: { blanca: FillGradient; negra: FillGradient } | null = null;
+
   private drawTecladoRealista(colors: VisualSettings['colors']): void {
     const L = this.layout;
     const g = this.keys.clear();
     const kh = L.keyboardHeight;
     const baja = Math.max(1, kh * 0.02);
     const lineH = Math.max(2, Math.round(L.height * 0.003));
+    this.gradTeclas ??= {
+      blanca: new FillGradient({
+        type: 'linear',
+        start: { x: 0, y: 0 },
+        end: { x: 0, y: 1 },
+        textureSpace: 'local',
+        colorStops: [
+          { offset: 0, color: '#d9d9d6' },
+          { offset: 0.07, color: '#fbfbf9' },
+          { offset: 0.9, color: '#f0f0ee' },
+          { offset: 1, color: '#d4d4d1' },
+        ],
+      }),
+      negra: new FillGradient({
+        type: 'linear',
+        start: { x: 0, y: 0 },
+        end: { x: 0, y: 1 },
+        textureSpace: 'local',
+        colorStops: [
+          { offset: 0, color: '#030303' },
+          { offset: 0.84, color: '#1b1b1b' },
+          { offset: 0.86, color: '#4a4a4a' },
+          { offset: 1, color: '#262626' },
+        ],
+      }),
+    };
+    const grad = this.gradTeclas;
+    // Fondo oscuro detrás: las ranuras entre teclas blancas son ese fondo (bordes limpios).
+    g.rect(0, L.keyLineY, L.width, kh).fill(0x0c0c0c);
     const luces: { x: number; w: number; negra: boolean; color: number; v: number }[] = [];
     for (const negras of [false, true]) {
       for (const key of this.keyboard.keys) {
@@ -1207,21 +1241,31 @@ export class Visualizer {
         const w = key.width * L.width;
         const note = this.active.get(key.pitch);
         const a = this.aparecer(key.x, 1);
-        const dy = (1 - a) * kh * 0.7 + (note ? baja : 0);
-        const s = this.teclaPool.next();
-        s.blendMode = 'normal';
-        s.tint = 0xffffff;
-        s.alpha = a;
+        const y = L.keyLineY + (1 - a) * kh * 0.7 + (note ? baja : 0);
         if (!negras) {
-          s.texture = this.texTecla.blanca;
-          s.position.set(x, L.keyLineY + dy);
-          s.width = Math.max(1, w);
-          s.height = kh;
+          const ranura = Math.max(1, Math.min(2, w * 0.08));
+          g.roundRect(
+            x + ranura / 2,
+            y,
+            Math.max(1, w - ranura),
+            kh - (note ? baja : 0),
+            Math.min(4, w * 0.14),
+          ).fill({
+            fill: grad.blanca,
+            alpha: a,
+          });
         } else {
-          s.texture = this.texTecla.negra;
-          s.position.set(x, L.keyLineY + dy);
-          s.width = w;
-          s.height = L.blackKeyHeight;
+          // Negras algo más anchas, con brillo a lo largo y la cara de adelante más clara.
+          const ancho = w * 1.08;
+          const bx = x - (ancho - w) / 2;
+          g.roundRect(bx, y, ancho, L.blackKeyHeight, Math.min(3, ancho * 0.16)).fill({
+            fill: grad.negra,
+            alpha: a,
+          });
+          g.rect(bx + ancho * 0.2, y + 1, Math.max(1, ancho * 0.14), L.blackKeyHeight * 0.78).fill({
+            color: 0xffffff,
+            alpha: 0.1 * a,
+          });
         }
         if (note)
           luces.push({
