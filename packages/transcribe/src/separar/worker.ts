@@ -57,7 +57,10 @@ async function bajar(baseUrl: string): Promise<ArrayBuffer[]> {
     });
   return Promise.all(
     PARTES.map(async (p, i) => {
-      const url = `${baseUrl}spleeter-${p}.fp16.onnx`;
+      // En la carpeta local se llaman spleeter-<parte>; en el repositorio público, <parte>.
+      const url = baseUrl.includes('huggingface.co')
+        ? `${baseUrl}${p}.fp16.onnx`
+        : `${baseUrl}spleeter-${p}.fp16.onnx`;
       const guardado = await cache?.match(url);
       if (guardado) return guardado.arrayBuffer();
       const res = await fetch(url);

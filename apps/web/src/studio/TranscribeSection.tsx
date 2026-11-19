@@ -138,7 +138,7 @@ export function ConvertAudioButton({ label = 'Convertir un audio' }: { label?: s
       <Button icon={<FileAudio />} disabled={busy} onClick={() => input.current?.click()}>
         {label}
       </Button>
-      {instrumento !== 'piano' && PIANO_MODEL_URL && (
+      {instrumento !== 'piano' && (
         <Switch
           label="Separar el instrumento de la canción"
           checked={separar}

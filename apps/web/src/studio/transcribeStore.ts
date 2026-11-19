@@ -52,6 +52,14 @@ export interface Conversion {
  * Carpeta del modelo de piano con pedal (Transkun, ADR-015). En desarrollo se sirve desde la
  * carpeta local de modelos; para la web publicada hace falta VITE_PIANO_MODEL_URL. PROVISIONAL(P21).
  */
+/**
+ * Separador de instrumentos (pedido 35): en desarrollo, la carpeta local; si no, el repositorio
+ * público de la conversión a ONNX (Apache-2.0, pesos MIT de Deezer). PROVISIONAL(P21): pasar a
+ * la copia propia de Mamut Herd en Hugging Face cuando exista.
+ */
+export const SEPARADOR_URL =
+  'https://huggingface.co/Best-Practice/spleeter-4stems-onnx/resolve/main/';
+
 export const PIANO_MODEL_URL: string | null =
   (import.meta.env.VITE_PIANO_MODEL_URL as string | undefined) ??
   (import.meta.env.DEV ? `${import.meta.env.BASE_URL}modelos/` : null);
@@ -183,7 +191,7 @@ export const useTranscribe = create<Store>((set, get) => {
       const instrumento = useStudio.getState().instrumento;
       // Canción completa: primero se separa el instrumento del resto (pedido 35).
       let fuente: AudioBuffer = buffer;
-      if (!fromMic && get().separar && instrumento !== 'piano' && PIANO_MODEL_URL) {
+      if (!fromMic && get().separar && instrumento !== 'piano') {
         const nombreParte =
           instrumento === 'drums'
             ? 'la batería'
@@ -191,7 +199,7 @@ export const useTranscribe = create<Store>((set, get) => {
               ? 'el bajo'
               : 'la guitarra';
         fuente = await separarInstrumento(buffer, PARTE_DE[instrumento], {
-          baseUrl: PIANO_MODEL_URL,
+          baseUrl: PIANO_MODEL_URL ?? SEPARADOR_URL,
           signal: controller.signal,
           onStage: (st) => {
             if (st.stage === 'downloading')

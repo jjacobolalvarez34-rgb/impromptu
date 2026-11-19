@@ -83,3 +83,22 @@ test('una canción con batería: se separa la batería y salen los golpes', asyn
   expect(vistos.length).toBeGreaterThan(0);
   await page.screenshot({ path: 'test-results/capturas/separar-bateria.png' });
 });
+
+test('en la web publicada, el separador se baja del repositorio público', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'celular' || !!process.env.CI, 'Baja de internet: solo en local');
+  test.setTimeout(180_000);
+  // Basta con que la descarga empiece y el navegador la permita (CORS y aislamiento): el aviso
+  // "Descargando…" con un porcentaje sale solo cuando ya llegaron datos. Bajar los 79 MB completos
+  // depende de la conexión.
+  await page.goto('/estudio?instrumento=bateria');
+  await page.locator('input[aria-label="Archivo de audio para convertir en notas"]').setInputFiles({
+    name: 'cancion.wav',
+    mimeType: 'audio/wav',
+    buffer: cancion(),
+  });
+  await expect(page.getByText(/Descargando el separador de instrumentos/).first()).toBeVisible({
+    timeout: 120_000,
+  });
+});
