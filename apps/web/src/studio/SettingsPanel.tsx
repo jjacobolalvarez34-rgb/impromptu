@@ -82,6 +82,8 @@ const PANEL_SUSTAIN = [
 ] as const;
 
 const NOTE_STYLES = [
+  { value: 'cristal', label: 'Cristal' },
+  { value: 'satin', label: 'Satín' },
   { value: 'glow', label: 'Brillante' },
   { value: 'flat', label: 'Plano' },
 ] as const;
@@ -343,7 +345,7 @@ export function SettingsPanel() {
         value={settings.effects.noteStyle}
         onChange={(noteStyle) => setEffect({ noteStyle })}
       />
-      {settings.effects.noteStyle === 'glow' && (
+      {settings.effects.noteStyle !== 'flat' && (
         <Slider
           label="Brillo de las notas"
           max={200}

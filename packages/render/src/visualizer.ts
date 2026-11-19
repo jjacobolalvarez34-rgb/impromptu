@@ -68,7 +68,7 @@ export const DEFAULT_SETTINGS: VisualSettings = {
     fallSpeed: 1,
     octaveGuides: true,
     noteGlow: 70,
-    noteStyle: 'glow',
+    noteStyle: 'cristal',
     beatGuides: true,
   },
   layout: 'visualizer',
@@ -208,6 +208,12 @@ export class Visualizer {
   private readonly texturasNota = new Map<string, Texture>();
   private readonly nucleoLayer = new Container();
   private readonly nucleoPool: Pool<Sprite>;
+  /** Estilo cristal (referencia de Jacobo): borde de luz y estela de rayos al caer. */
+  private readonly bordeLayer = new Container();
+  private readonly bordePool: Pool<NineSliceSprite>;
+  private readonly estelaLayer = new Container();
+  private readonly estelaPool: Pool<Sprite>;
+  private readonly texturasCristal = new Map<string, Texture>();
   /** Teclado realista: teclas con sombras que bajan al tocarlas. */
   private readonly teclasLayer = new Container();
   private readonly teclaPool: Pool<Sprite>;
@@ -283,6 +289,16 @@ export class Visualizer {
       return n;
     });
     this.texTecla = makeTeclaTextures();
+    this.bordePool = new Pool(
+      this.bordeLayer,
+      () => new NineSliceSprite({ texture: Texture.WHITE }),
+    );
+    const estela = makeEstelaTexture();
+    this.estelaPool = new Pool(this.estelaLayer, () => {
+      const e = new Sprite(estela);
+      e.blendMode = 'add';
+      return e;
+    });
     this.teclaPool = new Pool(this.teclasLayer, () => new Sprite(Texture.WHITE));
     const humo = makeHumoTexture();
     this.humoPool = new Pool(this.humoLayer, () => {
@@ -369,7 +385,9 @@ export class Visualizer {
       this.beamLayer,
       this.haloLayer,
       this.kitGfx,
+      this.estelaLayer,
       this.noteLayer,
+      this.bordeLayer,
       this.golpesGfx,
       this.nucleoLayer,
       this.insignias,
@@ -633,6 +651,8 @@ export class Visualizer {
     // Notas que caen
     this.notePool.begin();
     this.nucleoPool.begin();
+    this.bordePool.begin();
+    this.estelaPool.begin();
     this.golpesGfx.clear();
     this.haloPool.begin();
     const estilo = this.settings.estilo ?? {};
@@ -648,9 +668,12 @@ export class Visualizer {
     this.hitRects.length = 0;
     const outline = this.selectionOutline.clear();
     this.active.clear();
-    const glowStyle = effects.noteStyle === 'glow';
+    const cristal = effects.noteStyle === 'cristal';
+    // Satín (segunda referencia de Jacobo): opaca, más clara hacia los bordes, filo fino de luz.
+    const satin = effects.noteStyle === 'satin';
+    const glowStyle = effects.noteStyle !== 'flat';
     const noteTexture = this.noteTextures[glowStyle ? 'glow' : 'flat'];
-    const halo = glowStyle ? effects.noteGlow / 100 : 0; // 0–2
+    const halo = glowStyle ? (effects.noteGlow / 100) * (cristal ? 0.7 : satin ? 0.35 : 1) : 0; // 0–2
     const kit = this.vistaKit();
     // En la batería real los golpes caen hasta su pieza, que puede estar más abajo.
     const span = (kit ? L.height : L.keyLineY) / L.pps;
@@ -700,14 +723,68 @@ export class Visualizer {
         if (esBateria) this.barraGolpe(rect, tint, v, abierto, scale);
         const sprite = this.notePool.next();
         sprite.visible = !esBateria;
-        sprite.texture = this.texturaNota(radio, glowStyle) ?? noteTexture;
-        sprite.leftWidth = sprite.rightWidth = sprite.topHeight = sprite.bottomHeight = radio + 1;
+        const vidrio = cristal && !esBateria;
+        const sedoso = satin && !esBateria;
+        sprite.texture = vidrio
+          ? this.texturaCristal(radio, 'cuerpo')
+          : sedoso
+            ? this.texturaCristal(radio, 'satin')
+            : (this.texturaNota(radio, glowStyle) ?? noteTexture);
+        const corte = vidrio ? radio + 4 : sedoso ? radio + 10 : radio + 1;
+        sprite.leftWidth = sprite.rightWidth = sprite.topHeight = sprite.bottomHeight = corte;
         sprite.position.set(rect.x, rect.y);
         sprite.width = rect.width;
         sprite.height = rect.height;
         sprite.tint = tint;
-        sprite.alpha = abierto ? 0.12 : esBateria ? 0.55 + 0.45 * v : 0.72 + 0.28 * v;
-        if (brilloInterno > 0 && !abierto && !esBateria && rect.height > 4) {
+        sprite.alpha = abierto
+          ? 0.12
+          : esBateria
+            ? 0.55 + 0.45 * v
+            : sedoso
+              ? 0.9 + 0.1 * v
+              : 0.72 + 0.28 * v;
+        if (sedoso) {
+          const b = this.bordePool.next();
+          b.texture = this.texturaCristal(radio, 'filo');
+          b.leftWidth = b.rightWidth = b.topHeight = b.bottomHeight = radio + 4;
+          b.position.set(rect.x, rect.y);
+          b.width = rect.width;
+          b.height = rect.height;
+          b.tint = lighten(tint, 0.7);
+          b.alpha = 0.85;
+        }
+        if (vidrio) {
+          // Borde de luz casi blanca, reflejo de vidrio a la izquierda y estela al caer.
+          const b = this.bordePool.next();
+          b.texture = this.texturaCristal(radio, 'borde');
+          b.leftWidth = b.rightWidth = b.topHeight = b.bottomHeight = corte;
+          b.position.set(rect.x, rect.y);
+          b.width = rect.width;
+          b.height = rect.height;
+          b.tint = lighten(tint, 0.85);
+          b.alpha = 0.95;
+          if (rect.height > 12 && brilloInterno > 0) {
+            const reflejo = this.nucleoPool.next();
+            reflejo.position.set(
+              rect.x + rect.width * 0.16,
+              rect.y + Math.min(rect.height * 0.08, 8 * scale),
+            );
+            reflejo.width = Math.max(2, rect.width * 0.12);
+            reflejo.height = rect.height * 0.5;
+            reflejo.tint = 0xffffff;
+            reflejo.alpha = 0.4 * brilloInterno;
+          }
+          if (note.start > t && this.direction === 'fall') {
+            const e = this.estelaPool.next();
+            const alto = Math.min(rect.width * 3.2, 200 * scale);
+            e.position.set(rect.x + rect.width * 0.06, rect.y - alto + 2);
+            e.width = rect.width * 0.88;
+            e.height = alto;
+            e.tint = lighten(tint, 0.55);
+            e.alpha = 0.5 * (0.6 + 0.4 * v);
+          }
+        }
+        if (brilloInterno > 0 && !abierto && !esBateria && !vidrio && !sedoso && rect.height > 4) {
           // Brillo hacia adentro (pedido 41): una franja clara en el centro de la nota.
           const n = this.nucleoPool.next();
           n.position.set(rect.x + rect.width * 0.22, rect.y + Math.min(2, rect.height * 0.1));
@@ -769,6 +846,8 @@ export class Visualizer {
     }
     this.notePool.end();
     this.nucleoPool.end();
+    this.bordePool.end();
+    this.estelaPool.end();
     this.haloPool.end();
     this.noteLabelPool.end();
     this.insigniaPool.end();
@@ -1178,6 +1257,17 @@ export class Visualizer {
     // Pedido 42: un solo color para todas las notas, si se eligió.
     const unico = this.settings.estilo?.colorUnico;
     return this.color(propio ?? unico ?? noteColor(note, colors));
+  }
+
+  /** Cristal: el cuerpo de vidrio o el borde de luz, con el radio pedido (una vez por radio). */
+  private texturaCristal(radio: number, parte: ParteCristal): Texture {
+    const clave = `${parte}:${radio}`;
+    let t = this.texturasCristal.get(clave);
+    if (!t) {
+      t = makeCristalTexture(radio, parte);
+      this.texturasCristal.set(clave, t);
+    }
+    return t;
   }
 
   /** Textura de nota con el radio pedido (se arma una vez por radio). */
@@ -1869,6 +1959,87 @@ function makeRoundedNoteTexture(radio: number, brillante: boolean): Texture {
   ctx.beginPath();
   ctx.roundRect(0, 0, size, size, radio);
   ctx.fill();
+  return Texture.from(canvas);
+}
+
+/**
+ * Nota de cristal (referencia de Jacobo): el cuerpo es vidrio traslúcido, más claro abajo; el
+ * borde, una línea de luz con un filo interior. Se tiñen con el color de la nota.
+ */
+type ParteCristal = 'cuerpo' | 'borde' | 'satin' | 'filo';
+
+function makeCristalTexture(radio: number, parte: ParteCristal): Texture {
+  const size = Math.max(24, radio * 2 + (parte === 'satin' ? 28 : 16));
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  ctx.beginPath();
+  if (parte === 'satin') {
+    // Cuerpo lleno algo apagado; la luz entra por los bordes y se va al centro.
+    ctx.roundRect(1, 1, size - 2, size - 2, radio + 2);
+    ctx.fillStyle = 'rgb(200,200,200)';
+    ctx.fill();
+    ctx.save();
+    ctx.clip();
+    ctx.shadowColor = 'rgba(255,255,255,0.95)';
+    ctx.shadowBlur = 9;
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(0, 0, size, size, radio + 3);
+    ctx.stroke();
+    ctx.restore();
+  } else if (parte === 'filo') {
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 1.5;
+    ctx.roundRect(1.5, 1.5, size - 3, size - 3, radio + 1);
+    ctx.stroke();
+  } else if (parte === 'cuerpo') {
+    const g = ctx.createLinearGradient(0, 0, 0, size);
+    g.addColorStop(0, 'rgba(255,255,255,0.22)');
+    g.addColorStop(0.55, 'rgba(255,255,255,0.32)');
+    g.addColorStop(1, 'rgba(255,255,255,0.62)');
+    ctx.fillStyle = g;
+    ctx.roundRect(1, 1, size - 2, size - 2, radio + 2);
+    ctx.fill();
+  } else {
+    ctx.strokeStyle = 'rgba(255,255,255,1)';
+    ctx.lineWidth = 3;
+    ctx.roundRect(2, 2, size - 4, size - 4, radio + 1);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1;
+    ctx.roundRect(5, 5, size - 10, size - 10, Math.max(1, radio - 2));
+    ctx.stroke();
+  }
+  return Texture.from(canvas);
+}
+
+/** Estela de la nota de cristal: rayos verticales que se apagan hacia arriba. */
+function makeEstelaTexture(): Texture {
+  const w = 64;
+  const h = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d')!;
+  for (let x = 0; x < w; x += 2) {
+    const fuerza = 0.25 + 0.75 * Math.abs(Math.sin(x * 1.7) * Math.cos(x * 0.43));
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(1, `rgba(255,255,255,${(0.55 * fuerza).toFixed(3)})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(x, h * (0.25 * (1 - fuerza)), 1.5, h);
+  }
+  ctx.globalCompositeOperation = 'destination-in';
+  const gx = ctx.createLinearGradient(0, 0, w, 0);
+  gx.addColorStop(0, 'rgba(0,0,0,0)');
+  gx.addColorStop(0.2, 'rgba(0,0,0,1)');
+  gx.addColorStop(0.8, 'rgba(0,0,0,1)');
+  gx.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gx;
+  ctx.fillRect(0, 0, w, h);
   return Texture.from(canvas);
 }
 

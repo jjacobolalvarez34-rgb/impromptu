@@ -82,7 +82,7 @@ export interface VisualProject {
     fallSpeed: number;
     octaveGuides: boolean;
     noteGlow: number; // 0–200 %, halo de las notas (ADR-010)
-    noteStyle: 'flat' | 'glow'; // ADR-010
+    noteStyle: 'flat' | 'glow' | 'cristal' | 'satin'; // ADR-010; cristal: pedido de Jacobo (2026-11-19)
     beatGuides: boolean; // líneas de compás y pulso (ADR-011)
   };
   show: {

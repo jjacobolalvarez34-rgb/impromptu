@@ -138,6 +138,12 @@ test('piano con acabado de calidad: notas redondeadas, teclado realista, humo (p
   await page.waitForTimeout(1200);
   await page.getByRole('button', { name: 'Pausar', exact: true }).click();
   await page.screenshot({ path: 'test-results/capturas/fase11-piano-arriba.png' });
+  // Estilos de nota de las referencias de Jacobo: Cristal (por defecto) y Satín.
+  const estilos = page.getByRole('radiogroup', { name: 'Estilo de las notas' });
+  await expect(estilos.getByRole('radio', { name: 'Cristal' })).toBeChecked();
+  await estilos.getByRole('radio', { name: 'Satín' }).click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: 'test-results/capturas/fase11-piano-satin.png' });
 });
 
 test('bajo: mástil realista y el dedo que pulsa (i, m)', async ({ page }, info) => {
