@@ -64,7 +64,8 @@
   z-index: 2;
   display: grid;
   gap: var(--e-2);
-  margin: calc(var(--e-2) * -1) calc(var(--e-2) * -1) 0;
+  margin: 0;
+  min-width: 0;
   padding: var(--e-3);
   border: 1px solid var(--ambar);
   border-radius: var(--radio);
@@ -113,4 +114,21 @@
   height: 100%;
   background: var(--ambar);
   transform-origin: left;
+}
+
+/* En la columna angosta: el nombre en su línea; el porcentaje y Cancelar debajo. */
+.conversion .fila {
+  flex-wrap: wrap;
+}
+
+.conversion .fila p {
+  flex-basis: 100%;
+}
+
+.conversion .fila > :last-child {
+  margin-left: auto;
+}
+
+.conversion .fila {
+  row-gap: var(--e-1);
 }

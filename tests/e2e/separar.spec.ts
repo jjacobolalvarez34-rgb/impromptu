@@ -74,7 +74,18 @@ test('una canción con batería: se separa la batería y salen los golpes', asyn
     .poll(
       async () => {
         const texto = (await page.locator('body').textContent()) ?? '';
-        if (/Separando la batería|separador de instrumentos/.test(texto)) vistos.push('separar');
+        if (/Separando la batería|separador de instrumentos/.test(texto)) {
+          // La columna izquierda mientras trabaja: nada se sale del margen (Jacobo, 2026-11-19).
+          if (vistos.length === 0) {
+            await page.screenshot({ path: 'test-results/capturas/separar-columna.png' });
+            const desborde = await page.evaluate(() => {
+              const col = document.querySelector('aside');
+              return col ? col.scrollWidth - col.clientWidth : 0;
+            });
+            expect(desborde).toBeLessThanOrEqual(1);
+          }
+          vistos.push('separar');
+        }
         return /\d+ notas/.test((await page.locator('header').first().textContent()) ?? '');
       },
       { timeout: 280_000, intervals: [1000] },

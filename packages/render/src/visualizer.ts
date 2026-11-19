@@ -76,7 +76,7 @@ export const DEFAULT_SETTINGS: VisualSettings = {
   colors: { right: '#FF9F1C', left: '#E8E4DC', unassigned: '#9A968C' },
   estilo: {
     colorUnico: null,
-    redondeo: 55,
+    redondeo: 30, // Jacobo (2026-11-19): menos curva que el 55 de antes
     brilloInterno: 60,
     particulas: 'ambas',
     teclado: 'realista',
@@ -656,7 +656,7 @@ export class Visualizer {
     this.golpesGfx.clear();
     this.haloPool.begin();
     const estilo = this.settings.estilo ?? {};
-    const radio = Math.round(1 + ((estilo.redondeo ?? 55) / 100) * 15);
+    const radio = Math.round(1 + ((estilo.redondeo ?? 30) / 100) * 15);
     const brilloInterno = (estilo.brilloInterno ?? 60) / 100;
     this.noteLabelPool.begin();
     this.insigniaPool.begin();

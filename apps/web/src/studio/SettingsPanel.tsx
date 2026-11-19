@@ -1,5 +1,5 @@
 import type { PedalKind } from '@impromptu/core';
-import { THEMES, instrumentoDe } from '@impromptu/render';
+import { PALETAS, THEMES, instrumentoDe, paletaDe } from '@impromptu/render';
 import { Button, Chips, Slider, Switch } from '@impromptu/ui';
 import type { Instrument } from '@impromptu/core';
 import { useAudio } from './audio';
@@ -260,6 +260,33 @@ export function SettingsPanel() {
       {piano && (
         <>
           <h2 className="ui-etiqueta">Notas</h2>
+          {/* Colores listos para elegir: cambian las dos manos juntas. */}
+          <div className={styles.paletas} role="group" aria-label="Colores listos">
+            {PALETAS.map((p) => {
+              const activa = !settings.estilo?.colorUnico && paletaDe(settings.colors)?.id === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={styles.paleta}
+                  aria-pressed={activa}
+                  onClick={() => {
+                    const actual = useStudio.getState().settings;
+                    setSettings({
+                      colors: { ...actual.colors, right: p.right, left: p.left },
+                      estilo: { ...actual.estilo, colorUnico: null },
+                    });
+                  }}
+                >
+                  <span className={styles.muestra} aria-hidden="true">
+                    <span style={{ background: p.right }} />
+                    <span style={{ background: p.left }} />
+                  </span>
+                  {p.nombre}
+                </button>
+              );
+            })}
+          </div>
           {/* Pedido 42: un color por mano o el mismo para las dos. */}
           <Chips
             label="Color de las notas"
@@ -361,7 +388,7 @@ export function SettingsPanel() {
           <Slider
             label="Redondeo de las notas"
             max={100}
-            value={settings.estilo?.redondeo ?? 55}
+            value={settings.estilo?.redondeo ?? 30}
             onChange={(redondeo) => setEstilo({ redondeo })}
             format={(v) => `${v} %`}
           />

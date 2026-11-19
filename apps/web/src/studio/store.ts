@@ -192,7 +192,18 @@ export const useStudio = create<StudioState>()(
       // Los ajustes visuales se recuerdan entre sesiones (y los usa /en-vivo). La toma no:
       // las tomas viven en IndexedDB.
       name: 'impromptu-estudio',
-      version: 1,
+      version: 2,
+      // v1 → v2 (2026-11-19): quien tenía los valores de antes sin tocar (estilo Brillante y
+      // redondeo 55) pasa a las notas Cristal y a la curva más suave que pidió Jacobo.
+      migrate: (persisted, version) => {
+        const saved = (persisted ?? {}) as Partial<StudioState>;
+        if (version < 2 && saved.settings) {
+          const s = saved.settings;
+          if (s.effects?.noteStyle === 'glow') s.effects = { ...s.effects, noteStyle: 'cristal' };
+          if (s.estilo?.redondeo === 55) s.estilo = { ...s.estilo, redondeo: 30 };
+        }
+        return saved as StudioState;
+      },
       partialize: (s) => ({
         settings: s.settings,
         aspect: s.aspect,

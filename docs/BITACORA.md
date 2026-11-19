@@ -14,6 +14,13 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-19 (noche) · Notas Cristal y Satín, colores listos, menos curva
+- Hecho (web y PC, **sin verificar por Jacobo**): pedidos 50 a 53 de PENDIENTES. Notas **Cristal** (por defecto: vidrio, borde de luz, reflejo y estela de rayos) y **Satín** (llena y suave), según sus dos imágenes; **colores listos** (Ámbar, Hielo, Neón, Fuego, Menta, Rosa); **menos curva** (redondeo 30, con migración de los ajustes guardados); la **columna izquierda** ya no se sale del margen al convertir o descargar.
+- Pruebas: lint, typecheck y pruebas unitarias en verde; `fase11.spec.ts` (piano con Cristal, Satín y Hielo) y `separar.spec.ts` (mide que la columna no desborde). Capturas `fase11-piano*.png` y `separar-columna.png`. Nota: con el equipo cargado, la compilación de la web para las pruebas tarda casi 3 minutos y a veces pasa el límite; se deja prendida la vista previa (puerto 4173) para reusarla.
+- Probado por Jacobo: no.
+- Pendiente para la próxima: pasar lo gráfico nuevo al celular y compilar el APK y el instalador de PC **cuando Jacobo diga** (pidió no compilar aún).
+- Pedidos del usuario no atendidos: el paso al celular y la compilación, por pedido de Jacobo de parar aquí.
+
 ### 2026-11-19 (tarde) · Todo al celular, video en segundo plano, separar instrumentos y compilados
 - Orden que pidió Jacobo: (1) pasar todo al celular, (2) el video del visualizador en segundo plano, (3) pedido 35, (4) compilar. Hecho en ese orden:
   1. Celular: trastes en círculos, gemas de batería, hi-hat abierto, batería real, panel de rasgueo, volumen, hoja más rápida y manos nuevas (ver la entrada de la mañana).

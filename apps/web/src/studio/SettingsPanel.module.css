@@ -27,3 +27,55 @@
   color: var(--chasis);
   font-size: 14px;
 }
+
+/* Colores listos (lista de Jacobo, 2026-11-19). */
+.paletas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e-2);
+}
+
+.paleta {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: 36px;
+  padding: var(--e-1) var(--e-2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--panel-alto);
+  color: var(--tinta);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.paleta:hover {
+  border-color: var(--tinta-2, #8a877f);
+}
+
+.paleta:focus-visible {
+  outline: 2px solid var(--ambar);
+  outline-offset: 2px;
+}
+
+.paleta[aria-pressed='true'] {
+  border-color: var(--ambar);
+  box-shadow: inset 0 0 0 1px var(--ambar);
+}
+
+.muestra {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.muestra > span {
+  width: 12px;
+  height: 18px;
+  border-radius: 3px;
+  box-shadow: 0 0 6px currentcolor;
+}
+
+.muestra > span + span {
+  margin-left: 2px;
+}

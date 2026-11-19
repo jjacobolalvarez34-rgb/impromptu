@@ -171,7 +171,7 @@ function FilaConversion({ c, ahora }: { c: Conversion; ahora: number }) {
         <p className="ui-secundario">
           <strong>{c.name}</strong>
         </p>
-        {valor !== null && <Lcd size="md">{Math.floor(valor * 100)} %</Lcd>}
+        {valor !== null && <Lcd size="sm">{Math.floor(valor * 100)} %</Lcd>}
         <Button icon={<X />} onClick={() => useTranscribe.getState().cancel(c.id)}>
           Cancelar
         </Button>

@@ -24,7 +24,7 @@ async function abrirPrueba(page: Page, nombre: RegExp, instrumento: RegExp, desd
 
 test('guitarra: números de traste legibles', async ({ page }, info) => {
   test.skip(info.project.name === 'celular', 'Capturas de escritorio');
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   // Al final de la pieza hay rasgueos: flechas hacia abajo (ámbar) y hacia arriba (verde).
   await abrirPrueba(page, /rasgueo/, /Guitarra/, 2);
   await page.screenshot({ path: 'test-results/capturas/fase11-guitarra.png' });
@@ -32,7 +32,7 @@ test('guitarra: números de traste legibles', async ({ page }, info) => {
 
 test('batería: golpes como gemas que no se pegan', async ({ page }, info) => {
   test.skip(info.project.name === 'celular', 'Capturas de escritorio');
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   await page.goto('/estudio');
   // El pulso del tempo en la esquina (pedido 18), con la opción de que suene.
   await page.getByRole('switch', { name: 'Pulso en una esquina' }).click();
@@ -52,14 +52,14 @@ test('batería: golpes como gemas que no se pegan', async ({ page }, info) => {
 
 test('batería: el hi-hat abierto se ve hueco y el cerrado lleno', async ({ page }, info) => {
   test.skip(info.project.name === 'celular', 'Capturas de escritorio');
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   await abrirPrueba(page, /funk/, /Batería/);
   await page.screenshot({ path: 'test-results/capturas/fase11-hihat.png' });
 });
 
 test('calidad del piano: elegir Alta baja más capas (pedido 33)', async ({ page }, info) => {
   test.skip(info.project.name === 'celular', 'Ajustes del escritorio');
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   const pedidas = new Set<string>();
   page.on('request', (r) => {
     const m = /\/audio\/[A-Za-z]+\d+v(\d+)\.mp3$/.exec(r.url());
@@ -115,7 +115,7 @@ test('piano con acabado de calidad: notas redondeadas, teclado realista, humo (p
   page,
 }, info) => {
   test.skip(info.project.name === 'celular', 'Capturas de escritorio');
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   // eslint-disable-next-line no-console
   page.on('pageerror', (e) => console.log('ERROR DE LA PÁGINA:', e.message));
   await page.goto('/estudio?instrumento=piano');
@@ -144,11 +144,20 @@ test('piano con acabado de calidad: notas redondeadas, teclado realista, humo (p
   await estilos.getByRole('radio', { name: 'Satín' }).click();
   await page.waitForTimeout(400);
   await page.screenshot({ path: 'test-results/capturas/fase11-piano-satin.png' });
+  // Colores listos: "Hielo" (azul y blanco) con Cristal.
+  await estilos.getByRole('radio', { name: 'Cristal' }).click();
+  const hielo = page
+    .getByRole('group', { name: 'Colores listos' })
+    .getByRole('button', { name: 'Hielo' });
+  await hielo.click();
+  await expect(hielo).toHaveAttribute('aria-pressed', 'true');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: 'test-results/capturas/fase11-piano-hielo.png' });
 });
 
 test('bajo: mástil realista y el dedo que pulsa (i, m)', async ({ page }, info) => {
   test.skip(info.project.name === 'celular', 'Capturas de escritorio');
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   await abrirPrueba(page, /rock/, /Bajo/);
   await page.screenshot({ path: 'test-results/capturas/fase11-bajo.png' });
 });

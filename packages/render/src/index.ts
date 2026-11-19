@@ -12,3 +12,5 @@ export { carriles, instrumentoDe, COLOR_CUERDA, COLOR_PIEZA } from './instrument
 export { rasgueos } from './rasgueo';
 export type { Rasgueo } from './rasgueo';
 export type { Carriles } from './instrumentos';
+export { PALETAS, paletaDe } from './paletas';
+export type { Paleta } from './paletas';
