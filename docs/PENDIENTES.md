@@ -71,7 +71,7 @@ Con eso Claude sube las muestras y el modelo, y las apps los descargan la primer
   27. (2026-11-19) En el editor de la hoja, al tocar una nota se editaba otra. **Hecho**: con los acordes ganaba siempre la última nota y la altura se buscaba una octava corrida; ahora se elige la cabeza tocada (pruebas en `editor.spec.ts` y, con su pieza, `editor-consuelo.spec.ts`).
   28. Editar la hoja se siente lento con piezas largas (cada cambio redibuja la hoja entera).
   29. El video de la partitura se cancela al cambiar de instrumento: que siga **en segundo plano**, que se **descargue solo** al terminar y una **burbujita** que muestre lo que trabaja por detrás (videos y conversiones).
-  30. Batería: que se vea si el hi-hat va **abierto o cerrado**.
+  30. Batería: que se vea si el hi-hat va **abierto o cerrado**. **Hecho en web y PC (sin verificar por Jacobo)**: el abierto es una gema hueca (solo el borde) y el cerrado, llena; en las dos vistas. Captura `fase11-hihat.png`. Falta el celular y marcarlo en la partitura ("o" y "+").
   31. Flechas de rasgueo **a la derecha, en un panel tipo Friday Night Funkin'**: las flechas bajan hasta un cuadro que dice si toca abajo, arriba o silencio.
   32. **Subir el volumen general**: Jacobo tuvo que poner el equipo al 100 %; que con ~40 % ya se oiga bien. **Hecho en web y PC (sin verificar de oído)**: cadena maestra en `packages/audio/src/maestro.ts` (compresor suave, +6 dB y limitador), para el piano y para guitarra, bajo y batería, al tocar y al exportar. Falta la app de celular.
   33. Revisar la **calidad de reproducción** (lo más alto posible para músicos).

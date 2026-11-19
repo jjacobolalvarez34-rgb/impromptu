@@ -584,13 +584,26 @@ export class Visualizer {
           h.tint = tint;
           h.alpha = Math.min(1, 0.4 * halo) * (0.6 + 0.4 * v);
         }
+        // Hi-hat abierto (pedido 30): la gema hueca, solo el borde; el cerrado va lleno.
+        const abierto = esBateria && this.carriles?.meta.get(note.id)?.abierto === true;
+        if (abierto) {
+          outline
+            .roundRect(
+              rect.x,
+              rect.y,
+              rect.width,
+              rect.height,
+              Math.min(rect.height / 2, 8 * scale),
+            )
+            .stroke({ width: Math.max(3, 5 * scale), color: tint, alpha: 0.75 + 0.25 * v });
+        }
         const sprite = this.notePool.next();
         sprite.texture = noteTexture;
         sprite.position.set(rect.x, rect.y);
         sprite.width = rect.width;
         sprite.height = rect.height;
         sprite.tint = tint;
-        sprite.alpha = esBateria ? 0.55 + 0.45 * v : 0.72 + 0.28 * v;
+        sprite.alpha = abierto ? 0.12 : esBateria ? 0.55 + 0.45 * v : 0.72 + 0.28 * v;
         if (conFlechas) {
           // Caja del acorde: la flecha va a su izquierda, a la altura de su punta.
           const r = this.rasgueoDe.get(note.id);

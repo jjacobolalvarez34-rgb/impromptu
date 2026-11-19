@@ -49,3 +49,10 @@ test('batería: golpes como gemas que no se pegan', async ({ page }, info) => {
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'test-results/capturas/fase11-bateria-real.png' });
 });
+
+test('batería: el hi-hat abierto se ve hueco y el cerrado lleno', async ({ page }, info) => {
+  test.skip(info.project.name === 'celular', 'Capturas de escritorio');
+  test.setTimeout(120_000);
+  await abrirPrueba(page, /funk/, /Batería/);
+  await page.screenshot({ path: 'test-results/capturas/fase11-hihat.png' });
+});

@@ -1,4 +1,10 @@
-import { AFINACIONES, PIEZAS_BATERIA, asignarTrastes, piezaDeNota } from '@impromptu/core';
+import {
+  AFINACIONES,
+  HIHAT_ABIERTO,
+  PIEZAS_BATERIA,
+  asignarTrastes,
+  piezaDeNota,
+} from '@impromptu/core';
 import type { Instrument, NoteEvent, Take, Track } from '@impromptu/core';
 import type { KeyRect, KeyboardLayout } from './keyboard-layout';
 
@@ -48,8 +54,8 @@ export interface Carriles {
   layout: KeyboardLayout;
   /** Notas con la altura cambiada por su carril virtual (mismo id que la original). */
   notas: NoteEvent[];
-  /** Por id: texto sobre la nota y su color. */
-  meta: Map<string, { etiqueta: string; color: string }>;
+  /** Por id: texto sobre la nota y su color; `abierto`: hi-hat abierto (pedido 30). */
+  meta: Map<string, { etiqueta: string; color: string; abierto?: boolean }>;
   /** Guitarra: trastes visibles (0 = al aire) y cuerdas. Batería: piezas. */
   trastes: number;
   cuerdas: number;
@@ -101,14 +107,18 @@ export function carrilesCuerdas(tracks: readonly Track[], instrument: 'guitar' |
 export function carrilesBateria(tracks: readonly Track[]): Carriles {
   const n = PIEZAS_BATERIA.length;
   const layout = teclas(n, (i) => [i / n, 1 / n]);
-  const meta = new Map<string, { etiqueta: string; color: string }>();
+  const meta = new Map<string, { etiqueta: string; color: string; abierto?: boolean }>();
   const notas: NoteEvent[] = [];
   for (const nota of tracks.filter((t) => t.instrument === 'drums').flatMap((t) => t.notes)) {
     const pieza = piezaDeNota(nota.pitch);
     if (!pieza) continue;
     const i = PIEZAS_BATERIA.indexOf(pieza);
     notas.push({ ...nota, pitch: i, end: nota.start + 0.12 });
-    meta.set(nota.id, { etiqueta: pieza.nombre.slice(0, 1), color: COLOR_PIEZA[i]! });
+    meta.set(nota.id, {
+      etiqueta: pieza.nombre.slice(0, 1),
+      color: COLOR_PIEZA[i]!,
+      ...(nota.pitch === HIHAT_ABIERTO ? { abierto: true } : {}),
+    });
   }
   notas.sort((a, b) => a.start - b.start);
   return { instrument: 'drums', layout, notas, meta, trastes: n, cuerdas: 0 };
