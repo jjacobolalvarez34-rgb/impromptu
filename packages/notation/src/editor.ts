@@ -250,6 +250,14 @@ export function hacerSeleccionable(
 ): () => void {
   const quitar: (() => void)[] = [];
   const bateria = instrumento === 'drums' ? teclaVistaBateria() : null;
+  const cuerdas = instrumento === 'guitar' || instrumento === 'bass';
+  // Las notas de un acorde comparten el mismo grupo del SVG: se juntan para ponerle UN solo
+  // escuchador (con uno por nota, al tocar el acorde ganaba siempre la última; error que vio
+  // Jacobo: "edita la que es siguiente").
+  const grupos = new Map<
+    SVGGElement,
+    { compas: number; pentagrama: 0 | 1; notas: NotaGrafica[] }
+  >();
   osmd.GraphicSheet.MeasureList.forEach((pentagramas, compas) => {
     pentagramas.forEach((medida, indicePentagrama) => {
       // Guitarra: el pentagrama de notas y la tablatura son el mismo (0).
@@ -259,51 +267,88 @@ export function hacerSeleccionable(
           for (const gn of voz.notes) {
             const el = gn.getSVGGElement?.();
             if (!el) continue;
-            const inicio = Math.round(gn.sourceNote.ParentVoiceEntry.Timestamp.RealValue * 4 * DIV);
-            const duracion = Math.round(gn.sourceNote.Length.RealValue * 4 * DIV);
-            const elegir = (e: Event) => {
-              e.stopPropagation();
-              let tecla: number | null = null;
-              if (!gn.sourceNote.isRest()) {
-                const vista = gn.sourceNote.halfTone + 12;
-                const evento = score.measures[compas]?.staves[pentagrama].find(
-                  (x) => x.start === inicio,
-                );
-                const alturas = evento?.pitches ?? [];
-                if (bateria) tecla = bateria.get(vista) ?? alturas[0] ?? null;
-                else {
-                  // La más cercana (la guitarra se escribe una octava más alta de lo que suena).
-                  tecla = alturas.reduce<number | null>((m, p) => {
-                    const d = Math.min(
-                      Math.abs(p - vista),
-                      Math.abs(p - vista + 12),
-                      Math.abs(p - vista - 12),
-                    );
-                    const dm =
-                      m === null
-                        ? Infinity
-                        : Math.min(
-                            Math.abs(m - vista),
-                            Math.abs(m - vista + 12),
-                            Math.abs(m - vista - 12),
-                          );
-                    return d < dm ? p : m;
-                  }, null);
-                }
-              }
-              alElegir({ compas, pentagrama, inicio, duracion, tecla });
-            };
-            el.style.cursor = 'pointer';
-            el.dataset.compas = String(compas);
-            el.dataset.pentagrama = String(pentagrama);
-            el.dataset.inicio = String(inicio);
-            el.addEventListener('click', elegir);
-            quitar.push(() => el.removeEventListener('click', elegir));
+            const g = grupos.get(el);
+            if (g) g.notas.push(gn);
+            else grupos.set(el, { compas, pentagrama, notas: [gn] });
           }
         }
       }
     });
   });
+
+  /** Batería: nota General MIDI → altura a la que se dibuja (para ordenar de abajo hacia arriba). */
+  const alturaVista = new Map<number, number>();
+  if (bateria) {
+    for (const [vista, nota] of bateria) alturaVista.set(nota, vista);
+    for (const p of PIEZAS_BATERIA) {
+      const vista = alturaVista.get(p.nota);
+      if (vista !== undefined) for (const o of p.otras) alturaVista.set(o, vista);
+    }
+  }
+
+  /** Distancia entre la altura escrita y la de la partitura (las cuerdas suenan una octava abajo). */
+  const distancia = (p: number, vista: number) =>
+    cuerdas
+      ? Math.min(Math.abs(p - vista), Math.abs(p - vista + 12), Math.abs(p - vista - 12))
+      : Math.abs(p - vista);
+
+  for (const [el, { compas, pentagrama, notas }] of grupos) {
+    // En el acorde, de la más grave a la más aguda (igual que sus cabezas de abajo hacia arriba).
+    const ordenadas = notas
+      .slice()
+      .sort((a, b) =>
+        a.sourceNote.isRest() || b.sourceNote.isRest()
+          ? 0
+          : a.sourceNote.halfTone - b.sourceNote.halfTone,
+      );
+    const primera = ordenadas[0]!;
+    const inicio = Math.round(primera.sourceNote.ParentVoiceEntry.Timestamp.RealValue * 4 * DIV);
+    const duracion = Math.round(primera.sourceNote.Length.RealValue * 4 * DIV);
+    const elegir = (e: Event) => {
+      e.stopPropagation();
+      let tecla: number | null = null;
+      if (!primera.sourceNote.isRest()) {
+        const evento = score.measures[compas]?.staves[pentagrama].find((x) => x.start === inicio);
+        // Las notas de ese momento, de la que se dibuja más abajo a la de más arriba (en la
+        // batería cada pieza tiene su altura en el pentagrama; en lo demás, su altura MIDI).
+        const alturas = (evento?.pitches ?? [])
+          .slice()
+          .sort((a, b) => (alturaVista.get(a) ?? a) - (alturaVista.get(b) ?? b));
+        const cabezas = [...el.querySelectorAll('.vf-notehead')];
+        if (alturas.length === 1) tecla = alturas[0]!;
+        else if (alturas.length > 1 && cabezas.length === alturas.length && 'clientY' in e) {
+          // Acorde: la cabeza más cercana al clic, contada desde abajo, es la nota del mismo puesto.
+          // (Error que vio Jacobo: antes se elegía otra nota del acorde.)
+          const y = (e as MouseEvent).clientY;
+          const centros = cabezas
+            .map((c) => {
+              const r = c.getBoundingClientRect();
+              return r.top + r.height / 2;
+            })
+            .sort((a, b) => b - a);
+          let puesto = 0;
+          centros.forEach((cy, i) => {
+            if (Math.abs(cy - y) < Math.abs(centros[puesto]! - y)) puesto = i;
+          });
+          tecla = alturas[puesto] ?? null;
+        } else {
+          // Respaldo: la más cercana a lo escrito (halfTone de OSMD).
+          const vista = primera.sourceNote.halfTone;
+          tecla = alturas.reduce<number | null>(
+            (m, p) => (m === null || distancia(p, vista) < distancia(m, vista) ? p : m),
+            null,
+          );
+        }
+      }
+      alElegir({ compas, pentagrama, inicio, duracion, tecla });
+    };
+    el.style.cursor = 'pointer';
+    el.dataset.compas = String(compas);
+    el.dataset.pentagrama = String(pentagrama);
+    el.dataset.inicio = String(inicio);
+    el.addEventListener('click', elegir);
+    quitar.push(() => el.removeEventListener('click', elegir));
+  }
   return () => quitar.forEach((f) => f());
 }
 

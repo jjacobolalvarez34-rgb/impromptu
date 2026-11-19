@@ -68,6 +68,15 @@ Con eso Claude sube las muestras y el modelo, y las apps los descargan la primer
   24. **Fondo animado que haga sentir viva la app** (celular y PC): propuesta de Claude, para que Jacobo la apruebe: una rejilla de "pads" (como los de un controlador de DJ o un MPC) en gris muy oscuro detrás de las pantallas de inicio y de las listas; de vez en cuando unos pocos pads se encienden y se apagan suave (gris claro y, a veces, ámbar), siguiendo un pulso lento, como si alguien tocara. Muy poco contraste para no distraer, nunca detrás del visualizador ni de la partitura, y quieto si el sistema pide reducir el movimiento.
   25. **Sonidos más reales** (Jacobo, 2026-11-18): la batería (sobre todo los platillos), la guitarra y el bajo "suenan muy feo". La batería ya usa grabaciones (Sonic Pi, CC0) pero sencillas; la guitarra y el bajo son sintetizados. Buscar muestras grabadas con licencia libre verificada (CC0, CC-BY o GPL compatible), con varias capas por fuerza, y cargarlas como el piano.
   26. En vivo y en el estudio, el botón decía "Conectar teclado" estando en guitarra: ahora dice "Conectar guitarra MIDI" o "Conectar batería". **Hecho el 2026-11-18.**
+  27. (2026-11-19) En el editor de la hoja, al tocar una nota se editaba otra. **Hecho**: con los acordes ganaba siempre la última nota y la altura se buscaba una octava corrida; ahora se elige la cabeza tocada (pruebas en `editor.spec.ts` y, con su pieza, `editor-consuelo.spec.ts`).
+  28. Editar la hoja se siente lento con piezas largas (cada cambio redibuja la hoja entera).
+  29. El video de la partitura se cancela al cambiar de instrumento: que siga **en segundo plano**, que se **descargue solo** al terminar y una **burbujita** que muestre lo que trabaja por detrás (videos y conversiones).
+  30. Batería: que se vea si el hi-hat va **abierto o cerrado**.
+  31. Flechas de rasgueo **a la derecha, en un panel tipo Friday Night Funkin'**: las flechas bajan hasta un cuadro que dice si toca abajo, arriba o silencio.
+  32. **Subir el volumen general**: Jacobo tuvo que poner el equipo al 100 %; que con ~40 % ya se oiga bien.
+  33. Revisar la **calidad de reproducción** (lo más alto posible para músicos).
+  34. Un modo para **escuchar solo el MIDI con nuestros sonidos** (sin el audio original de la grabación).
+  35. **Mejores modelos de audio a notas para guitarra y batería** (los de ahora fallan mucho). Jacobo probó con una canción completa ("Azul" de Zoé): primero habría que **separar los instrumentos** (como Moises). Candidatos libres: Demucs (Meta, MIT; el mejor; 80–300 MB; lento en el equipo), Spleeter (Deezer, MIT) y Open-Unmix (MIT). Falta verificar la licencia de los pesos y medir tiempo y memoria (web y celular). Es una función grande: decidir con Jacobo cuándo entra.
 - **Orden pedido por Jacobo:** (a) llevar a la web y a la PC la presentación y mejorar la pantalla principal de la PC (que se parezca a la de la web, que sí le gusta); (b) guitarra, misma idea del piano; (c) batería; (d) fase 10; (e) integrar todo en web, PC y celular; (f) compilar al final.
 
 ## Lo que queda (resumen al 2026-11-17)
