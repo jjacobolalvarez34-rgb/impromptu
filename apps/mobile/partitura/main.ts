@@ -10,10 +10,14 @@ import {
   aRedondas,
   beatsOf,
   buildScore,
+  BarraEdicion,
+  editar,
+  hacerSeleccionable,
   leerRecorrido,
+  marcarSeleccion,
   toMusicXml,
 } from '@impromptu/notation';
-import type { Score } from '@impromptu/notation';
+import type { Edicion, Score, Seleccion } from '@impromptu/notation';
 import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 
 interface PiezaWeb {
@@ -28,6 +32,7 @@ interface PiezaWeb {
     velocity: number;
     string?: number;
     fret?: number;
+    hand?: 'L' | 'R';
   }[];
   pedals: { kind: PedalKind; time: number; value: number }[];
 }
@@ -35,6 +40,8 @@ interface PiezaWeb {
 interface Puente {
   listo(bpm: number): void;
   error(mensaje: string): void;
+  /** La pieza editada en la hoja (fase 10), para que Kotlin la guarde. */
+  guardar?(json: string): void;
 }
 
 const puente = (globalThis as unknown as { Puente?: Puente }).Puente;
@@ -44,7 +51,15 @@ let xml = '';
 let linea: LineaDeLectura | null = null;
 
 function aTake(p: PiezaWeb): Take {
-  const notes = p.notes.map((n) => createNoteEvent({ ...n, origin: 'midi-file' }));
+  const notes = p.notes.map((n) => {
+    const { hand, ...resto } = n;
+    const nota = createNoteEvent({ ...resto, origin: 'midi-file' });
+    if (hand) {
+      nota.hand = hand;
+      nota.handSource = 'user';
+    }
+    return nota;
+  });
   return createTake({
     title: p.title,
     tracks: [
@@ -60,33 +75,114 @@ function aTake(p: PiezaWeb): Take {
   });
 }
 
+// Lo que se muestra y se edita.
+let actual: Take | null = null;
+let instrumento: Instrument = 'piano';
+let compasActual: [number, number] = [4, 4];
+let soloTab = false;
+let seleccion: Seleccion | null = null;
+const historial: Take[] = [];
+const futuro: Take[] = [];
+let quitarClics: (() => void) | null = null;
+let barra: BarraEdicion | null = null;
+
+async function dibujar(take: Take): Promise<void> {
+  const beats = beatsOf(take);
+  partitura = buildScore(take, { beats, timeSignature: compasActual, instrument: instrumento });
+  xml = toMusicXml(partitura, { instrument: instrumento, soloTablatura: soloTab });
+  const el = document.getElementById('partitura')!;
+  el.innerHTML = '';
+  vista = new OpenSheetMusicDisplay(el, {
+    autoResize: true,
+    backend: 'svg',
+    drawTitle: true,
+    drawPartNames: false,
+    followCursor: true,
+  });
+  await vista.load(xml);
+  vista.render();
+  linea?.quitar();
+  linea = new LineaDeLectura(
+    el,
+    document.scrollingElement as HTMLElement,
+    leerRecorrido(vista.cursor),
+  );
+  linea.mover(0);
+  // Editor (fase 10): tocar una nota de la hoja la elige.
+  quitarClics?.();
+  quitarClics = hacerSeleccionable(
+    vista as unknown as Parameters<typeof hacerSeleccionable>[0],
+    partitura,
+    instrumento,
+    (sel) => elegir(sel),
+  );
+  marcarSeleccion(el, seleccion);
+}
+
+function elegir(sel: Seleccion | null): void {
+  seleccion = sel;
+  barra?.mostrar(sel);
+  marcarSeleccion(document.getElementById('partitura')!, sel);
+}
+
+/** La pieza editada vuelve a Kotlin, que la guarda (y el visualizador y el sonido la siguen). */
+function guardar(take: Take): void {
+  const notas = take.tracks.flatMap((t) =>
+    t.notes.map((n) => ({
+      pitch: n.pitch,
+      start: n.start,
+      end: n.end,
+      velocity: n.velocity,
+      ...(n.string !== undefined ? { string: n.string, fret: n.fret } : {}),
+      ...(n.hand ? { hand: n.hand } : {}),
+    })),
+  );
+  const pedales = take.tracks.flatMap((t) => t.pedals);
+  puente?.guardar?.(JSON.stringify({ notes: notas, pedals: pedales }));
+}
+
+async function aplicar(ed: Edicion): Promise<void> {
+  if (!actual || !partitura || !seleccion) return;
+  const r = editar(actual, partitura, seleccion, ed, instrumento);
+  historial.push(actual);
+  futuro.length = 0;
+  actual = r.take;
+  seleccion = r.seleccion;
+  await dibujar(actual);
+  elegir(seleccion);
+  guardar(actual);
+}
+
+async function moverHistoria(desde: Take[], hacia: Take[]): Promise<void> {
+  const t = desde.pop();
+  if (!t || !actual) return;
+  hacia.push(actual);
+  actual = t;
+  elegir(null);
+  await dibujar(actual);
+  guardar(actual);
+}
+
 async function mostrar(pieza: PiezaWeb, compas: string, soloTablatura = false): Promise<void> {
   try {
-    const take = aTake(pieza);
-    const beats = beatsOf(take);
-    const [n, d] = compas.split('/').map(Number) as [number, number];
-    const instrument = pieza.instrument ?? 'piano';
-    partitura = buildScore(take, { beats, timeSignature: [n, d], instrument });
-    xml = toMusicXml(partitura, { instrument, soloTablatura });
-    const el = document.getElementById('partitura')!;
-    el.innerHTML = '';
-    vista = new OpenSheetMusicDisplay(el, {
-      autoResize: true,
-      backend: 'svg',
-      drawTitle: true,
-      drawPartNames: false,
-      followCursor: true,
-    });
-    await vista.load(xml);
-    vista.render();
-    linea?.quitar();
-    linea = new LineaDeLectura(
-      el,
-      document.scrollingElement as HTMLElement,
-      leerRecorrido(vista.cursor),
+    instrumento = pieza.instrument ?? 'piano';
+    compasActual = compas.split('/').map(Number) as [number, number];
+    soloTab = soloTablatura;
+    actual = aTake(pieza);
+    historial.length = 0;
+    futuro.length = 0;
+    barra?.quitar();
+    barra = new BarraEdicion(
+      document.body,
+      instrumento,
+      (ed) => void aplicar(ed),
+      () => elegir(null),
+      () => void moverHistoria(historial, futuro),
+      () => void moverHistoria(futuro, historial),
     );
-    linea.mover(0);
-    puente?.listo(Math.round(partitura.bpm));
+    elegir(null);
+    await dibujar(actual);
+    puente?.listo(Math.round(partitura!.bpm));
   } catch (e) {
     puente?.error(e instanceof Error ? e.message : String(e));
   }

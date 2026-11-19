@@ -136,6 +136,10 @@ fun PartituraPantalla(id: String, nav: Navegador) {
                             @JavascriptInterface fun error(m: String) {
                                 post { bpm = 0; estado = "No se pudo escribir la partitura: $m" }
                             }
+                            /** La pieza editada en la hoja (fase 10): se guarda y el sonido la sigue. */
+                            @JavascriptInterface fun guardar(json: String) {
+                                post { guardarEdicion(id, json) }
+                            }
                         }, "Puente")
                         webViewClient = object : WebViewClient() {
                             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
@@ -174,4 +178,35 @@ fun compartirArchivo(context: android.content.Context, f: File, tipo: String) {
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(i, "Compartir").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
+/** Guarda en la pieza las notas y pedales que mandó el editor de la hoja. */
+private fun guardarEdicion(id: String, json: String) {
+    val pieza = Impromptu.piezas.buscar(id) ?: return
+    runCatching {
+        val o = org.json.JSONObject(json)
+        val ns = o.getJSONArray("notes")
+        val ps = o.optJSONArray("pedals") ?: org.json.JSONArray()
+        val notas = List(ns.length()) { i ->
+            val n = ns.getJSONObject(i)
+            com.mamutherd.impromptu.datos.Nota(
+                tecla = n.getInt("pitch"),
+                inicio = n.getDouble("start"),
+                fin = n.getDouble("end"),
+                fuerza = n.getInt("velocity"),
+                mano = n.optString("hand").ifEmpty { null },
+                cuerda = if (n.has("string")) n.getInt("string") else null,
+                traste = if (n.has("fret")) n.getInt("fret") else null,
+            )
+        }
+        val pedales = List(ps.length()) { i ->
+            val q = ps.getJSONObject(i)
+            com.mamutherd.impromptu.datos.Pedal(
+                com.mamutherd.impromptu.datos.TipoPedal.deClave(q.getString("kind")),
+                q.getDouble("time"),
+                q.getInt("value"),
+            )
+        }
+        Impromptu.piezas.guardar(pieza.copy(notas = notas.sortedWith(compareBy({ it.inicio }, { it.tecla })), pedales = pedales.sortedBy { it.tiempo }))
+    }
 }

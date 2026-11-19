@@ -111,6 +111,7 @@ data class Pieza(
                 put("velocity", n.fuerza)
                 n.cuerda?.let { put("string", it) }
                 n.traste?.let { put("fret", it) }
+                n.mano?.let { put("hand", it) }
             })
         })
         put("pedals", JSONArray().apply {
