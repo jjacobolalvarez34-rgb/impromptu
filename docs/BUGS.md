@@ -65,3 +65,9 @@
 - Cómo reproducir (Jacobo, 2026-11-18, APK 0.1, en 720p): exportar una pieza y verla: el sonido va corrido respecto a las notas.
 - Causa probable: los cuadros se dibujaban con el lienzo directo sobre la superficie del codificador, que les pone la hora del reloj; si se dibuja más rápido de lo que el codificador alcanza, puede saltarse cuadros y el video queda más corto que el audio.
 - Arreglo: OpenGL ES con la hora exacta de cada cuadro (`eglPresentationTimeANDROID`), sin perder cuadros; se vacía la salida del codificador antes de cada cuadro. **Sin verificar en el celular.**
+
+### BUG-006 · La tablatura del bajo salía con 6 líneas y las notas en cuerdas equivocadas
+- Dónde: web, pestaña Tablatura con una pieza de bajo (`score/ScoreTab.tsx`).
+- Cómo reproducir (Jacobo, 2026-11-18): abrir "Bajo: rock" y ver la tablatura: 6 líneas, casi todo 0 en la misma cuerda y notas que cambiaban sin cambiar de cuerda.
+- Causa: la hoja le pasaba la afinación de la guitarra también al bajo; la nota más grave del bajo no cabe en una guitarra.
+- Arreglo y prueba: el bajo usa su afinación (4 cuerdas); prueba `bajo: tablatura de 4 cuerdas…` en `packages/notation/src/instrumentos.test.ts`. Verificado con captura (`test-results/capturas/tab-bajo.png`).

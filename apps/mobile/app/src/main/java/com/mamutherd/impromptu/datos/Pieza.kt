@@ -60,18 +60,13 @@ data class Pieza(
     val duracion: Double =
         maxOf(notas.maxOfOrNull { it.fin } ?: 0.0, pedales.maxOfOrNull { it.tiempo } ?: 0.0)
 
-    /** Rango de teclas a mostrar: el de la pieza, ampliado a un teclado razonable. */
+    /**
+     * Rango de teclas a mostrar: el piano completo de 88 teclas (La0 a Do8), como pidió Jacobo
+     * (2026-11-18). Si alguna nota se sale (no pasa en un piano real), se amplía.
+     */
     fun rango(): IntRange {
-        if (notas.isEmpty()) return 36..96
-        var bajo = notas.minOf { it.tecla }
-        var alto = notas.maxOf { it.tecla }
-        // Al menos 3 octavas, empezando y terminando en tecla blanca.
-        while (alto - bajo < 36) {
-            if (bajo > 21) bajo--
-            if (alto < 108) alto++
-        }
-        while (esNegra(bajo) && bajo > 21) bajo--
-        while (esNegra(alto) && alto < 108) alto++
+        val bajo = minOf(21, notas.minOfOrNull { it.tecla } ?: 21)
+        val alto = maxOf(108, notas.maxOfOrNull { it.tecla } ?: 108)
         return bajo..alto
     }
 

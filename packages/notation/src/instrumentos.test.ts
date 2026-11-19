@@ -39,6 +39,17 @@ describe('partitura de otros instrumentos', () => {
     expect(xml).not.toContain('<backup>');
   });
 
+  it('bajo: tablatura de 4 cuerdas con la nota grave en su cuerda', () => {
+    const t = toma('bass', [33, 40]);
+    const xml = toMusicXml(buildScore(t, { beats: beatsOf(t), instrument: 'bass' }), {
+      instrument: 'bass',
+    });
+    expect(xml).toContain('<staff-lines>4</staff-lines>');
+    // La 33 es la cuerda La (3) al aire; la 40, la cuerda Mi grave (4) en el traste 12 o la La en el 7.
+    expect(xml).toContain('<string>3</string><fret>0</fret>');
+    expect(xml).toContain('<part-name>Bajo</part-name>');
+  });
+
   it('hoja vacía con varios compases', () => {
     const t = toma('guitar', []);
     const score = buildScore(t, { beats: beatsOf(t), instrument: 'guitar', compasesMinimos: 4 });

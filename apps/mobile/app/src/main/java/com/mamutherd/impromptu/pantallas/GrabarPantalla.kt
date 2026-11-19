@@ -98,7 +98,8 @@ fun GrabarPantalla(nav: Navegador) {
                 notas = g?.vista ?: emptyList(),
                 pedales = emptyList(),
                 t = g?.segundos() ?: 0.0,
-                rango = 36..96,
+                // Piano completo de 88 teclas.
+                rango = 21..108,
                 abajo = teclado.abajo,
                 sustainVivo = teclado.sustain,
                 op = opciones,

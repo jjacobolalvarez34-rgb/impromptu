@@ -104,7 +104,11 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
       score && take
         ? toMusicXml(score, {
             instrument: instrumento,
-            afinacion: AFINACIONES[useStudio.getState().guitarra.afinacion],
+            // La afinación elegida es de la guitarra; el bajo usa la suya (4 cuerdas).
+            afinacion:
+              instrumento === 'guitar'
+                ? AFINACIONES[useStudio.getState().guitarra.afinacion]
+                : undefined,
             soloTablatura: cuerdas && soloTab,
           })
         : null,
