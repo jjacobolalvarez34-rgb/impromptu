@@ -9,6 +9,17 @@ export const DEFAULT_SAMPLE_BASE = 'https://tambien.github.io/Piano/audio/';
 /** Capas de fuerza que se descargan: 5 de 16 (unos 30 MB) dan matices sin pesar tanto. */
 export const DEFAULT_LAYERS = [1, 5, 9, 13, 16] as const;
 
+/**
+ * Calidad del piano (pedido 33, para músicos): más capas de fuerza = más matices entre suave y
+ * fuerte, a cambio de más descarga. Normal ~30 MB, alta ~48 MB, máxima (las 16) ~96 MB.
+ */
+export type CalidadPiano = 'normal' | 'alta' | 'maxima';
+export const CAPAS_POR_CALIDAD: Readonly<Record<CalidadPiano, readonly number[]>> = {
+  normal: DEFAULT_LAYERS,
+  alta: [1, 3, 5, 7, 9, 11, 13, 16],
+  maxima: Array.from({ length: 16 }, (_, i) => i + 1),
+};
+
 const NAMES: Readonly<Record<number, string>> = { 0: 'C', 3: 'Ds', 6: 'Fs', 9: 'A' };
 
 /** Teclas muestreadas: 21 (A0), 24, 27, …, 108 (C8). */

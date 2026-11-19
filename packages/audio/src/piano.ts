@@ -57,7 +57,7 @@ export class Piano {
   private readonly buffers = new Map<string, AudioBuffer>();
   readonly output: GainNode;
   private readonly baseUrl: string;
-  private readonly layers: readonly number[];
+  private layers: readonly number[];
   private active: ActiveVoice[] = [];
   /**
    * Sustain de panel, como el botón SUSTAIN del Yamaha PSR-E343: al soltar la tecla la nota no
@@ -96,6 +96,8 @@ export class Piano {
   /** Usa las muestras ya decodificadas de otro piano (por ejemplo, para exportar sin volver a descargar). */
   shareSamplesFrom(other: Piano): void {
     for (const [name, buffer] of other.buffers) this.buffers.set(name, buffer);
+    // Mismas capas que el estudio (pedido 33): el video suena con la calidad elegida.
+    this.layers = other.layers;
     this.panelSustain = other.panelSustain;
   }
 

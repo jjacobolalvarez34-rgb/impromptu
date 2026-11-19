@@ -1,4 +1,5 @@
-import { LivePlayer, Piano, Sintes, takeVoices } from '@impromptu/audio';
+import { CAPAS_POR_CALIDAD, LivePlayer, Piano, Sintes, takeVoices } from '@impromptu/audio';
+import type { CalidadPiano } from '@impromptu/audio';
 import type { LiveVoiceHandle, Voice } from '@impromptu/audio';
 import type { Beat, Hand, Take, Instrument } from '@impromptu/core';
 import { beatGrid } from '@impromptu/core';
@@ -24,6 +25,9 @@ interface AudioState {
   /** Sustain de panel en segundos (0 = apagado), como el botón SUSTAIN del PSR-E343. */
   panelSustain: number;
   setPanelSustain: (seconds: number) => void;
+  /** Calidad del piano (pedido 33): cuántas capas de fuerza se bajan. */
+  calidad: CalidadPiano;
+  setCalidad: (c: CalidadPiano) => void;
 }
 
 export const useAudio = create<AudioState>()(
@@ -42,9 +46,17 @@ export const useAudio = create<AudioState>()(
         set({ panelSustain });
         engine.applyPanelSustain();
       },
+      calidad: 'normal',
+      setCalidad: (calidad) => {
+        set({ calidad });
+        void engine.recargarPiano();
+      },
     }),
-    // Solo se recuerda el sustain de panel; el resto es estado de la sesión.
-    { name: 'impromptu-audio', partialize: (s) => ({ panelSustain: s.panelSustain }) },
+    // Se recuerdan el sustain de panel y la calidad; el resto es estado de la sesión.
+    {
+      name: 'impromptu-audio',
+      partialize: (s) => ({ panelSustain: s.panelSustain, calidad: s.calidad }),
+    },
   ),
 );
 
@@ -91,6 +103,7 @@ class AudioEngine {
   }
 
   private loading: Promise<Piano | null> | null = null;
+  private cargas = 0;
   private clockSwitched = false;
 
   /** Contexto de audio (para decodificar archivos propios con la misma frecuencia). */
@@ -127,6 +140,13 @@ class AudioEngine {
     return this.context;
   }
 
+  /** Cambió la calidad: se baja el piano con las capas nuevas y reemplaza al anterior. */
+  recargarPiano(): Promise<Piano | null> {
+    if (!this.loading) return this.preload();
+    this.loading = null;
+    return this.preload();
+  }
+
   /**
    * Descarga el piano apenas se abre la app (pedido de Jacobo): bajar y decodificar no
    * necesita un gesto del usuario; sonar sí (B-008), y eso lo hace `start()`.
@@ -135,11 +155,15 @@ class AudioEngine {
     if (this.loading) return this.loading;
     const piano = new Piano(this.ensureContext(), {
       panelSustain: useAudio.getState().panelSustain,
+      layers: CAPAS_POR_CALIDAD[useAudio.getState().calidad],
     });
     useAudio.setState({ status: 'loading', progress: 0 });
+    // Si se cambia la calidad a medio bajar, gana el último pedido.
+    const carga = ++this.cargas;
     this.loading = piano
       .load(({ loaded, total }) => useAudio.setState({ progress: loaded / total }))
       .then(() => {
+        if (carga !== this.cargas) return piano;
         this.piano = piano;
         this.livePlayer = new LivePlayer(piano);
         useAudio.setState({ status: 'ready', progress: 1 });

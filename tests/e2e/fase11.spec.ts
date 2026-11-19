@@ -56,3 +56,21 @@ test('batería: el hi-hat abierto se ve hueco y el cerrado lleno', async ({ page
   await abrirPrueba(page, /funk/, /Batería/);
   await page.screenshot({ path: 'test-results/capturas/fase11-hihat.png' });
 });
+
+test('calidad del piano: elegir Alta baja más capas (pedido 33)', async ({ page }, info) => {
+  test.skip(info.project.name === 'celular', 'Ajustes del escritorio');
+  test.setTimeout(120_000);
+  const pedidas = new Set<string>();
+  page.on('request', (r) => {
+    const m = /\/audio\/[A-Za-z]+\d+v(\d+)\.mp3$/.exec(r.url());
+    if (m) pedidas.add(m[1]!);
+  });
+  await page.goto('/estudio?instrumento=piano');
+  const calidad = page.getByRole('radiogroup', { name: 'Calidad del piano' });
+  await calidad.getByRole('radio', { name: 'Alta' }).click();
+  await expect(page.getByText(/8 capas de fuerza|Descargando el piano/)).toBeVisible();
+  // Capas que solo tiene la calidad alta (3, 7, 11).
+  await expect
+    .poll(() => ['3', '7', '11'].every((c) => pedidas.has(c)), { timeout: 60_000 })
+    .toBe(true);
+});

@@ -349,8 +349,44 @@ export function SettingsPanel() {
             />
           ))}
           <PanelSustain />
+          <CalidadDelPiano />
         </>
       )}
+    </>
+  );
+}
+
+const CALIDADES = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'alta', label: 'Alta' },
+  { value: 'maxima', label: 'Máxima' },
+] as const;
+
+/** Calidad del piano (pedido 33): más capas de fuerza para quien toca en serio. */
+function CalidadDelPiano() {
+  const calidad = useAudio((s) => s.calidad);
+  const status = useAudio((s) => s.status);
+  const progress = useAudio((s) => s.progress);
+  return (
+    <>
+      <p className={styles.rotulo} aria-hidden="true">
+        Calidad del piano
+      </p>
+      <Chips
+        label="Calidad del piano"
+        options={CALIDADES}
+        value={calidad}
+        onChange={(c) => useAudio.getState().setCalidad(c)}
+      />
+      <p className="ui-secundario" role="status">
+        {status === 'loading'
+          ? `Descargando el piano… ${Math.round(progress * 100)} %`
+          : calidad === 'normal'
+            ? '5 capas de fuerza (unos 30 MB). Alta: 8 capas (48 MB); Máxima: las 16 (96 MB), más matices entre suave y fuerte.'
+            : calidad === 'alta'
+              ? '8 capas de fuerza (unos 48 MB): más matices entre suave y fuerte.'
+              : 'Las 16 capas del Salamander (unos 96 MB): todos los matices. Se baja una vez.'}
+      </p>
     </>
   );
 }
