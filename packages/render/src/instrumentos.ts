@@ -80,7 +80,7 @@ export function carrilesCuerdas(tracks: readonly Track[], instrument: 'guitar' |
   return { instrument, layout, notas, meta, trastes, cuerdas };
 }
 
-/** Carriles de batería: uno por pieza; cada golpe se ve al menos 0,15 s. */
+/** Carriles de batería: uno por pieza; el parche brilla 0,12 s con cada golpe. */
 export function carrilesBateria(tracks: readonly Track[]): Carriles {
   const n = PIEZAS_BATERIA.length;
   const layout = teclas(n, (i) => [i / n, 1 / n]);
@@ -90,7 +90,7 @@ export function carrilesBateria(tracks: readonly Track[]): Carriles {
     const pieza = piezaDeNota(nota.pitch);
     if (!pieza) continue;
     const i = PIEZAS_BATERIA.indexOf(pieza);
-    notas.push({ ...nota, pitch: i, end: Math.max(nota.end, nota.start + 0.15) });
+    notas.push({ ...nota, pitch: i, end: nota.start + 0.12 });
     meta.set(nota.id, { etiqueta: pieza.nombre.slice(0, 1), color: COLOR_PIEZA[i]! });
   }
   notas.sort((a, b) => a.start - b.start);

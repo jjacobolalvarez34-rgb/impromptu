@@ -172,6 +172,11 @@ export class Visualizer {
   /** Números de dedo y nombres de nota sobre las notas (fase 4). */
   private readonly noteLabels = new Container();
   private readonly noteLabelPool: Pool<BitmapText>;
+  /** Fase 11 (pedido 15): el número de traste va en un círculo del color de la cuerda. */
+  private readonly insignias = new Container();
+  private readonly insigniaPool: Pool<Sprite>;
+  /** Golpe de batería que se está dibujando (la gema no depende de la duración). */
+  private readonly golpe = { pitch: 0, start: 0, end: 0 } as NoteEvent;
   /** Selección del editor y rectángulos del último cuadro (para saber qué nota hay bajo el cursor). */
   private selection: ReadonlySet<string> = new Set();
   private readonly selectionOutline = new Graphics();
@@ -249,6 +254,12 @@ export class Visualizer {
     this.videoCanvas.width = this.videoCanvas.height = 2;
     this.videoTexture = Texture.from(this.videoCanvas);
     this.videoSprite = new Sprite(this.videoTexture);
+    const circulo = app.renderer.generateTexture(new Graphics().circle(32, 32, 32).fill(0xffffff));
+    this.insigniaPool = new Pool(this.insignias, () => {
+      const s = new Sprite(circulo);
+      s.anchor.set(0.5);
+      return s;
+    });
     installLabelFont();
     this.noteLabelPool = new Pool(
       this.noteLabels,
@@ -274,6 +285,7 @@ export class Visualizer {
       this.beamLayer,
       this.haloLayer,
       this.noteLayer,
+      this.insignias,
       this.noteLabels,
       this.selectionOutline,
       this.keys,
@@ -503,7 +515,12 @@ export class Visualizer {
     this.notePool.begin();
     this.haloPool.begin();
     this.noteLabelPool.begin();
+    this.insigniaPool.begin();
     const { fingers: showFingers, noteNames: showNames } = this.settings.show;
+    const esBateria = this.carriles?.instrument === 'drums';
+    const esCuerda = !!this.carriles && !esBateria;
+    // Gemas de batería (pedido 16): alto fijo, así los golpes seguidos no se pegan (pedido 15).
+    const altoGema = Math.max(10, 20 * scale);
     this.hitRects.length = 0;
     const outline = this.selectionOutline.clear();
     this.active.clear();
@@ -513,7 +530,20 @@ export class Visualizer {
     const span = L.keyLineY / L.pps;
     const [from, to] = this.direction === 'fall' ? [t, t + span] : [t - span, t];
     forEachNoteIn(this.index, from, to, (note) => {
-      const rect = noteRect(note, t, L, this.keyboard, 3, this.direction);
+      let rect: ReturnType<typeof noteRect>;
+      if (esBateria) {
+        this.golpe.pitch = note.pitch;
+        this.golpe.start = note.start;
+        this.golpe.end = note.start;
+        rect = noteRect(this.golpe, t, L, this.keyboard, altoGema, this.direction);
+        if (rect) {
+          // Más angosta que el carril y un poco más ancha con más fuerza.
+          const ancho = rect.width * (0.42 + 0.22 * (note.velocity / 127));
+          rect.x += (rect.width - ancho) / 2;
+          rect.width = ancho;
+          rect.height = Math.min(rect.height, altoGema);
+        }
+      } else rect = noteRect(note, t, L, this.keyboard, 3, this.direction);
       if (rect) {
         const tint = this.colorNota(note, colors);
         const v = note.velocity / 127;
@@ -533,10 +563,14 @@ export class Visualizer {
         sprite.width = rect.width;
         sprite.height = rect.height;
         sprite.tint = tint;
-        sprite.alpha = 0.72 + 0.28 * v;
-        const text =
-          this.carriles?.meta.get(note.id)?.etiqueta ?? labelFor(note, showFingers, showNames);
-        if (text) this.placeLabel(text, rect, tint, scale);
+        sprite.alpha = esBateria ? 0.55 + 0.45 * v : 0.72 + 0.28 * v;
+        if (esCuerda) {
+          const traste = this.carriles?.meta.get(note.id)?.etiqueta;
+          if (traste) this.insignia(traste, rect, tint, scale);
+        } else if (!esBateria) {
+          const text = labelFor(note, showFingers, showNames);
+          if (text) this.placeLabel(text, rect, tint, scale);
+        }
         this.hitRects.push({ id: note.id, ...rect });
         if (this.selection.has(note.id)) {
           outline
@@ -549,6 +583,7 @@ export class Visualizer {
     this.notePool.end();
     this.haloPool.end();
     this.noteLabelPool.end();
+    this.insigniaPool.end();
 
     if (camera) this.keys.clear();
     else this.drawKeyboard(colors);
@@ -633,6 +668,30 @@ export class Visualizer {
   }
 
   /** Dedo o nombre al pie de la nota, si cabe; oscuro sobre notas claras y claro sobre oscuras. */
+  /**
+   * Número de traste legible (pedido 15): un círculo del color de la cuerda en la punta de la
+   * nota, con tamaño propio (no depende de lo angosta que sea la nota).
+   */
+  private insignia(
+    text: string,
+    rect: { x: number; y: number; width: number; height: number },
+    tint: number,
+    scale: number,
+  ): void {
+    const d = Math.max(18, (text.length > 1 ? 34 : 30) * scale);
+    const cx = rect.x + rect.width / 2;
+    const cy = this.direction === 'fall' ? rect.y + rect.height - d / 2 : rect.y + d / 2;
+    const c = this.insigniaPool.next();
+    c.position.set(cx, cy);
+    c.width = c.height = d;
+    c.tint = tint;
+    const label = this.noteLabelPool.next();
+    label.text = text;
+    label.style.fontSize = d * (text.length > 1 ? 0.5 : 0.6);
+    label.tint = luminance(tint) > 0.55 ? 0x111110 : 0xf5f2ec;
+    label.position.set(cx - label.width / 2, cy - label.height / 2);
+  }
+
   private placeLabel(
     text: string,
     rect: { x: number; y: number; width: number; height: number },
