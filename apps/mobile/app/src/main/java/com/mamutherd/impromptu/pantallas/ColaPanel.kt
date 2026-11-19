@@ -89,7 +89,7 @@ fun ColaConversiones(nav: Navegador, modifier: Modifier = Modifier) {
 @Composable
 private fun FilaTrabajando(t: TrabajoConversion, ahora: Long) {
     val valor: Float? = when (t.etapa) {
-        Etapa.Escuchando -> t.avance.valor(ahora).toFloat()
+        Etapa.Escuchando, Etapa.Separando, Etapa.Descargando -> t.avance.valor(ahora).toFloat()
         Etapa.Leyendo -> t.lectura * 0.999f
         Etapa.Armando -> 1f
         else -> null

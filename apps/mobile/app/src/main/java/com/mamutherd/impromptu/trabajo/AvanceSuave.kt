@@ -54,6 +54,9 @@ enum class Etapa(val frases: List<String>) {
     Esperando(listOf("Espera su turno")),
     Leyendo(listOf("Leyendo el audio…", "Pasándolo a la frecuencia de la IA…")),
     Preparando(listOf("Preparando la IA…", "Cargando el modelo en la memoria…")),
+    /** Pedido 35: el separador de instrumentos se baja la primera vez (~79 MB). */
+    Descargando(listOf("Descargando el separador de instrumentos (79 MB, solo la primera vez)…")),
+    Separando(listOf("Separando el instrumento del resto de la canción…", "Quitando la voz y los demás instrumentos…")),
     Escuchando(
         listOf(
             "Escuchando nota por nota…",

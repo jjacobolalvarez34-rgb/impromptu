@@ -120,6 +120,7 @@ object Impromptu {
         instrumento = Instrumento.deClave(ajustes.getString("instrumento", "piano"))
         conversiones.afinacionGuitarra = ajustes.getString("afinacion", "estandar") ?: "estandar"
         conversiones.sensibilidadBateria = 2 - ajustes.getFloat("sensibilidadBateria", 1f).toDouble()
+        conversiones.separar = ajustes.getBoolean("separar", true)
         cargarBateria()
         cargarBancoPara(instrumento)
         encenderSonido()

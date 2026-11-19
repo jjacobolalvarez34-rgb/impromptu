@@ -46,6 +46,7 @@ fun AjustesPantalla(nav: Navegador) {
     var sensibilidad by remember { mutableDoubleStateOf(prefs.getFloat("sensibilidadBateria", 1f).toDouble()) }
     var vistaBateria by remember { mutableStateOf(prefs.getString("vistaBateria", "carriles") ?: "carriles") }
     var rasgueo by remember { mutableStateOf(prefs.getBoolean("rasgueo", true)) }
+    var separar by remember { mutableStateOf(prefs.getBoolean("separar", true)) }
 
     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
         Encabezado("Ajustes", { nav.volver() })
@@ -89,6 +90,21 @@ fun AjustesPantalla(nav: Navegador) {
                         Chip(texto, rasgueo == v, {
                             rasgueo = v
                             prefs.edit().putBoolean("rasgueo", v).apply()
+                        })
+                    }
+                }
+                Etiqueta("Separar el instrumento de la canción", Modifier.padding(top = 12.dp, bottom = 6.dp))
+                Text(
+                    "Al convertir una canción completa, primero se separa la guitarra, el bajo o la batería del resto (como Moises). La primera vez baja 79 MB.",
+                    style = Tipos.Secundario,
+                    modifier = Modifier.padding(bottom = 6.dp),
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    for ((texto, v) in listOf("Sí" to true, "No" to false)) {
+                        Chip(texto, separar == v, {
+                            separar = v
+                            prefs.edit().putBoolean("separar", v).apply()
+                            Impromptu.conversiones.separar = v
                         })
                     }
                 }

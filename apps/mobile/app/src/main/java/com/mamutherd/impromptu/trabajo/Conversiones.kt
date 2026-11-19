@@ -13,6 +13,7 @@ import com.mamutherd.impromptu.instrumentos.Guitarra
 import com.mamutherd.impromptu.instrumentos.Instrumento
 import com.mamutherd.impromptu.transcribir.BasicPitch
 import com.mamutherd.impromptu.transcribir.DetectorBateria
+import com.mamutherd.impromptu.transcribir.Separador
 import com.mamutherd.impromptu.transcribir.Modelos
 import com.mamutherd.impromptu.transcribir.Transkun
 import kotlinx.coroutines.CoroutineScope
@@ -212,7 +213,28 @@ class Conversiones(
     @Volatile private var basicPitch: BasicPitch? = null
 
     /** Guitarra y bajo con Basic Pitch (y cuerda y traste); batería con el detector por bandas. */
-    private fun convertirOtro(t: TrabajoConversion, pcm: Decodificar.Pcm, job: kotlin.coroutines.CoroutineContext) {
+    private fun convertirOtro(t: TrabajoConversion, pcmOriginal: Decodificar.Pcm, job: kotlin.coroutines.CoroutineContext) {
+        // Pedido 35: con un archivo (una canción), primero se separa el instrumento del resto.
+        var pcm = pcmOriginal
+        if (t.origen == Origen.Audio && separar) {
+            t.etapa = if (Separador.bajado(context)) Etapa.Preparando else Etapa.Descargando
+            t.avance = AvanceSuave(System.currentTimeMillis(), 0.1)
+            Separador.cargar(context) { t.avance.actualizar(it.toDouble(), System.currentTimeMillis()) }.use { sep ->
+                if (!job.isActive) throw CancellationException()
+                t.etapa = Etapa.Separando
+                t.avance = AvanceSuave(System.currentTimeMillis(), 0.1)
+                val audio = Decodificar.remuestrear(pcm.muestras, pcm.tasa, Separador.TASA)
+                val parte = when (t.instrumento) {
+                    Instrumento.Bateria -> "drums"
+                    Instrumento.Bajo -> "bass"
+                    else -> "other"
+                }
+                pcm = Decodificar.Pcm(
+                    sep.separar(audio, parte, { job.isActive }) { t.avance.actualizar(it.toDouble(), System.currentTimeMillis()) },
+                    Separador.TASA,
+                )
+            }
+        }
         t.etapa = Etapa.Escuchando
         t.avance = AvanceSuave(System.currentTimeMillis(), 0.1)
         val notas = if (t.instrumento == Instrumento.Bateria) {
@@ -235,6 +257,8 @@ class Conversiones(
 
     /** Afinación de la guitarra y sensibilidad de la batería (Ajustes). */
     var afinacionGuitarra = "estandar"
+    /** Separar el instrumento de la canción antes de convertir (pedido 35, Ajustes). */
+    var separar = true
     var sensibilidadBateria = 1.0
 
     /** Avance total para la notificación (0 a 100) y el nombre de la que trabaja. */
