@@ -116,6 +116,8 @@ test('piano con acabado de calidad: notas redondeadas, teclado realista, humo (p
 }, info) => {
   test.skip(info.project.name === 'celular', 'Capturas de escritorio');
   test.setTimeout(120_000);
+  // eslint-disable-next-line no-console
+  page.on('pageerror', (e) => console.log('ERROR DE LA PÁGINA:', e.message));
   await page.goto('/estudio?instrumento=piano');
   await page.locator('input[accept=".mid,.midi,audio/midi"]').setInputFiles({
     name: 'acordes.mid',
