@@ -4,7 +4,7 @@
  * recibe avisos por `Puente` (interfaz de JavaScript de Android).
  */
 import { createNoteEvent, createTake, createTrack, fitKeyboardRange } from '@impromptu/core';
-import type { PedalKind, Take } from '@impromptu/core';
+import type { Instrument, PedalKind, Take } from '@impromptu/core';
 import {
   LineaDeLectura,
   aRedondas,
@@ -19,7 +19,16 @@ import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 interface PiezaWeb {
   title: string;
   duration: number;
-  notes: { pitch: number; start: number; end: number; velocity: number }[];
+  /** Fase 9: piano, guitar, bass o drums. */
+  instrument?: Instrument;
+  notes: {
+    pitch: number;
+    start: number;
+    end: number;
+    velocity: number;
+    string?: number;
+    fret?: number;
+  }[];
   pedals: { kind: PedalKind; time: number; value: number }[];
 }
 
@@ -38,7 +47,14 @@ function aTake(p: PiezaWeb): Take {
   const notes = p.notes.map((n) => createNoteEvent({ ...n, origin: 'midi-file' }));
   return createTake({
     title: p.title,
-    tracks: [createTrack({ name: 'Piano', notes, pedals: p.pedals })],
+    tracks: [
+      createTrack({
+        instrument: p.instrument ?? 'piano',
+        name: 'Pieza',
+        notes,
+        pedals: p.instrument && p.instrument !== 'piano' ? [] : p.pedals,
+      }),
+    ],
     duration: p.duration,
     keyboardRange: fitKeyboardRange(notes.map((n) => n.pitch)),
   });
@@ -49,8 +65,9 @@ async function mostrar(pieza: PiezaWeb, compas: string): Promise<void> {
     const take = aTake(pieza);
     const beats = beatsOf(take);
     const [n, d] = compas.split('/').map(Number) as [number, number];
-    partitura = buildScore(take, { beats, timeSignature: [n, d] });
-    xml = toMusicXml(partitura);
+    const instrument = pieza.instrument ?? 'piano';
+    partitura = buildScore(take, { beats, timeSignature: [n, d], instrument });
+    xml = toMusicXml(partitura, { instrument });
     const el = document.getElementById('partitura')!;
     el.innerHTML = '';
     vista = new OpenSheetMusicDisplay(el, {

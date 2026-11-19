@@ -1,5 +1,7 @@
 package com.mamutherd.impromptu.pantallas
 
+import androidx.compose.runtime.mutableStateOf
+import com.mamutherd.impromptu.audio.Sintes
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,6 +41,9 @@ fun AjustesPantalla(nav: Navegador) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("ajustes", Context.MODE_PRIVATE) }
     var sustain by remember { mutableDoubleStateOf(prefs.getFloat("panelSustain", 0f).toDouble()) }
+    var timbre by remember { mutableStateOf(Sintes.Timbre.entries.firstOrNull { it.name == prefs.getString("timbre", "Acero") } ?: Sintes.Timbre.Acero) }
+    var afinacion by remember { mutableStateOf(prefs.getString("afinacion", "estandar") ?: "estandar") }
+    var sensibilidad by remember { mutableDoubleStateOf(prefs.getFloat("sensibilidadBateria", 1f).toDouble()) }
 
     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
         Encabezado("Ajustes", { nav.volver() })
@@ -59,6 +64,42 @@ fun AjustesPantalla(nav: Navegador) {
                             sustain = v
                             prefs.edit().putFloat("panelSustain", v.toFloat()).apply()
                             Impromptu.motor?.orden { it.panelSustain = v }
+                        })
+                    }
+                }
+            }
+            Panel(Modifier.fillMaxWidth()) {
+                Text("Guitarra y bajo", style = Tipos.TituloPanel)
+                Etiqueta("Sonido de la guitarra", Modifier.padding(top = 10.dp, bottom = 6.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    for ((texto, t) in listOf("Nylon" to Sintes.Timbre.Nylon, "Acero" to Sintes.Timbre.Acero, "Eléctrica" to Sintes.Timbre.Electrica)) {
+                        Chip(texto, timbre == t, {
+                            timbre = t
+                            prefs.edit().putString("timbre", t.name).apply()
+                            Impromptu.motor?.orden { _ -> Impromptu.motor?.sintes?.timbreGuitarra = t }
+                        })
+                    }
+                }
+                Etiqueta("Afinación", Modifier.padding(top = 12.dp, bottom = 6.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    for ((texto, a) in listOf("Estándar" to "estandar", "Drop D" to "drop-d", "Medio tono abajo" to "medio-tono-abajo")) {
+                        Chip(texto, afinacion == a, {
+                            afinacion = a
+                            prefs.edit().putString("afinacion", a).apply()
+                            Impromptu.conversiones.afinacionGuitarra = a
+                        })
+                    }
+                }
+            }
+            Panel(Modifier.fillMaxWidth()) {
+                Text("Batería", style = Tipos.TituloPanel)
+                Etiqueta("Sensibilidad del micrófono", Modifier.padding(top = 10.dp, bottom = 6.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    for ((texto, v) in listOf("Baja" to 0.6, "Media" to 1.0, "Alta" to 1.4)) {
+                        Chip(texto, sensibilidad == v, {
+                            sensibilidad = v
+                            prefs.edit().putFloat("sensibilidadBateria", v.toFloat()).apply()
+                            Impromptu.conversiones.sensibilidadBateria = 2 - v
                         })
                     }
                 }

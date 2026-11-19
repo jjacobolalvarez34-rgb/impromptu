@@ -227,7 +227,7 @@ fun MicrofonoPantalla(nav: Navegador) {
             }
             val titulo = Impromptu.piezas.siguienteTitulo("Micrófono")
             pedirNotificaciones()
-            alcance.launch { Impromptu.conversiones.encolarGrabacion(muestras, g.tasa, titulo) }
+            alcance.launch { Impromptu.conversiones.encolarGrabacion(muestras, g.tasa, titulo, Impromptu.instrumento) }
             aviso = "«$titulo» pasó a convertirse. Puedes grabar otra."
         }
     }
@@ -377,6 +377,7 @@ private fun Consejos(modifier: Modifier) {
             "Deja el celular cerca del piano, sin taparle el micrófono.",
             "Mejor en silencio alrededor y con piano solo.",
             "Puedes grabar varias seguidas: cada una se convierte en la cola.",
+            "Se escucha con el instrumento elegido en el inicio (piano, guitarra, bajo o batería).",
         )) {
             Row(Modifier.padding(top = 8.dp)) {
                 Text("·", style = Tipos.Texto.copy(color = C3.Ambar), modifier = Modifier.width(14.dp))

@@ -11,7 +11,8 @@ object Smf {
     const val PPQ = 480
     private const val TEMPO_US = 500_000 // 120 por minuto
 
-    class Leido(val notas: List<Nota>, val pedales: List<Pedal>, val nombre: String?)
+    /** `instrumento`: "drums" si las notas van por el canal 10, "guitar" o "bass" por su programa (fase 9). */
+    class Leido(val notas: List<Nota>, val pedales: List<Pedal>, val nombre: String?, val instrumento: String = "piano")
 
     class Formato(msg: String) : Exception(msg)
 
@@ -42,6 +43,7 @@ object Smf {
         val eventos = ArrayList<Ev>()
         val tempos = ArrayList<Pair<Long, Int>>() // tick, µs por negra
         var nombre: String? = null
+        var programa: Int? = null
         var orden = 0
         repeat(pistas) {
             if (p + 8 > bytes.size) return@repeat
@@ -77,7 +79,8 @@ object Smf {
                 val tipo = estado and 0xF0
                 val canal = estado and 0x0F
                 when (tipo) {
-                    0xC0, 0xD0 -> u8()
+                    0xC0 -> u8().let { if (programa == null && canal != 9) programa = it }
+                    0xD0 -> u8()
                     else -> {
                         val d1 = u8()
                         val d2 = u8()
@@ -122,7 +125,20 @@ object Smf {
         for ((clave, cola) in abiertas) for ((ini, vel) in cola) {
             if (clave / 128 != 9) notas += Nota(clave % 128, ini, maxOf(finTotal, ini + 0.5), vel)
         }
-        return Leido(notas.sortedWith(compareBy({ it.inicio }, { it.tecla })), pedales.sortedBy { it.tiempo }, nombre)
+        // Batería: la mayoría de las notas en el canal 10 (que hasta aquí se dejaban fuera).
+        val enBateria = eventos.count { it.tipo == 0x90 && it.b > 0 && it.canal == 9 }
+        val enOtros = eventos.count { it.tipo == 0x90 && it.b > 0 && it.canal != 9 }
+        if (enBateria > enOtros) {
+            val golpes = eventos.filter { it.tipo == 0x90 && it.b > 0 && it.canal == 9 }
+                .map { Nota(it.a, segundos(it.tick), segundos(it.tick) + 0.1, it.b) }
+            return Leido(golpes.sortedWith(compareBy({ it.inicio }, { it.tecla })), emptyList(), nombre, "drums")
+        }
+        val instrumento = when (programa) {
+            in 24..31 -> "guitar"
+            in 32..39 -> "bass"
+            else -> "piano"
+        }
+        return Leido(notas.sortedWith(compareBy({ it.inicio }, { it.tecla })), pedales.sortedBy { it.tiempo }, nombre, instrumento)
     }
 
     fun ticks(seg: Double) = (seg * PPQ * 1e6 / TEMPO_US).roundToLong()
@@ -130,11 +146,15 @@ object Smf {
     fun escribir(pieza: Pieza): ByteArray {
         data class Ev(val tick: Long, val prioridad: Int, val bytes: ByteArray)
         val evs = ArrayList<Ev>()
+        // Batería por el canal 10; guitarra y bajo con su programa General MIDI (fase 9).
+        val canal = if (pieza.instrumento == "drums") 9 else 0
+        val programa = when (pieza.instrumento) { "guitar" -> 25; "bass" -> 33; else -> 0 }
+        evs += Ev(0, -1, byteArrayOf((0xC0 or canal).toByte(), programa.toByte()))
         for (n in pieza.notas) {
             val on = ticks(n.inicio)
             val off = maxOf(on + 1, ticks(n.fin))
-            evs += Ev(on, 2, byteArrayOf(0x90.toByte(), n.tecla.toByte(), n.fuerza.coerceIn(1, 127).toByte()))
-            evs += Ev(off, 0, byteArrayOf(0x80.toByte(), n.tecla.toByte(), 64))
+            evs += Ev(on, 2, byteArrayOf((0x90 or canal).toByte(), n.tecla.toByte(), n.fuerza.coerceIn(1, 127).toByte()))
+            evs += Ev(off, 0, byteArrayOf((0x80 or canal).toByte(), n.tecla.toByte(), 64))
         }
         for (p in pieza.pedales) {
             evs += Ev(ticks(p.tiempo), 1, byteArrayOf(0xB0.toByte(), p.tipo.cc.toByte(), p.valor.coerceIn(0, 127).toByte()))

@@ -14,6 +14,9 @@ data class Nota(
     val fuerza: Int,
     val mano: String? = null,
     val dedo: Int? = null,
+    /** Guitarra y bajo (fase 9): cuerda (1 la más aguda) y traste. */
+    val cuerda: Int? = null,
+    val traste: Int? = null,
 )
 
 enum class TipoPedal(val cc: Int, val clave: String) {
@@ -51,6 +54,8 @@ data class Pieza(
     val pedales: List<Pedal>,
     val instrumento: String = "piano",
 ) {
+    val instr get() = com.mamutherd.impromptu.instrumentos.Instrumento.deClave(instrumento)
+
     /** Fin de la última nota o pedal. */
     val duracion: Double =
         maxOf(notas.maxOfOrNull { it.fin } ?: 0.0, pedales.maxOfOrNull { it.tiempo } ?: 0.0)
@@ -85,6 +90,8 @@ data class Pieza(
                 put("fuerza", n.fuerza)
                 n.mano?.let { put("mano", it) }
                 n.dedo?.let { put("dedo", it) }
+                n.cuerda?.let { put("cuerda", it) }
+                n.traste?.let { put("traste", it) }
             })
         })
         put("pedales", JSONArray().apply {
@@ -99,6 +106,7 @@ data class Pieza(
     /** Formato que entiende el paquete de notación de la web (Take simplificada). */
     fun aJsonWeb(): JSONObject = JSONObject().apply {
         put("title", titulo)
+        put("instrument", instrumento)
         put("duration", duracion)
         put("notes", JSONArray().apply {
             for (n in notas) put(JSONObject().apply {
@@ -106,6 +114,8 @@ data class Pieza(
                 put("start", n.inicio)
                 put("end", n.fin)
                 put("velocity", n.fuerza)
+                n.cuerda?.let { put("string", it) }
+                n.traste?.let { put("fret", it) }
             })
         })
         put("pedals", JSONArray().apply {
@@ -136,6 +146,8 @@ data class Pieza(
                         fuerza = n.getInt("fuerza"),
                         mano = if (n.has("mano")) n.getString("mano") else null,
                         dedo = if (n.has("dedo")) n.getInt("dedo") else null,
+                        cuerda = if (n.has("cuerda")) n.getInt("cuerda") else null,
+                        traste = if (n.has("traste")) n.getInt("traste") else null,
                     )
                 },
                 pedales = List(ps.length()) { i ->

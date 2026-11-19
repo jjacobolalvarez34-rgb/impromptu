@@ -124,10 +124,20 @@ fun PaquetesPantalla(primeraVez: Boolean, alVolver: () -> Unit, alTerminar: () -
                 }
             }
             Panel(Modifier.fillMaxWidth()) {
-                Cabeza(Iconos.Tambor, "Batería", "PRONTO", apagado = true)
+                Cabeza(Iconos.Guitarra, "Guitarra y bajo", "INCLUIDO")
+                Text(
+                    "Sonido de guitarra (nylon, acero o eléctrica) y bajo, notas sobre el mástil, tablatura y la IA que pasa audio a notas con cuerda y traste. Viene con la app.",
+                    style = Tipos.Secundario,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
             }
             Panel(Modifier.fillMaxWidth()) {
-                Cabeza(Iconos.Guitarra, "Guitarra", "PRONTO", apagado = true)
+                Cabeza(Iconos.Tambor, "Batería", "INCLUIDO")
+                Text(
+                    "Batería acústica grabada, batería electrónica por USB, partitura de batería y el detector de golpes del micrófono. Viene con la app.",
+                    style = Tipos.Secundario,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
             }
         }
         if (primeraVez) {

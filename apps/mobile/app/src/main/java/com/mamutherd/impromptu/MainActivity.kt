@@ -153,7 +153,10 @@ fun importarMidi(context: Context, uri: Uri): String? = try {
     val nombreArchivo = context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
         ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
         ?.substringBeforeLast('.')
-    val pieza = Impromptu.piezas.nueva(nombreArchivo ?: leido.nombre ?: "MIDI", Origen.Midi, leido.notas, leido.pedales)
+    // Guitarra o bajo (por su programa MIDI): cada nota con cuerda y traste. Batería: canal 10.
+    val instr = com.mamutherd.impromptu.instrumentos.Instrumento.deClave(leido.instrumento)
+    val notas = if (instr.cuerdas) com.mamutherd.impromptu.instrumentos.Guitarra.asignar(leido.notas, com.mamutherd.impromptu.instrumentos.Guitarra.afinacion(instr)) else leido.notas
+    val pieza = Impromptu.piezas.nueva(nombreArchivo ?: leido.nombre ?: "MIDI", Origen.Midi, notas, leido.pedales, leido.instrumento)
     Impromptu.piezas.guardar(pieza)
     pieza.id
 } catch (e: Exception) {

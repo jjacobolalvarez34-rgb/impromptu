@@ -494,3 +494,19 @@ object Decodificacion {
         return todos.filter { it.inicio < it.fin }.sortedWith(compareBy({ it.inicio }, { it.fin }, { it.tecla }))
     }
 }
+
+/** Sesiones de ONNX Runtime con los modelos de assets/modelos (mapeados, sin copiar al montón). */
+object Modelos {
+    fun sesion(context: Context, nombre: String): OrtSession {
+        val env = OrtEnvironment.getEnvironment()
+        val opciones = OrtSession.SessionOptions().apply {
+            setOptimizationLevel(OrtSession.SessionOptions.OptLevel.EXTENDED_OPT)
+            setCPUArenaAllocator(false)
+            setMemoryPatternOptimization(false)
+        }
+        val buf = context.assets.openFd("modelos/$nombre").use { fd ->
+            FileInputStream(fd.fileDescriptor).channel.use { ch -> ch.map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength) }
+        }
+        return env.createSession(buf, opciones)
+    }
+}

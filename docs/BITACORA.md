@@ -40,7 +40,19 @@ Una entrada por sesión, la más reciente arriba.
   - **Audio a notas**: guitarra y bajo con Basic Pitch y cuerda y traste; batería con un **detector propio por bandas** (los modelos de batería revisados no tienen licencia de pesos clara o son no comerciales: ADTOF es CC BY-NC-SA). En la prueba con un ritmo sintetizado acierta todos los golpes.
   - **Estudio**: elegir instrumento (Piano, Guitarra, Bajo, Batería); la pantalla principal abre con guitarra o batería; las opciones cambian (sonido y afinación de la guitarra, sensibilidad de la batería; lo de piano se esconde).
   - Pruebas: core 6, notación 19, audio 21, transcripción 14 (detector), MIDI 26, e2e `instrumentos.spec.ts`; capturas `test-results/capturas/estudio-{guitarra,bateria}-pieza.png`.
-- Pendiente: guitarra y batería en la app de Android; editores de tablatura y de batería (fase 10); fase 10; fase 11; integrar en las tres y compilar.
+- Hecho después, con Jacobo mirando el localhost:
+  - MIDIs de prueba de guitarra, bajo y batería en **Pruebas** (`fixtures/demos`, `scripts/demos-midi.mjs`); al abrir una pieza el selector toma su instrumento.
+  - **Guitarra y bajo no sonaban** (verificado por Jacobo): el sintetizador programaba `stop` antes de `start`. Arreglado.
+  - **Batería con grabaciones reales** (Sonic Pi, CC0) porque la sintetizada no sonaba a batería (Jacobo): golpe suave o fuerte según la fuerza; el hi-hat cerrado corta al abierto; también en el video.
+- Hecho, fase 9 en **Android** (**sin verificar en el celular**):
+  - Selector de instrumento en el inicio; el instrumento al lado de cada pieza; guitarra y batería en Instrumentos como incluidos.
+  - Sonido: guitarra y bajo con Karplus-Strong y batería grabada (los mismos FLAC de la web, en los assets) en el motor de audio y en el video.
+  - Video: mástil y parches, como en la web.
+  - MIDI: abrir y guardar con su instrumento (canal 10, programas de guitarra y bajo).
+  - Audio a notas: guitarra y bajo con **Basic Pitch nativo** (ONNX de 230 kB, Apache-2.0; mismo corte en ventanas y extracción de notas que la web, con el paso de la melodía optimizado) y cuerda y traste; batería con el detector por bandas portado.
+  - Ajustes: sonido y afinación de la guitarra, sensibilidad de la batería. Partitura con tablatura o percusión.
+  - Pruebas JUnit: guitarra (mismas posiciones que la web), detector de batería, **Basic Pitch de punta a punta** con una melodía sintetizada (todas las notas en su lugar), Transkun igual a Python.
+- Pendiente: fase 10 (editor de partitura, de tablatura y de batería; video de la partitura; grabar en la partitura); fase 11; los pedidos 13–21 de PENDIENTES; compilar todo al final.
 
 ---
 

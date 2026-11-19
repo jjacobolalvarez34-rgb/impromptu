@@ -1,7 +1,13 @@
 package com.mamutherd.impromptu
 
 import android.content.Context
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.mamutherd.impromptu.audio.Banco
+import com.mamutherd.impromptu.audio.Decodificar
+import com.mamutherd.impromptu.audio.Sintes
+import com.mamutherd.impromptu.instrumentos.Instrumento
 import com.mamutherd.impromptu.audio.Motor
 import com.mamutherd.impromptu.datos.Piezas
 import com.mamutherd.impromptu.midi.EventoMidi
@@ -14,6 +20,8 @@ import com.mamutherd.impromptu.trabajo.ServicioTrabajos
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Estado de toda la app: piezas, paquetes, sonido, teclado y la cola de conversiones. Vive lo
@@ -41,6 +49,18 @@ object Impromptu {
     lateinit var conversiones: Conversiones
         private set
 
+    /** Instrumento con el que se graba y se convierte (fase 9). Se recuerda entre sesiones. */
+    var instrumento by mutableStateOf(Instrumento.Piano)
+        private set
+
+    fun elegirInstrumento(i: Instrumento) {
+        instrumento = i
+        app.getSharedPreferences("ajustes", Context.MODE_PRIVATE).edit().putString("instrumento", i.clave).apply()
+    }
+
+    /** Batería grabada (Sonic Pi, CC0), a 44,1 kHz; se llena al iniciar desde los assets. */
+    val bateria = ConcurrentHashMap<String, FloatArray>()
+
     private var iniciado = false
 
     fun iniciar(context: Context) {
@@ -53,6 +73,11 @@ object Impromptu {
         teclado.iniciar()
         conversiones = Conversiones(app, piezas, alcance) { ocupada -> if (ocupada) ServicioTrabajos.asegurar(app) }
         conversiones.reanudar()
+        val ajustes = app.getSharedPreferences("ajustes", Context.MODE_PRIVATE)
+        instrumento = Instrumento.deClave(ajustes.getString("instrumento", "piano"))
+        conversiones.afinacionGuitarra = ajustes.getString("afinacion", "estandar") ?: "estandar"
+        conversiones.sensibilidadBateria = 2 - ajustes.getFloat("sensibilidadBateria", 1f).toDouble()
+        cargarBateria()
         encenderSonido()
     }
 
@@ -63,7 +88,8 @@ object Impromptu {
         val banco = Banco(paquetes.carpetaPiano)
         if (!banco.completo) return null
         this.banco = banco
-        return Motor(app, banco).also {
+        return Motor(app, banco, bateria).also {
+            it.sintes.timbreGuitarra = Sintes.Timbre.entries.firstOrNull { t -> t.name == app.getSharedPreferences("ajustes", Context.MODE_PRIVATE).getString("timbre", "Acero") } ?: Sintes.Timbre.Acero
             it.sampler.panelSustain = app.getSharedPreferences("ajustes", Context.MODE_PRIVATE).getFloat("panelSustain", 0f).toDouble()
             it.encender()
             motor = it
@@ -81,12 +107,26 @@ object Impromptu {
     private fun alEventoMidi(e: EventoMidi) {
         val m = motor
         when (e) {
-            is EventoMidi.On -> m?.notaOn(e.tecla, e.fuerza)
-            is EventoMidi.Off -> m?.notaOff(e.tecla)
+            is EventoMidi.On -> m?.notaOn(e.tecla, e.fuerza, instrumento)
+            is EventoMidi.Off -> m?.notaOff(e.tecla, instrumento)
             is EventoMidi.Control -> m?.pedal(e.cc, e.valor)
         }
         grabacion?.evento(e)
     }
 
     val iaDisponible get() = Modelo.disponible(app)
+
+    private fun cargarBateria() {
+        alcance.launch(Dispatchers.IO) {
+            val nombres = runCatching { app.assets.list("bateria") }.getOrNull().orEmpty()
+            for (archivo in nombres.filter { it.endsWith(".flac") }) {
+                runCatching {
+                    app.assets.openFd("bateria/$archivo").use { fd ->
+                        val pcm = Decodificar.aMono(app, asset = fd)
+                        bateria[archivo.removeSuffix(".flac")] = Decodificar.remuestrear(pcm.muestras, pcm.tasa, 44_100)
+                    }
+                }
+            }
+        }
+    }
 }

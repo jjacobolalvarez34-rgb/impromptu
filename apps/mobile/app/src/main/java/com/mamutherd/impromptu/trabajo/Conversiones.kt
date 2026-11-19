@@ -9,6 +9,11 @@ import androidx.compose.runtime.setValue
 import com.mamutherd.impromptu.audio.Decodificar
 import com.mamutherd.impromptu.datos.Origen
 import com.mamutherd.impromptu.datos.Piezas
+import com.mamutherd.impromptu.instrumentos.Guitarra
+import com.mamutherd.impromptu.instrumentos.Instrumento
+import com.mamutherd.impromptu.transcribir.BasicPitch
+import com.mamutherd.impromptu.transcribir.DetectorBateria
+import com.mamutherd.impromptu.transcribir.Modelos
 import com.mamutherd.impromptu.transcribir.Transkun
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -25,7 +30,14 @@ import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
 
 /** Una conversión de audio a notas en la cola. Sus campos son estado de Compose. */
-class TrabajoConversion(val id: String, val titulo: String, val origen: Origen, val archivo: File) {
+class TrabajoConversion(
+    val id: String,
+    val titulo: String,
+    val origen: Origen,
+    val archivo: File,
+    /** Con qué se escucha: piano (Transkun), guitarra o bajo (Basic Pitch) o batería (detector). */
+    val instrumento: Instrumento = Instrumento.Piano,
+) {
     var etapa by mutableStateOf(Etapa.Esperando)
     /** Cuándo empezó a trabajar (System.currentTimeMillis), 0 si espera. */
     var inicio by mutableStateOf(0L)
@@ -68,7 +80,7 @@ class Conversiones(
             runCatching {
                 val o = JSONObject(meta.readText())
                 val audio = File(carpeta, o.getString("archivo"))
-                if (audio.exists()) cola += TrabajoConversion(o.getString("id"), o.getString("titulo"), Origen.deClave(o.getString("origen")), audio)
+                if (audio.exists()) cola += TrabajoConversion(o.getString("id"), o.getString("titulo"), Origen.deClave(o.getString("origen")), audio, Instrumento.deClave(o.optString("instrumento")))
                 else meta.delete()
             }
         }
@@ -80,27 +92,27 @@ class Conversiones(
     }
 
     /** Pone en la cola un audio elegido (se copia: el permiso para leerlo no dura). */
-    suspend fun encolarArchivo(uri: Uri, titulo: String) {
+    suspend fun encolarArchivo(uri: Uri, titulo: String, instrumento: Instrumento = Instrumento.Piano) {
         val id = UUID.randomUUID().toString()
         val ext = context.contentResolver.getType(uri)?.substringAfter('/')?.takeIf { it.length in 2..5 } ?: "audio"
         val destino = File(carpeta, "$id.$ext")
         withContext(Dispatchers.IO) {
             context.contentResolver.openInputStream(uri)!!.use { entrada -> destino.outputStream().use { entrada.copyTo(it) } }
         }
-        agregar(TrabajoConversion(id, titulo, Origen.Audio, destino))
+        agregar(TrabajoConversion(id, titulo, Origen.Audio, destino, instrumento))
     }
 
     /** Pone en la cola lo grabado con el micrófono (se guarda como WAV). */
-    suspend fun encolarGrabacion(muestras: FloatArray, tasa: Int, titulo: String) {
+    suspend fun encolarGrabacion(muestras: FloatArray, tasa: Int, titulo: String, instrumento: Instrumento = Instrumento.Piano) {
         val id = UUID.randomUUID().toString()
         val destino = File(carpeta, "$id.wav")
         withContext(Dispatchers.IO) { escribirWav(destino, muestras, tasa) }
-        agregar(TrabajoConversion(id, titulo, Origen.Microfono, destino))
+        agregar(TrabajoConversion(id, titulo, Origen.Microfono, destino, instrumento))
     }
 
     private fun agregar(t: TrabajoConversion) {
         File(carpeta, "${t.id}.json").writeText(
-            JSONObject().put("id", t.id).put("titulo", t.titulo).put("origen", t.origen.clave).put("archivo", t.archivo.name).toString(),
+            JSONObject().put("id", t.id).put("titulo", t.titulo).put("origen", t.origen.clave).put("archivo", t.archivo.name).put("instrumento", t.instrumento.clave).toString(),
         )
         cola += t
         procesar()
@@ -111,6 +123,7 @@ class Conversiones(
         val t = cola.firstOrNull { it.id == id } ?: return
         if (t === actual) {
             transkun?.cancelar()
+            basicPitch?.cancelar()
             procesador?.cancel()
         } else {
             quitar(t)
@@ -141,6 +154,8 @@ class Conversiones(
             } finally {
                 transkun?.close()
                 transkun = null
+                basicPitch?.close()
+                basicPitch = null
                 if (cola.isEmpty()) alCambiar(false)
                 else if (!isActive) {
                     // Se canceló la que trabajaba: sigue con la próxima.
@@ -159,8 +174,12 @@ class Conversiones(
         try {
             val job = kotlin.coroutines.coroutineContext
             val pcm = Decodificar.aMono(context, archivo = t.archivo, seguir = { job.isActive }) { t.lectura = it }
+            if (pcm.muestras.size < pcm.tasa / 2) throw IllegalStateException("El audio es demasiado corto.")
+            if (t.instrumento != Instrumento.Piano) {
+                convertirOtro(t, pcm, job)
+                return
+            }
             val audio = Decodificar.remuestrear(pcm.muestras, pcm.tasa, Transkun.TASA)
-            if (audio.size < Transkun.TASA / 2) throw IllegalStateException("El audio es demasiado corto.")
             t.etapa = Etapa.Preparando
             val tk = transkun ?: Transkun.cargar(context).also { transkun = it }
             if (!job.isActive) throw CancellationException()
@@ -189,6 +208,34 @@ class Conversiones(
             actual = null
         }
     }
+
+    @Volatile private var basicPitch: BasicPitch? = null
+
+    /** Guitarra y bajo con Basic Pitch (y cuerda y traste); batería con el detector por bandas. */
+    private fun convertirOtro(t: TrabajoConversion, pcm: Decodificar.Pcm, job: kotlin.coroutines.CoroutineContext) {
+        t.etapa = Etapa.Escuchando
+        t.avance = AvanceSuave(System.currentTimeMillis(), 0.1)
+        val notas = if (t.instrumento == Instrumento.Bateria) {
+            t.avance.actualizar(0.5, System.currentTimeMillis())
+            DetectorBateria.detectar(pcm.muestras, pcm.tasa, sensibilidadBateria)
+        } else {
+            val audio = Decodificar.remuestrear(pcm.muestras, pcm.tasa, BasicPitch.TASA)
+            val bp = basicPitch ?: BasicPitch(Modelos.sesion(context, "basic-pitch.onnx")).also { basicPitch = it }
+            val crudas = bp.transcribir(audio) { t.avance.actualizar(it.toDouble(), System.currentTimeMillis()) }
+            Guitarra.asignar(crudas, Guitarra.afinacion(t.instrumento, afinacionGuitarra))
+        }
+        if (!job.isActive) throw CancellationException()
+        t.etapa = Etapa.Armando
+        if (notas.isEmpty()) throw IllegalStateException("No se escucharon notas en «${t.titulo}».")
+        val pieza = piezas.nueva(t.titulo, t.origen, notas, emptyList(), t.instrumento.clave)
+        piezas.guardar(pieza)
+        terminadas += Terminada(pieza.id, pieza.titulo)
+        quitar(t)
+    }
+
+    /** Afinación de la guitarra y sensibilidad de la batería (Ajustes). */
+    var afinacionGuitarra = "estandar"
+    var sensibilidadBateria = 1.0
 
     /** Avance total para la notificación (0 a 100) y el nombre de la que trabaja. */
     fun resumen(): Pair<String, Int>? {

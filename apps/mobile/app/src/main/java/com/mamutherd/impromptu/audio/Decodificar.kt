@@ -39,13 +39,19 @@ object Decodificar {
         context: Context,
         uri: Uri? = null,
         archivo: File? = null,
+        /** Un archivo de los assets (sin comprimir en el APK). */
+        asset: android.content.res.AssetFileDescriptor? = null,
         maxSeg: Double? = null,
         seguir: () -> Boolean = { true },
         progreso: (Float) -> Unit = {},
     ): Pcm {
         val ex = MediaExtractor()
         try {
-            if (archivo != null) ex.setDataSource(archivo.absolutePath) else ex.setDataSource(context, uri!!, null)
+            when {
+                archivo != null -> ex.setDataSource(archivo.absolutePath)
+                asset != null -> ex.setDataSource(asset.fileDescriptor, asset.startOffset, asset.declaredLength)
+                else -> ex.setDataSource(context, uri!!, null)
+            }
             val pista = (0 until ex.trackCount).firstOrNull {
                 ex.getTrackFormat(it).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true
             } ?: throw IllegalArgumentException("El archivo no tiene audio")

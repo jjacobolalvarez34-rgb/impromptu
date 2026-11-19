@@ -1,5 +1,6 @@
 package com.mamutherd.impromptu.visual
 
+import com.mamutherd.impromptu.audio.Sintes
 import android.graphics.Color
 import android.graphics.Paint
 import android.media.MediaCodec
@@ -29,6 +30,8 @@ class Exportador(
     private val ancho: Int,
     private val alto: Int,
     private val fps: Int = 30,
+    /** Batería grabada (para piezas de batería). */
+    private val bateria: Map<String, FloatArray> = emptyMap(),
 ) {
     private val tasa = 44_100
     /** Antes de la primera nota, para que se vea caer. */
@@ -103,6 +106,7 @@ class Exportador(
 
             val r = Renderizador()
             val rango = pieza.rango()
+            val op = Renderizador.Opciones(instrumento = pieza.instr)
             val negro = Paint().apply { color = Color.BLACK }
             val cuadros = (total * fps).toInt()
             for (k in 0 until cuadros) {
@@ -110,7 +114,7 @@ class Exportador(
                 val t = inicio + k.toDouble() / fps
                 val c = superficie.lockHardwareCanvas()
                 try {
-                    r.dibujar(c, ancho.toFloat(), alto.toFloat(), pieza.notas, pieza.pedales, t, rango)
+                    r.dibujar(c, ancho.toFloat(), alto.toFloat(), pieza.notas, pieza.pedales, t, rango, op = op)
                     val restante = fin - t
                     if (restante < FUNDIDO) {
                         negro.alpha = ((1 - restante / FUNDIDO) * 255).toInt().coerceIn(0, 255)
@@ -137,6 +141,7 @@ class Exportador(
     /** Rinde el piano sin tiempo real y lo codifica en AAC (paquetes en memoria). */
     private suspend fun codificarAudio(avance: (Float) -> Unit): Pair<MediaFormat, List<Paquete>> {
         val sampler = Sampler(banco, tasa)
+        val sintes = Sintes(tasa, bateria)
         val sec = Secuencia(pieza)
         val limitador = Limitador()
         val formato = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, tasa, 2).apply {
@@ -168,9 +173,10 @@ class Exportador(
                         } else {
                             val n = minOf(BLOQUE.toLong(), totalCuadros - hechos).toInt()
                             val t0 = inicio + hechos.toDouble() / tasa
-                            indice = sec.aplicar(indice, t0 + n.toDouble() / tasa, sampler)
+                            indice = sec.aplicar(indice, t0 + n.toDouble() / tasa, sampler, sintes)
                             buf.fill(0f)
                             sampler.render(buf, n)
+                            sintes.render(buf, n)
                             limitador.procesar(buf, n * 2)
                             val entrada = codec.getInputBuffer(i)!!.order(ByteOrder.LITTLE_ENDIAN)
                             entrada.clear()

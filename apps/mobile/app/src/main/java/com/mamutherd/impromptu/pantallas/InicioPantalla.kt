@@ -1,5 +1,7 @@
 package com.mamutherd.impromptu.pantallas
 
+import com.mamutherd.impromptu.ui.Chip
+import com.mamutherd.impromptu.instrumentos.Instrumento
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.widget.Toast
@@ -94,7 +96,7 @@ fun InicioPantalla(nav: Navegador) {
         val nombre = nombreDe(context, uri) ?: Impromptu.piezas.siguienteTitulo("Audio")
         pedirNotificaciones()
         alcance.launch {
-            runCatching { Impromptu.conversiones.encolarArchivo(uri, nombre) }
+            runCatching { Impromptu.conversiones.encolarArchivo(uri, nombre, Impromptu.instrumento) }
                 .onFailure { Toast.makeText(context, "No se pudo leer ese audio.", Toast.LENGTH_LONG).show() }
         }
     }
@@ -112,7 +114,14 @@ fun InicioPantalla(nav: Navegador) {
 
     val acciones: @Composable (Int) -> Unit = { columnas ->
         val lista = listOf<@Composable (Modifier) -> Unit>(
-            { m -> Accion(Iconos.Teclado, "Grabar", "Con tu teclado por USB", m, destacada = true) { nav.ir(Pantalla.Grabar) } },
+            { m ->
+                val detalle = when (Impromptu.instrumento) {
+                    Instrumento.Bateria -> "Con tu batería electrónica por USB"
+                    Instrumento.Piano -> "Con tu teclado por USB"
+                    else -> "Con tu guitarra MIDI o un teclado"
+                }
+                Accion(Iconos.Teclado, "Grabar", detalle, m, destacada = true) { nav.ir(Pantalla.Grabar) }
+            },
             { m -> Accion(Iconos.Microfono, "Micrófono", "Toca y la app escribe", m) { nav.ir(Pantalla.Microfono) } },
             { m -> Accion(Iconos.ArchivoAudio, "Audio a notas", "MP3, WAV o M4A", m) { abrirAudio.launch(arrayOf("audio/*")) } },
             { m ->
@@ -178,6 +187,7 @@ fun InicioPantalla(nav: Navegador) {
                 ) {
                     cabecera()
                     EstadoTeclado()
+                    SelectorInstrumento()
                     acciones(2)
                     ColaConversiones(nav, Modifier.fillMaxWidth())
                 }
@@ -196,6 +206,7 @@ fun InicioPantalla(nav: Navegador) {
             ) {
                 item(key = "cabecera") { cabecera() }
                 item(key = "teclado") { EstadoTeclado() }
+                item(key = "instrumento") { SelectorInstrumento() }
                 item(key = "cola") { ColaConversiones(nav, Modifier.fillMaxWidth()) }
                 item(key = "acciones") { acciones(2) }
                 piezas()
@@ -214,6 +225,16 @@ fun InicioPantalla(nav: Navegador) {
             { Impromptu.piezas.borrar(p.id); borrar = null; menu = null },
             { borrar = null },
         )
+    }
+}
+
+/** Con qué instrumento se graba y se convierte (fase 9). */
+@Composable
+private fun SelectorInstrumento() {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        for (i in Instrumento.entries) {
+            Chip(i.texto, Impromptu.instrumento == i, { Impromptu.elegirInstrumento(i) }, Modifier.weight(1f))
+        }
     }
 }
 
@@ -303,7 +324,7 @@ private fun FilaPieza(
             ) {
                 Text(p.titulo, style = Tipos.Texto.copy(fontSize = Tipos.Texto.fontSize * 1.05f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    "${p.origen.texto.uppercase()} · ${formatoTiempo(p.duracion)} · ${p.notas.size} NOTAS · ${fecha.format(Date(p.creada)).uppercase()}",
+                    "${p.instr.texto.uppercase()} · ${p.origen.texto.uppercase()} · ${formatoTiempo(p.duracion)} · ${fecha.format(Date(p.creada)).uppercase()}",
                     style = Tipos.Etiqueta.copy(letterSpacing = Tipos.Etiqueta.letterSpacing * 0.5f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

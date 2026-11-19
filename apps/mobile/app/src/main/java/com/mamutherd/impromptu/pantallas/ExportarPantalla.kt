@@ -86,7 +86,7 @@ object Exportacion {
             val nombre = pieza.titulo.replace(Regex("[\\\\/:*?\"<>|]"), "_") + ".mp4"
             val archivo = File(carpeta, nombre)
             try {
-                Exportador(pieza, banco, ancho, alto).exportar(archivo) { estado = Estado.Trabajando(pieza.id, it) }
+                Exportador(pieza, banco, ancho, alto, bateria = Impromptu.bateria).exportar(archivo) { estado = Estado.Trabajando(pieza.id, it) }
                 val enGaleria = withContext(Dispatchers.IO) { aGaleria(context, archivo) != null }
                 estado = Estado.Lista(pieza.id, archivo, enGaleria)
             } catch (e: CancellationException) {
@@ -227,6 +227,7 @@ fun ExportarPantalla(id: String, nav: Navegador) {
 private fun VistaPrevia(pieza: Pieza, formato: Formato, modifier: Modifier) {
     val renderizador = remember { Renderizador() }
     val rango = remember(pieza) { pieza.rango() }
+    val opciones = remember(pieza) { Renderizador.Opciones(instrumento = pieza.instr) }
     val desde = remember(pieza) { maxOf(0.0, (pieza.notas.firstOrNull()?.inicio ?: 0.0) - 1.0) }
     val ciclo = minOf(10.0, maxOf(4.0, pieza.duracion - desde))
     val inicio = remember { System.nanoTime() }
@@ -245,7 +246,7 @@ private fun VistaPrevia(pieza: Pieza, formato: Formato, modifier: Modifier) {
             val escala = w / formato.ancho
             c.save()
             c.scale(escala, escala)
-            renderizador.dibujar(c, formato.ancho.toFloat(), formato.alto.toFloat(), pieza.notas, pieza.pedales, t, rango)
+            renderizador.dibujar(c, formato.ancho.toFloat(), formato.alto.toFloat(), pieza.notas, pieza.pedales, t, rango, op = opciones)
             c.restore()
         }
         Etiqueta("Vista previa", Modifier.align(Alignment.TopStart).padding(8.dp))

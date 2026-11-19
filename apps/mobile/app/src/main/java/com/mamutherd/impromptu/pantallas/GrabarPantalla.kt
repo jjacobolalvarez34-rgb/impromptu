@@ -1,5 +1,7 @@
 package com.mamutherd.impromptu.pantallas
 
+import com.mamutherd.impromptu.instrumentos.Instrumento
+import com.mamutherd.impromptu.instrumentos.Guitarra
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -49,7 +51,8 @@ import kotlinx.coroutines.delay
 fun GrabarPantalla(nav: Navegador) {
     val teclado = Impromptu.teclado
     val renderizador = remember { Renderizador() }
-    val opciones = remember { Renderizador.Opciones(subiendo = true) }
+    val instrumento = Impromptu.instrumento
+    val opciones = remember(instrumento) { Renderizador.Opciones(subiendo = true, instrumento = instrumento) }
     var grabacion by remember { mutableStateOf<Grabacion?>(null) }
     var segundos by remember { mutableDoubleStateOf(0.0) }
     var salir by remember { mutableStateOf(false) }
@@ -75,9 +78,12 @@ fun GrabarPantalla(nav: Navegador) {
         val g = grabacion ?: return
         Impromptu.grabacion = null
         grabacion = null
-        val (notas, pedales) = g.terminar()
-        if (notas.isEmpty()) return
-        val p = Impromptu.piezas.nueva(Impromptu.piezas.siguienteTitulo("Grabación"), Origen.Teclado, notas, pedales)
+        val (grabadas, pedalesGrabados) = g.terminar()
+        if (grabadas.isEmpty()) return
+        // Guitarra y bajo: cada nota con cuerda y traste; sin pedal fuera del piano.
+        val notas = if (instrumento.cuerdas) Guitarra.asignar(grabadas, Guitarra.afinacion(instrumento, Impromptu.conversiones.afinacionGuitarra)) else grabadas
+        val pedales = if (instrumento == Instrumento.Piano) pedalesGrabados else emptyList()
+        val p = Impromptu.piezas.nueva(Impromptu.piezas.siguienteTitulo("Grabación"), Origen.Teclado, notas, pedales, instrumento.clave)
         Impromptu.piezas.guardar(p)
         nav.reemplazar(Pantalla.Pieza(p.id))
     }

@@ -50,12 +50,13 @@ class Piezas(context: Context) {
         return "$base $n"
     }
 
-    fun nueva(titulo: String, origen: Origen, notas: List<Nota>, pedales: List<Pedal>) = Pieza(
+    fun nueva(titulo: String, origen: Origen, notas: List<Nota>, pedales: List<Pedal>, instrumento: String = "piano") = Pieza(
         id = UUID.randomUUID().toString(),
         titulo = titulo,
         creada = System.currentTimeMillis(),
         origen = origen,
         notas = notas.sortedWith(compareBy({ it.inicio }, { it.tecla })),
         pedales = pedales.sortedBy { it.tiempo },
+        instrumento = instrumento,
     )
 }

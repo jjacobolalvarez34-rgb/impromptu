@@ -56,7 +56,7 @@ android {
     }
 
     // Modelos y tablas del espectro: sin comprimir, para leerlos directo.
-    androidResources { noCompress += listOf("onnx", "f32", "json") }
+    androidResources { noCompress += listOf("onnx", "f32", "json", "flac") }
 
     testOptions { unitTests.isReturnDefaultValues = true }
 }
@@ -69,11 +69,12 @@ kotlin {
 // por el repositorio (son 58 MB). PROVISIONAL(P21): hasta decidir dónde se aloja el modelo.
 abstract class CopiarModelos : DefaultTask() {
     @get:InputFiles abstract val origen: ConfigurableFileCollection
+    @get:Input abstract val carpeta: Property<String>
     @get:OutputDirectory abstract val salida: DirectoryProperty
 
     @TaskAction
     fun copiar() {
-        val destino = salida.get().dir("modelos").asFile
+        val destino = salida.get().dir(carpeta.get()).asFile
         destino.deleteRecursively()
         destino.mkdirs()
         origen.files.filter { it.exists() }.forEach { it.copyTo(destino.resolve(it.name), overwrite = true) }
@@ -81,14 +82,21 @@ abstract class CopiarModelos : DefaultTask() {
 }
 
 val carpetaModelos = System.getenv("IMPROMPTU_MODELOS") ?: "D:/.cache/models/movil"
-val archivosModelo = listOf("transkun-red.onnx", "transkun-puntuador.onnx", "transkun-cabezas.onnx", "transkun-ventanas.f32", "transkun-mel.f32", "transkun-espectro.json")
+val archivosModelo = listOf("transkun-red.onnx", "transkun-puntuador.onnx", "transkun-cabezas.onnx", "transkun-ventanas.f32", "transkun-mel.f32", "transkun-espectro.json", "basic-pitch.onnx")
 androidComponents {
     onVariants { variante ->
         val nombre = "copiarModelos" + variante.name.replaceFirstChar { it.uppercase() }
         val tarea = tasks.register<CopiarModelos>(nombre) {
             origen.from(archivosModelo.map { file("$carpetaModelos/$it") })
+            carpeta.set("modelos")
         }
         variante.sources.assets?.addGeneratedSourceDirectory(tarea, CopiarModelos::salida)
+        // Batería grabada (Sonic Pi, CC0), la misma de la web.
+        val bateria = tasks.register<CopiarModelos>("copiarBateria" + variante.name.replaceFirstChar { it.uppercase() }) {
+            origen.from(fileTree(rootProject.file("../web/public/bateria")) { include("*.flac") })
+            carpeta.set("bateria")
+        }
+        variante.sources.assets?.addGeneratedSourceDirectory(bateria, CopiarModelos::salida)
     }
 }
 

@@ -7,6 +7,7 @@ import android.media.AudioManager
 import android.media.AudioTrack
 import android.os.Process
 import com.mamutherd.impromptu.datos.Pieza
+import com.mamutherd.impromptu.instrumentos.Instrumento
 import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
@@ -20,6 +21,7 @@ class Secuencia(pieza: Pieza) {
     val a: IntArray
     val b: IntArray
     val duracion = pieza.duracion
+    val instrumento = pieza.instr
 
     init {
         data class E(val t: Double, val tipo: Int, val a: Int, val b: Int)
@@ -50,19 +52,21 @@ class Secuencia(pieza: Pieza) {
 
     /** Lleva el sampler al estado de pedales que hay en `seg` (al buscar). */
     fun pedalesEn(seg: Double, sampler: Sampler) {
+        if (instrumento != Instrumento.Piano) return
         val ultimo = HashMap<Int, Int>()
         for (i in 0 until indice(seg)) if (tipo[i] == 2) ultimo[a[i]] = b[i]
         for ((cc, v) in ultimo) sampler.pedal(cc, v)
     }
 
     /** Aplica al sampler los eventos de [desde, hasta). Devuelve el índice siguiente. */
-    fun aplicar(desde: Int, hasta: Double, sampler: Sampler): Int {
+    fun aplicar(desde: Int, hasta: Double, sampler: Sampler, sintes: Sintes? = null): Int {
         var i = desde
+        val piano = instrumento == Instrumento.Piano || sintes == null
         while (i < n && t[i] < hasta) {
             when (tipo[i]) {
-                0 -> sampler.notaOff(a[i])
-                1 -> sampler.notaOn(a[i], b[i])
-                else -> sampler.pedal(a[i], b[i])
+                0 -> if (piano) sampler.notaOff(a[i]) else sintes!!.notaOff(a[i])
+                1 -> if (piano) sampler.notaOn(a[i], b[i]) else sintes!!.notaOn(instrumento, a[i], b[i])
+                else -> if (piano) sampler.pedal(a[i], b[i])
             }
             i++
         }
@@ -75,10 +79,12 @@ class Secuencia(pieza: Pieza) {
  * cortos y los escribe en un AudioTrack de baja latencia. Las órdenes de otros hilos (MIDI,
  * interfaz) entran por una cola y se aplican al inicio de cada bloque.
  */
-class Motor(context: Context, banco: Banco) {
+class Motor(context: Context, banco: Banco, bateria: Map<String, FloatArray> = emptyMap()) {
     val tasa: Int = (context.getSystemService(Context.AUDIO_SERVICE) as AudioManager)
         .getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE)?.toIntOrNull()?.takeIf { it in 22_050..96_000 } ?: 48_000
     val sampler = Sampler(banco, tasa)
+    /** Guitarra, bajo y batería (fase 9). */
+    val sintes = Sintes(tasa, bateria)
     private val cola = ConcurrentLinkedQueue<(Sampler) -> Unit>()
     private val limitador = Limitador()
 
@@ -106,8 +112,10 @@ class Motor(context: Context, banco: Banco) {
         cola.add(f)
     }
 
-    fun notaOn(tecla: Int, fuerza: Int) = orden { it.notaOn(tecla, fuerza) }
-    fun notaOff(tecla: Int) = orden { it.notaOff(tecla) }
+    fun notaOn(tecla: Int, fuerza: Int, instrumento: Instrumento = Instrumento.Piano) =
+        orden { if (instrumento == Instrumento.Piano) it.notaOn(tecla, fuerza) else sintes.notaOn(instrumento, tecla, fuerza) }
+    fun notaOff(tecla: Int, instrumento: Instrumento = Instrumento.Piano) =
+        orden { if (instrumento == Instrumento.Piano) it.notaOff(tecla) else sintes.notaOff(tecla) }
     fun pedal(cc: Int, valor: Int) = orden { it.pedal(cc, valor) }
 
     /** Ficha de quien cargó la pieza: solo ese puede soltarla (las pantallas se cruzan al animar). */
@@ -128,6 +136,7 @@ class Motor(context: Context, banco: Banco) {
 
     private fun ordenCargar(pieza: Pieza?) = orden {
         it.silencio()
+        sintes.silencio()
         secuencia = pieza?.let(::Secuencia)
         reproduciendo = false
         posicion = 0.0
@@ -140,6 +149,7 @@ class Motor(context: Context, banco: Banco) {
             posicion = 0.0
         }
         it.silencio()
+        sintes.silencio()
         s.pedalesEn(posicion, it)
         indice = s.indice(posicion)
         reproduciendo = true
@@ -148,12 +158,14 @@ class Motor(context: Context, banco: Banco) {
     fun pausar() = orden {
         reproduciendo = false
         it.silencio()
+        sintes.silencio()
     }
 
     fun buscar(seg: Double) = orden {
         val s = secuencia ?: return@orden
         posicion = seg.coerceIn(0.0, s.duracion)
         it.silencio()
+        sintes.silencio()
         s.pedalesEn(posicion, it)
         indice = s.indice(posicion)
     }
@@ -208,7 +220,7 @@ class Motor(context: Context, banco: Banco) {
                 if (s == null) reproduciendo = false
                 else {
                     val fin = posicion + BLOQUE.toDouble() / tasa * velocidad
-                    indice = s.aplicar(indice, fin, sampler)
+                    indice = s.aplicar(indice, fin, sampler, sintes)
                     posicion = fin
                     if (posicion >= s.duracion + 0.3) {
                         reproduciendo = false
@@ -218,6 +230,7 @@ class Motor(context: Context, banco: Banco) {
             }
             buf.fill(0f)
             sampler.render(buf, BLOQUE)
+            sintes.render(buf, BLOQUE)
             limitador.procesar(buf, BLOQUE * 2)
             t.write(buf, 0, buf.size, AudioTrack.WRITE_BLOCKING)
         }

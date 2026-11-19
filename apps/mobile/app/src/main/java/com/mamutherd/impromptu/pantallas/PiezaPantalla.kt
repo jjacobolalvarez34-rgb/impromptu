@@ -78,6 +78,7 @@ fun PiezaPantalla(id: String, nav: Navegador) {
     val motor = Impromptu.motor
     val renderizador = remember { Renderizador() }
     val rango = remember(pieza) { pieza.rango() }
+    val opciones = remember(pieza) { Renderizador.Opciones(instrumento = pieza.instr) }
     var tocando by remember { mutableStateOf(false) }
     var tiempo by remember { mutableDoubleStateOf(0.0) }
     var velocidad by remember { mutableDoubleStateOf(1.0) }
@@ -112,7 +113,7 @@ fun PiezaPantalla(id: String, nav: Navegador) {
                 .semantics { contentDescription = "Notas cayendo de ${pieza.titulo}" }
                 .pointerInput(Unit) { detectTapGestures { controles = !controles } },
         ) { c, w, h ->
-            renderizador.dibujar(c, w, h, pieza.notas, pieza.pedales, motor?.posicionVisible ?: tiempo, rango)
+            renderizador.dibujar(c, w, h, pieza.notas, pieza.pedales, motor?.posicionVisible ?: tiempo, rango, op = opciones)
         }
         if (controles) {
             Row(

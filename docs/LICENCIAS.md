@@ -29,7 +29,8 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 | alphaTab | Tablaturas (fase 9) | MPL-2.0 | Igual que Mediabunny |
 | onnxruntime-web | Ejecutar modelos ONNX | MIT [VERIFICAR] | |
 | TensorFlow.js 3.21 | Ejecutar Basic Pitch | Apache-2.0 (verificado) | Aviso de licencia |
-| `@spotify/basic-pitch` 1.0.1 (código y modelo) | Audio a notas (fase 5) | Apache-2.0 (verificado) | Aviso de licencia; crédito en "Acerca de" |
+| `@spotify/basic-pitch` 1.0.1 (código y modelo) | Audio a notas (fase 5); guitarra y bajo (fase 9) | Apache-2.0 (verificado) | Aviso de licencia; crédito en "Acerca de" |
+| Basic Pitch ONNX (`nmp.onnx` del paquete de pip `basic-pitch` 0.4.0) | Guitarra y bajo en la app de Android | Apache-2.0 (verificado: LICENSE del paquete, © 2022 Spotify AB) | Aviso de licencia |
 | `onnxruntime-web` 1.31.1 | Correr el modelo de piano (ADR-014) | MIT (verificado) | Aviso de copyright |
 | `onnxruntime-android` 1.31.1 | Transkun en la app de Android (ADR-019) | MIT | Aviso de copyright; crédito en "Acerca de" de la app |
 | Jetpack Compose, AndroidX, kotlinx-coroutines | App de Android | Apache-2.0 | Aviso de licencia |
