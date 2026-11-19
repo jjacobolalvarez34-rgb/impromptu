@@ -90,7 +90,10 @@ object Exportacion {
             val nombre = pieza.titulo.replace(Regex("[\\\\/:*?\"<>|]"), "_") + sufijo + ".mp4"
             val archivo = File(carpeta, nombre)
             try {
-                Exportador(pieza, banco, ancho, alto, bateria = Impromptu.bateria, hoja = hoja)
+                // Los sonidos grabados del instrumento se esperan: el video suena como al tocar.
+                val timbre = Impromptu.timbreGuardado()
+                runCatching { Impromptu.esperarBancoPara(pieza.instr, timbre) }
+                Exportador(pieza, banco, ancho, alto, bateria = Impromptu.bateria, hoja = hoja, bancos = Impromptu.bancos, timbre = timbre)
                     .exportar(archivo) { estado = Estado.Trabajando(pieza.id, it) }
                 val enGaleria = withContext(Dispatchers.IO) { aGaleria(context, archivo) != null }
                 estado = Estado.Lista(pieza.id, archivo, enGaleria)

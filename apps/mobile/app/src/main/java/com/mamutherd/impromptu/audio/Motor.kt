@@ -79,12 +79,18 @@ class Secuencia(pieza: Pieza) {
  * cortos y los escribe en un AudioTrack de baja latencia. Las órdenes de otros hilos (MIDI,
  * interfaz) entran por una cola y se aplican al inicio de cada bloque.
  */
-class Motor(context: Context, banco: Banco, bateria: Map<String, FloatArray> = emptyMap()) {
+class Motor(
+    context: Context,
+    banco: Banco,
+    bateria: Map<String, FloatArray> = emptyMap(),
+    /** Sonidos grabados de guitarra, bajo y batería (pedido 25), compartidos con Impromptu. */
+    bancos: Map<String, BancoGrabado> = emptyMap(),
+) {
     val tasa: Int = (context.getSystemService(Context.AUDIO_SERVICE) as AudioManager)
         .getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE)?.toIntOrNull()?.takeIf { it in 22_050..96_000 } ?: 48_000
     val sampler = Sampler(banco, tasa)
     /** Guitarra, bajo y batería (fase 9). */
-    val sintes = Sintes(tasa, bateria)
+    val sintes = Sintes(tasa, bateria, bancos)
     private val cola = ConcurrentLinkedQueue<(Sampler) -> Unit>()
     private val limitador = Limitador()
 
@@ -123,6 +129,8 @@ class Motor(context: Context, banco: Banco, bateria: Map<String, FloatArray> = e
 
     /** Carga una pieza para tocarla y devuelve su ficha. */
     fun cargar(pieza: Pieza?): Int {
+        // El banco grabado de su instrumento empieza a decodificarse (si no estaba).
+        pieza?.let { com.mamutherd.impromptu.Impromptu.cargarBancoPara(it.instr) }
         ordenCargar(pieza)
         return ++ficha
     }

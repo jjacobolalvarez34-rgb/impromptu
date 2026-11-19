@@ -1,6 +1,7 @@
 package com.mamutherd.impromptu.visual
 
 import com.mamutherd.impromptu.audio.Sintes
+import com.mamutherd.impromptu.audio.BancoGrabado
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -45,6 +46,9 @@ class Exportador(
     private val bateria: Map<String, FloatArray> = emptyMap(),
     /** Video de la partitura (fase 10): dibuja la hoja en vez del visualizador. */
     private val hoja: HojaVideo? = null,
+    /** Sonidos grabados (pedido 25) y el timbre de la guitarra elegido. */
+    private val bancos: Map<String, BancoGrabado> = emptyMap(),
+    private val timbre: Sintes.Timbre = Sintes.Timbre.Acero,
 ) {
     private val tasa = 44_100
     /** Antes de la primera nota, para que se vea caer. */
@@ -157,7 +161,7 @@ class Exportador(
     /** Rinde el piano sin tiempo real y lo codifica en AAC (paquetes en memoria). */
     private suspend fun codificarAudio(avance: (Float) -> Unit): Pair<MediaFormat, List<Paquete>> {
         val sampler = Sampler(banco, tasa)
-        val sintes = Sintes(tasa, bateria)
+        val sintes = Sintes(tasa, bateria, bancos).also { it.timbreGuitarra = timbre }
         val sec = Secuencia(pieza)
         val limitador = Limitador()
         val formato = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, tasa, 2).apply {

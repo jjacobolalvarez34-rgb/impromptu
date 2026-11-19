@@ -97,6 +97,14 @@ androidComponents {
             carpeta.set("bateria")
         }
         variante.sources.assets?.addGeneratedSourceDirectory(bateria, CopiarModelos::salida)
+        // Guitarras, bajo y batería grabados (pedido 25): los mismos bancos de la web.
+        for (b in listOf("nylon", "acero", "electrica", "bajo", "bateria")) {
+            val t = tasks.register<CopiarModelos>("copiarSonidos" + b.replaceFirstChar { it.uppercase() } + variante.name.replaceFirstChar { it.uppercase() }) {
+                origen.from(fileTree(rootProject.file("../web/public/instrumentos/$b")) { include("*.flac", "manifiesto.json") })
+                carpeta.set("instrumentos/$b")
+            }
+            variante.sources.assets?.addGeneratedSourceDirectory(t, CopiarModelos::salida)
+        }
     }
 }
 

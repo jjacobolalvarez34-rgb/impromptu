@@ -21,7 +21,8 @@ Una entrada por sesión, la más reciente arriba.
   - **BUG-007**: en la web la batería grabada nunca llegaba (la carpeta pública de Vite es la de la marca); arreglado con un plugin que sirve y copia los sonidos.
   - Créditos en "Acerca de".
   - Pruebas: `muestras.test.ts` (banco por instrumento, nota más cercana y su altura, capa por fuerza, variaciones de la batería); e2e `instrumentos.spec.ts` baja la guitarra y la batería y decodifica una grabación de cada banco (ninguna en silencio).
-- Pendiente: los mismos sonidos en la app de Android; la fase 11.
+- Hecho en la **app de Android** (**sin verificar en el celular**): los mismos bancos van en los assets (Gradle los copia de la web); se decodifica solo el del instrumento en uso (al iniciar, al elegir instrumento o timbre y al abrir una pieza), en mono y a su frecuencia original; la voz se lee con interpolación (cambia de tono y de frecuencia en un paso). Al exportar se espera el banco y se usa el timbre elegido (antes el video siempre salía con guitarra de acero). JUnit `MuestrasTest` (3: banco por instrumento, nota y capa, y los manifiestos reales con todos sus archivos); APK debug de 120 MB con los 162 archivos.
+- Pendiente: que Jacobo los escuche (web y celular); la fase 11.
 
 ### 2026-11-18 (tarde) · Pedidos de Jacobo tras probar la app
 - Probado por Jacobo en su celular (verificado): la conversión ya no cierra la app, el teclado suena sin retraso, el micrófono graba bien con su piano vertical y la partitura sale muy bien.

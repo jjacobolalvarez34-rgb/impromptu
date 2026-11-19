@@ -77,6 +77,7 @@ fun AjustesPantalla(nav: Navegador) {
                             timbre = t
                             prefs.edit().putString("timbre", t.name).apply()
                             Impromptu.motor?.orden { _ -> Impromptu.motor?.sintes?.timbreGuitarra = t }
+                            Impromptu.cargarBancoPara(com.mamutherd.impromptu.instrumentos.Instrumento.Guitarra, t)
                         })
                     }
                 }

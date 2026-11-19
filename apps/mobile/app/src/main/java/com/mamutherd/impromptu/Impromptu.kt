@@ -19,6 +19,7 @@ import com.mamutherd.impromptu.trabajo.Conversiones
 import com.mamutherd.impromptu.trabajo.ServicioTrabajos
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
@@ -56,6 +57,37 @@ object Impromptu {
     fun elegirInstrumento(i: Instrumento) {
         instrumento = i
         app.getSharedPreferences("ajustes", Context.MODE_PRIVATE).edit().putString("instrumento", i.clave).apply()
+        cargarBancoPara(i)
+    }
+
+    /**
+     * Sonidos grabados de guitarra, bajo y batería (pedido 25), por banco ("acero", "bateria"…).
+     * Se decodifica solo el banco del instrumento en uso (la batería ocupa ~26 MB en memoria).
+     */
+    val bancos = ConcurrentHashMap<String, com.mamutherd.impromptu.audio.BancoGrabado>()
+    private val cargandoBancos = ConcurrentHashMap<String, kotlinx.coroutines.Deferred<Unit>>()
+
+    /** Timbre de la guitarra elegido en Ajustes. */
+    fun timbreGuardado(): Sintes.Timbre =
+        Sintes.Timbre.entries.firstOrNull { t -> t.name == app.getSharedPreferences("ajustes", Context.MODE_PRIVATE).getString("timbre", "Acero") }
+            ?: Sintes.Timbre.Acero
+
+    /** Empieza a decodificar el banco de un instrumento (una sola vez). */
+    fun cargarBancoPara(i: Instrumento, timbre: Sintes.Timbre = timbreGuardado()): kotlinx.coroutines.Deferred<Unit>? {
+        val clave = com.mamutherd.impromptu.audio.Muestras.bancoDe(i, timbre) ?: return null
+        bancos[clave]?.let { return null }
+        return cargandoBancos.getOrPut(clave) {
+            alcance.async(Dispatchers.IO) {
+                val b = com.mamutherd.impromptu.audio.BancoGrabado.leer(app, clave)
+                if (b != null) bancos[clave] = b else cargandoBancos.remove(clave)
+                Unit
+            }
+        }
+    }
+
+    /** Espera el banco de un instrumento (antes de exportar, para que el video suene igual). */
+    suspend fun esperarBancoPara(i: Instrumento, timbre: Sintes.Timbre = timbreGuardado()) {
+        cargarBancoPara(i, timbre)?.await()
     }
 
     /** Batería grabada (Sonic Pi, CC0), a 44,1 kHz; se llena al iniciar desde los assets. */
@@ -78,6 +110,7 @@ object Impromptu {
         conversiones.afinacionGuitarra = ajustes.getString("afinacion", "estandar") ?: "estandar"
         conversiones.sensibilidadBateria = 2 - ajustes.getFloat("sensibilidadBateria", 1f).toDouble()
         cargarBateria()
+        cargarBancoPara(instrumento)
         encenderSonido()
     }
 
@@ -88,8 +121,8 @@ object Impromptu {
         val banco = Banco(paquetes.carpetaPiano)
         if (!banco.completo) return null
         this.banco = banco
-        return Motor(app, banco, bateria).also {
-            it.sintes.timbreGuitarra = Sintes.Timbre.entries.firstOrNull { t -> t.name == app.getSharedPreferences("ajustes", Context.MODE_PRIVATE).getString("timbre", "Acero") } ?: Sintes.Timbre.Acero
+        return Motor(app, banco, bateria, bancos).also {
+            it.sintes.timbreGuitarra = timbreGuardado()
             it.sampler.panelSustain = app.getSharedPreferences("ajustes", Context.MODE_PRIVATE).getFloat("panelSustain", 0f).toDouble()
             it.encender()
             motor = it

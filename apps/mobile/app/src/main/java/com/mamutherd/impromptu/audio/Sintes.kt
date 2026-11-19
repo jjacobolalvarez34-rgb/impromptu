@@ -7,16 +7,29 @@ import kotlin.math.floor
 import kotlin.math.pow
 
 /**
- * Guitarra, bajo y batería (fase 9), igual que packages/audio/src/sintes.ts: la cuerda con
- * Karplus-Strong (sin descargas ni licencias) y la batería con grabaciones de Sonic Pi (CC0),
- * golpe suave o fuerte según la fuerza. No es seguro entre hilos: lo usa el hilo de audio (o el
- * de exportar), como el Sampler.
+ * Guitarra, bajo y batería, igual que packages/audio/src/sintes.ts. Primero suenan las
+ * grabaciones (pedido 25: FreePats y MuldjordKit, en `bancos`); si el banco del instrumento aún
+ * no está, la cuerda con Karplus-Strong y la batería de Sonic Pi (CC0). No es seguro entre hilos:
+ * lo usa el hilo de audio (o el de exportar), como el Sampler.
  */
-class Sintes(val tasa: Int, private val bateria: Map<String, FloatArray> = emptyMap()) {
+class Sintes(
+    val tasa: Int,
+    private val bateria: Map<String, FloatArray> = emptyMap(),
+    /** Bancos grabados ya decodificados, por clave ("acero", "bateria"…). */
+    private val bancos: Map<String, BancoGrabado> = emptyMap(),
+) {
     enum class Timbre { Nylon, Acero, Electrica, Bajo }
 
-    private class Voz(val datos: FloatArray, val nivel: Float, val tecla: Int, val bateria: Boolean) {
-        var pos = 0
+    /** `paso`: cuántas muestras del original avanza cada muestra de salida (altura y frecuencia). */
+    private class Voz(
+        val datos: FloatArray,
+        val nivel: Float,
+        val tecla: Int,
+        val bateria: Boolean,
+        val paso: Double = 1.0,
+        val grabada: Boolean = false,
+    ) {
+        var pos = 0.0
         var g = nivel
         var soltando = false
         var caida = 1f
@@ -24,6 +37,8 @@ class Sintes(val tasa: Int, private val bateria: Map<String, FloatArray> = empty
     }
 
     private val voces = ArrayList<Voz>()
+    /** Turno de cada pieza de batería, para alternar sus variaciones grabadas. */
+    private val turnos = HashMap<Int, Int>()
     private val cache = HashMap<String, FloatArray>()
     var timbreGuitarra = Timbre.Acero
     var volumen = 0.8f
@@ -77,7 +92,36 @@ class Sintes(val tasa: Int, private val bateria: Map<String, FloatArray> = empty
         return out
     }
 
+    /** Voz con la grabación del banco del instrumento, o null si el banco aún no está. */
+    private fun vozGrabada(instrumento: Instrumento, tecla: Int, fuerza: Int): Voz? {
+        val clave = Muestras.bancoDe(instrumento, timbreGuitarra) ?: return null
+        val b = bancos[clave] ?: return null
+        val m = b.manifiesto
+        val escala = 0.45f + 0.55f * fuerza / 127f
+        if (instrumento == Instrumento.Bateria) {
+            val turno = turnos[tecla] ?: 0
+            val archivo = Muestras.golpe(m.piezas, tecla, fuerza, turno) ?: return null
+            val datos = b.datos[archivo] ?: return null
+            turnos[tecla] = turno + 1
+            return Voz(datos, m.ganancia * escala * 1.1f, tecla, true, b.tasa.toDouble() / tasa, grabada = true)
+        }
+        val (zona, rate) = Muestras.zonaCuerda(m.zonas, tecla, fuerza) ?: return null
+        val datos = b.datos[zona.archivo] ?: return null
+        return Voz(datos, m.ganancia * escala * 1.3f, tecla, false, rate * b.tasa / tasa, grabada = true)
+    }
+
     fun notaOn(instrumento: Instrumento, tecla: Int, fuerza: Int) {
+        val grabada = vozGrabada(instrumento, tecla, fuerza)
+        if (grabada != null) {
+            if (grabada.bateria && (tecla == 42 || tecla == 44)) {
+                for (v in voces) if (v.bateria && v.tecla == Bateria.HIHAT_ABIERTO) { v.soltando = true; v.caida = factor(0.015) }
+            }
+            if (!grabada.bateria) {
+                for (v in voces) if (!v.bateria && v.tecla == tecla && !v.soltando) { v.soltando = true; v.caida = factor(0.05) }
+            }
+            voces += grabada
+            return
+        }
         if (instrumento == Instrumento.Bateria) {
             val (fuerte, suave) = Bateria.MUESTRAS[tecla] ?: return
             val datos = muestra(if (fuerza < 64 && suave != null) suave else fuerte) ?: return
@@ -94,9 +138,14 @@ class Sintes(val tasa: Int, private val bateria: Map<String, FloatArray> = empty
         voces += Voz(cuerda(tecla, fuerzaGrupo, timbre), 1f, tecla, false)
     }
 
-    /** Soltar una cuerda la apaga rápido; la batería suena entera. */
+    /** Soltar una cuerda la apaga rápido (la grabada, sin chasquido); la batería suena entera. */
     fun notaOff(tecla: Int) {
-        for (v in voces) if (!v.bateria && v.tecla == tecla && !v.soltando) { v.soltando = true; v.caida = factor(0.04) }
+        for (v in voces) {
+            if (!v.bateria && v.tecla == tecla && !v.soltando) {
+                v.soltando = true
+                v.caida = factor(if (v.grabada) 0.07 else 0.04)
+            }
+        }
     }
 
     fun silencio() {
@@ -118,17 +167,21 @@ class Sintes(val tasa: Int, private val bateria: Map<String, FloatArray> = empty
         while (it.hasNext()) {
             val v = it.next()
             var i = 0
+            val d = v.datos
             while (i < frames) {
-                if (v.pos >= v.datos.size) { v.viva = false; break }
+                val k = v.pos.toInt()
+                if (k + 1 >= d.size) { v.viva = false; break }
                 if (v.soltando) {
                     v.g *= v.caida
                     if (v.g < 1e-4f) { v.viva = false; break }
                 }
-                val x = v.datos[v.pos] * v.g * volumen
+                // Interpolación lineal: la grabación sube o baja de tono y cambia de frecuencia.
+                val fr = (v.pos - k).toFloat()
+                val x = (d[k] + (d[k + 1] - d[k]) * fr) * v.g * volumen
                 val o = (offset + i) * 2
                 out[o] += x
                 out[o + 1] += x
-                v.pos++
+                v.pos += v.paso
                 i++
             }
             if (!v.viva) it.remove()
