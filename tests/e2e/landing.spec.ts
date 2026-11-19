@@ -53,3 +53,15 @@ test('el recorrido opcional: se ofrece la primera vez, se recorre y no vuelve a 
   await page.goto('/app?recorrido');
   await expect(page.getByRole('dialog')).toContainText('Paso 1 de 6');
 });
+
+test('el intro se desvanece y deja ver la pantalla de atrás (pedido 43)', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto('/app?intro');
+  const saltar = page.getByRole('button', { name: 'Saltar' });
+  await expect(saltar).toBeVisible();
+  // La pantalla ya está debajo del intro.
+  await expect(page.getByRole('heading', { name: 'Elige tu instrumento' })).toBeAttached();
+  await saltar.click({ force: true });
+  await expect(saltar).toBeHidden({ timeout: 3000 });
+  await expect(page.getByRole('heading', { name: 'Elige tu instrumento' })).toBeVisible();
+});

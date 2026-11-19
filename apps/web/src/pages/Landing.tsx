@@ -142,19 +142,23 @@ export function Landing() {
   });
   useReveal(rootRef);
 
+  // Pedido 43: al terminar, el intro se desvanece en vez de cortarse de golpe.
+  const [saliendo, setSaliendo] = useState(false);
   const endIntro = () => {
     try {
       sessionStorage.setItem(INTRO_KEY, '1');
     } catch {
       // sin almacenamiento
     }
-    setIntro(false);
+    if (saliendo) return;
+    setSaliendo(true);
+    window.setTimeout(() => setIntro(false), 520);
   };
 
   return (
     <div ref={rootRef} className={styles.landing}>
       {intro && (
-        <div className={styles.intro} onClick={endIntro}>
+        <div className={styles.intro} data-saliendo={saliendo} onClick={endIntro}>
           <LogoIntro
             size="min(36vw, 32vh, 260px)"
             onDone={() => window.setTimeout(endIntro, 450)}

@@ -29,28 +29,32 @@ export function Portada() {
   );
   const navigate = useNavigate();
 
+  // Pedido 43: al terminar, el intro se desvanece en vez de cortarse de golpe.
+  const [saliendo, setSaliendo] = useState(false);
   const endIntro = () => {
     try {
       sessionStorage.setItem(INTRO_KEY, '1');
     } catch {
       // Sin almacenamiento: la intro se verá otra vez la próxima vez.
     }
-    setIntro(false);
+    if (saliendo) return;
+    setSaliendo(true);
+    window.setTimeout(() => setIntro(false), 520);
   };
 
-  if (intro) {
-    return (
-      <div className={styles.intro} onClick={endIntro}>
-        <LogoIntro size="min(36vw, 32vh, 260px)" onDone={() => window.setTimeout(endIntro, 500)} />
-        <button type="button" className={styles.saltar} onClick={endIntro}>
-          Saltar
-        </button>
-      </div>
-    );
-  }
+  // El intro va encima de la pantalla: al desvanecerse, ya se ve lo de atrás (pedido 43).
+  const capaIntro = intro && (
+    <div className={styles.intro} data-saliendo={saliendo} onClick={endIntro}>
+      <LogoIntro size="min(36vw, 32vh, 260px)" onDone={() => window.setTimeout(endIntro, 500)} />
+      <button type="button" className={styles.saltar} onClick={endIntro}>
+        Saltar
+      </button>
+    </div>
+  );
 
   return (
     <div className={styles.portada}>
+      {capaIntro}
       <header className={styles.cabecera}>
         {/* De vuelta a la página principal (pedido de Jacobo). En la app de PC no hay página web. */}
         {!isDesktop() && (

@@ -21,6 +21,19 @@ html:has(.landing) {
   place-items: center;
   background: var(--carbon);
   cursor: pointer;
+  transition: opacity 500ms ease;
+}
+
+/* Pedido 43: el intro se desvanece y deja ver la página. */
+.intro[data-saliendo='true'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro {
+    transition-duration: 1ms;
+  }
 }
 
 .saltar {
