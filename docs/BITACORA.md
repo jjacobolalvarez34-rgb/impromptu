@@ -69,7 +69,10 @@ Una entrada por sesión, la más reciente arriba.
   - **Video de la partitura** (web y PC): la hoja con la línea ámbar avanzando y desplazándose por renglones, con el audio del instrumento, la cola y el fundido. `packages/export/src/partitura.ts`; e2e descarga el video.
   - El botón de conectar dice teclado, guitarra MIDI o batería según el instrumento.
   - Despertadores a las 3:03 y 5:47 para seguir trabajando solo (pedido de Jacobo).
-- Pendiente: grabar directo en la partitura; video de la partitura en el celular; fase 11 (gráficos, pedidos 15–18 y el rasgueo de guitarra); sonidos más reales (pedido 25); compilar todo al final.
+- Hecho, fase 10 (noche, modo nocturno). **Sin verificar por Jacobo**:
+  - **Grabar directo en la partitura** (web y PC): en la pestaña Partitura, "Grabar en la partitura" graba con el teclado y la hoja se reescribe cada segundo mientras se toca (la línea ámbar sigue el tiempo y la hoja baja sola); con el metrónomo (los mismos controles del Estudio) los compases caen en su lugar. "Parar y abrir" guarda la toma como cualquier grabación y la deja abierta para editar. Con el **micrófono**: la IA en vivo escribe lo que oye con ~1 s de retraso y, al parar, la IA repasa todo y la pieza se abre ahí. Prueba e2e `grabar-hoja.spec.ts` con un teclado MIDI simulado (captura `test-results/grabar-hoja.png`). El micrófono en la hoja no tiene prueba automática (falta probarlo con un piano real).
+  - **Volver a la página principal** desde la pantalla de elegir instrumento (`/app`), pedido de Jacobo; en la app de PC no aparece (no tiene página web).
+- Pendiente: video de la partitura y grabar en la hoja en el celular; fase 11 (gráficos, pedidos 15–18 y el rasgueo de guitarra); sonidos más reales (pedido 25); compilar todo al final.
 
 ---
 

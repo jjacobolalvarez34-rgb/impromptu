@@ -15,14 +15,18 @@ import {
 } from '@impromptu/notation';
 import type { Edicion, Score, Seleccion } from '@impromptu/notation';
 import { Button, Chips } from '@impromptu/ui';
-import { Download, FileMusic, Film, Printer } from 'lucide-react';
+import { Circle, Download, FileMusic, Film, Mic, Printer, Square } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 import { AFINACIONES, createTake, createTrack } from '@impromptu/core';
-import type { Instrument } from '@impromptu/core';
+import type { Instrument, Take } from '@impromptu/core';
 import { instrumentoDe } from '@impromptu/render';
 import { exportarVideoPartitura, fileName } from '@impromptu/export';
 import { engine } from '../studio/audio';
+import { live, useLive } from '../studio/live';
+import { useTranscribe } from '../studio/transcribeStore';
+import { useMetronome } from '../studio/metronome';
+import { MetronomeControls } from '../studio/LivePanel';
 import { midiFileName } from '../studio/saveMidi';
 import { transport, useStudio } from '../studio/store';
 import styles from './ScoreTab.module.css';
@@ -66,6 +70,50 @@ function download(name: string, data: BlobPart, type: string) {
 export function ScoreTab({ compact = false }: { compact?: boolean }) {
   const abierta = useStudio((s) => s.take);
   const elegido = useStudio((s) => s.instrumento);
+  // Grabar directo en la partitura (fase 10): mientras se toca, la hoja se escribe sola.
+  const conTeclado = useLive((s) => s.recording);
+  // Con el micrófono: la IA en vivo escribe con ~1 s de retraso; al parar, la IA repasa todo.
+  const conMic = useTranscribe((s) => s.state.step === 'recording');
+  const estadoMic = useTranscribe((s) => s.state);
+  const grabando = conTeclado || conMic;
+  const conectado = useLive((s) => s.device !== null);
+  const [provisional, setProvisional] = useState<Take | null>(null);
+  // Si el teclado ya tenía permiso, queda conectado sin pasar por el Estudio.
+  useEffect(() => {
+    void live.autoConnect();
+  }, []);
+  useEffect(() => {
+    if (!grabando) return;
+    const tomar = () => setProvisional(live.provisional() ?? live.oidoProvisional());
+    const primera = window.setTimeout(tomar, 0);
+    const id = window.setInterval(tomar, 1000);
+    return () => {
+      window.clearTimeout(primera);
+      window.clearInterval(id);
+      setProvisional(null);
+      // Se deja de juntar lo que oye el micrófono (también si se paró desde el Estudio).
+      live.escucharEnHoja(false);
+    };
+  }, [grabando]);
+  const grabarEnHoja = () => {
+    transport.pause();
+    useStudio.setState({ playing: false });
+    live.startRecording();
+  };
+  const grabarConMic = () => {
+    transport.pause();
+    useStudio.setState({ playing: false });
+    live.escucharEnHoja(true);
+    void useTranscribe.getState().startMic();
+  };
+  const pararMic = () => {
+    useTranscribe.getState().stopMic();
+    live.escucharEnHoja(false);
+  };
+  const pararGrabacion = async () => {
+    const hecha = await live.stopRecording();
+    if (hecha) useStudio.getState().open(hecha);
+  };
   // Sin pieza: la hoja vacía del instrumento elegido (pedido de Jacobo), con unos compases.
   const vacia = useMemo(
     () =>
@@ -78,7 +126,7 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
           }),
     [abierta, elegido],
   );
-  const take = abierta ?? vacia;
+  const take = (grabando ? provisional : null) ?? abierta ?? vacia;
   const instrumento = take ? instrumentoDe(take) : elegido;
   const cuerdas = instrumento === 'guitar' || instrumento === 'bass';
   const [soloTab, setSoloTab] = useState(false);
@@ -172,10 +220,14 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
 
   const beats = useMemo(() => {
     if (!take) return null;
+    if (grabando && provisional) {
+      const bpm = take.tempoMap[0]?.bpm ?? manualBpm ?? useMetronome.getState().bpm;
+      return beatsOf(take, { bpm, first: 0 });
+    }
     if (manualBpm === null) return beatsOf(take);
     const first = Math.min(...take.tracks.flatMap((t) => t.notes.map((n) => n.start)), 0);
     return beatsOf(take, { bpm: manualBpm, first: Math.max(0, first) });
-  }, [take, manualBpm]);
+  }, [take, manualBpm, grabando, provisional]);
 
   const score: Score | null = useMemo(() => {
     if (!take || !beats) return null;
@@ -184,9 +236,9 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
       beats,
       timeSignature: [n, d],
       instrument: instrumento,
-      compasesMinimos: abierta ? 1 : 4,
+      compasesMinimos: abierta && !grabando ? 1 : 4,
     });
-  }, [take, beats, meter, instrumento, abierta]);
+  }, [take, beats, meter, instrumento, abierta, grabando]);
 
   const xml = useMemo(
     () =>
@@ -211,7 +263,7 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
   // La barra de edición vive en la hoja mientras haya una pieza abierta.
   useEffect(() => {
     const el = hoja.current;
-    if (!el || !abierta) return;
+    if (!el || !abierta || grabando) return;
     const aplicar = (ed: Edicion) => {
       const { seleccion: sel, score: sc, instrumento: inst } = estado.current;
       const actual = useStudio.getState().take;
@@ -235,7 +287,7 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
       b.quitar();
       barra.current = null;
     };
-  }, [abierta, instrumento]);
+  }, [abierta, instrumento, grabando]);
 
   useEffect(() => {
     barra.current?.mostrar(seleccion);
@@ -251,7 +303,9 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
     const el = holder.current;
     void (async () => {
       try {
-        setStatus('loading');
+        const enVivo =
+          useLive.getState().recording || useTranscribe.getState().state.step === 'recording';
+        if (!enVivo) setStatus('loading');
         const { OpenSheetMusicDisplay } = await import('opensheetmusicdisplay');
         if (cancelled) return;
         el.innerHTML = '';
@@ -268,7 +322,7 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
         // Cada nota de la hoja se puede tocar para editarla (solo con una pieza abierta).
         quitarClics.current?.();
         const sc = estado.current.score;
-        if (sc && useStudio.getState().take) {
+        if (sc && useStudio.getState().take && !enVivo) {
           quitarClics.current = hacerSeleccionable(
             view as unknown as Parameters<typeof hacerSeleccionable>[0],
             sc,
@@ -283,6 +337,11 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
         linea.current = new LineaDeLectura(el, el.parentElement ?? el, recorrido.current);
         osmd.current = view;
         setStatus('ready');
+        // Grabando: la hoja baja sola hasta lo último que se tocó.
+        if (enVivo) {
+          const caja = hoja.current;
+          caja?.scrollTo({ top: caja.scrollHeight });
+        }
       } catch {
         if (!cancelled) setStatus('error');
       }
@@ -300,7 +359,12 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
     if (!score || !beats || status !== 'ready') return;
     let raf = 0;
     const loop = () => {
-      linea.current?.mover(aRedondas(transport.now(), score.measureTimes, score.bpm, score.time));
+      const t = useLive.getState().recording
+        ? live.elapsed()
+        : useTranscribe.getState().state.step === 'recording'
+          ? live.oidoTranscurrido()
+          : transport.now();
+      linea.current?.mover(aRedondas(t, score.measureTimes, score.bpm, score.time));
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -319,6 +383,37 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
   return (
     <div className={styles.cuerpo} data-compact={compact}>
       <aside className={styles.panel} aria-label="Ajustes de la partitura" hidden={compact}>
+        <h2 className="ui-etiqueta">Grabar</h2>
+        {conTeclado ? (
+          <Button variant="stop" icon={<Square />} onClick={() => void pararGrabacion()}>
+            Parar y abrir
+          </Button>
+        ) : conMic ? (
+          <Button variant="stop" icon={<Square />} onClick={pararMic}>
+            Parar el micrófono
+          </Button>
+        ) : (
+          <>
+            <Button icon={<Circle />} disabled={!conectado} onClick={grabarEnHoja}>
+              Grabar en la partitura
+            </Button>
+            <Button icon={<Mic />} onClick={grabarConMic}>
+              Grabar con el micrófono
+            </Button>
+          </>
+        )}
+        <p className="ui-secundario">
+          {conTeclado
+            ? 'Toca: la hoja se escribe sola mientras grabas. Con el metrónomo encendido, los compases caen en su lugar.'
+            : conMic
+              ? 'Toca: las notas aparecen con un segundo de retraso. Al parar, la IA repasa todo y la pieza se abre aquí.'
+              : conectado
+                ? 'Con el teclado, la hoja se escribe mientras tocas. Con el micrófono, la IA escucha y escribe.'
+                : 'Conecta el teclado en el Estudio (En vivo) para grabar directo en la hoja, o usa el micrófono.'}
+        </p>
+        {estadoMic.step === 'error' && <p className="ui-secundario">{estadoMic.message}</p>}
+        {!grabando && conectado && <MetronomeControls />}
+
         <h2 className="ui-etiqueta">Tempo</h2>
         <label className={styles.campo}>
           <input
@@ -361,7 +456,7 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
         <h2 className="ui-etiqueta">Exportar</h2>
         <Button
           icon={<Download />}
-          disabled={!abierta}
+          disabled={!abierta || grabando}
           onClick={() =>
             xml && download(`${base}.musicxml`, xml, 'application/vnd.recordare.musicxml+xml')
           }
@@ -370,7 +465,7 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
         </Button>
         <Button
           icon={<FileMusic />}
-          disabled={!abierta}
+          disabled={!abierta || grabando}
           onClick={() =>
             download(
               midiFileName(`${base} (cuantizado)`),
@@ -393,12 +488,16 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
             Descargar el video de la partitura
           </a>
         ) : (
-          <Button icon={<Film />} disabled={!abierta} onClick={() => void exportarHoja()}>
+          <Button
+            icon={<Film />}
+            disabled={!abierta || grabando}
+            onClick={() => void exportarHoja()}
+          >
             Video de la partitura
           </Button>
         )}
         {video.paso === 'error' && <p className="ui-secundario">{video.mensaje}</p>}
-        <Button icon={<Printer />} disabled={!abierta} onClick={() => window.print()}>
+        <Button icon={<Printer />} disabled={!abierta || grabando} onClick={() => window.print()}>
           Imprimir o guardar PDF
         </Button>
         <p className="ui-secundario">
@@ -407,12 +506,12 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
         </p>
       </aside>
       <main ref={hoja} className={styles.hoja} aria-label={`Partitura de ${take.title}`}>
-        {abierta && !seleccion && (
+        {abierta && !grabando && !seleccion && (
           <p className={`ui-secundario ${styles.ayuda}`}>
             Toca una nota (o un silencio) para editarla. Al editar, la pieza toma el ritmo escrito.
           </p>
         )}
-        {!abierta && (
+        {!abierta && !grabando && (
           <p className="ui-secundario">
             Hoja vacía. Abre una pieza en el Estudio (un MIDI, una grabación o un audio) para verla
             escrita aquí.

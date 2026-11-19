@@ -284,7 +284,7 @@ const METER_OPTIONS = [
 ] as const;
 
 /** Metrónomo al grabar: con él, la partitura sale con el tempo y el compás exactos. */
-function MetronomeControls() {
+export function MetronomeControls() {
   const { on, bpm, beats, set } = useMetronome();
   return (
     <>

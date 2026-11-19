@@ -1,6 +1,6 @@
 import { Recorder, WebMidiError, WebMidiInput, isWebMidiSupported } from '@impromptu/midi';
 import type { LiveEvent, MidiAccessError, MidiDevice } from '@impromptu/midi';
-import { KEYBOARD_PRESETS, createNoteEvent } from '@impromptu/core';
+import { KEYBOARD_PRESETS, createNoteEvent, createTake, createTrack } from '@impromptu/core';
 import type { KeyboardRange, NoteEvent, PedalEvent, Take } from '@impromptu/core';
 import { create } from 'zustand';
 import { engine } from './audio';
@@ -207,6 +207,17 @@ class LiveSession {
   pushHeard(notes: { pitch: number; start: number; end: number; velocity: number }[]): void {
     for (const n of notes) {
       this.notes.push(createNoteEvent({ ...n, origin: 'audio' }));
+      if (this.oido) {
+        const o = this.oido.origen;
+        this.oido.notas.push(
+          createNoteEvent({
+            ...n,
+            start: Math.max(0, n.start - o),
+            end: Math.max(0.05, n.end - o),
+            origin: 'audio',
+          }),
+        );
+      }
     }
     this.notes.sort((a, b) => a.start - b.start);
     this.lastActivity = liveNow();
@@ -302,6 +313,67 @@ class LiveSession {
     useStudio.getState().setView('live');
     void this.keepScreenOn(true);
     useLive.setState({ recording: true });
+  }
+
+  /**
+   * La toma tal como va mientras se graba (fase 10, «grabar directo en la partitura»): las
+   * notas ya soltadas y las que siguen abajo, cortadas en el instante actual.
+   */
+  provisional(): Take | null {
+    if (!useLive.getState().recording) return null;
+    const ahora = Math.max(0, liveNow() - this.recordStart);
+    const notas = [
+      ...this.recorder.closedNotes(),
+      ...this.recorder.openNotes().map((n) =>
+        createNoteEvent({
+          pitch: n.pitch,
+          start: n.start,
+          end: Math.max(ahora, n.start + 0.05),
+          velocity: n.velocity,
+          origin: 'midi-live',
+        }),
+      ),
+    ];
+    const take = conInstrumento(
+      createTake({
+        title: 'Grabando',
+        tracks: [createTrack({ name: 'Piano', notes: notas })],
+        duration: ahora,
+      }),
+      useStudio.getState().instrumento,
+    );
+    if (this.metronome) {
+      take.tempoMap = [{ time: 0, bpm: this.metronome.bpm }];
+      take.timeSignature = [this.metronome.beats, 4];
+    }
+    return take;
+  }
+
+  /** Notas oídas por el micrófono desde que se empezó a grabar en la partitura. */
+  private oido: { origen: number; notas: NoteEvent[] } | null = null;
+
+  /** Grabar con el micrófono desde la hoja: se juntan las notas que oye la IA en vivo. */
+  escucharEnHoja(on: boolean): void {
+    this.oido = on ? { origen: liveNow(), notas: [] } : null;
+  }
+
+  /** La toma tal como va según el micrófono (null si no se graba desde la hoja). */
+  oidoProvisional(): Take | null {
+    if (!this.oido) return null;
+    const ahora = liveNow() - this.oido.origen;
+    return conInstrumento(
+      createTake({
+        title: 'Grabando',
+        tracks: [createTrack({ name: 'Piano', notes: [...this.oido.notas] })],
+        duration: Math.max(ahora, ...this.oido.notas.map((n) => n.end)),
+      }),
+      useStudio.getState().instrumento,
+    );
+  }
+
+  /** Segundos desde que se empezó a grabar con el micrófono en la hoja. */
+  oidoTranscurrido(): number {
+    return this.oido ? liveNow() - this.oido.origen : 0;
   }
 
   /** Segundos grabados hasta ahora (para el LCD). */

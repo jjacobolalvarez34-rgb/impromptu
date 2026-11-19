@@ -48,8 +48,33 @@
   justify-items: start;
 }
 
-.cabecera > span:first-child > span[role='img'] {
+.logo > span[role='img'] {
   padding-left: 0;
+}
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: 44px;
+  margin-top: calc(var(--e-6) * -1);
+  color: var(--chasis);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.volver svg {
+  width: 16px;
+  height: 16px;
+}
+
+.volver:hover {
+  color: var(--tinta);
+}
+
+.volver:focus-visible {
+  outline: 2px solid var(--ambar);
+  outline-offset: 2px;
 }
 
 .lema {

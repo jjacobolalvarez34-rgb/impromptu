@@ -1,10 +1,11 @@
 import { Button, Logo, LogoIntro } from '@impromptu/ui';
-import { Drum, Guitar, Piano } from 'lucide-react';
+import { ArrowLeft, Drum, Guitar, Piano } from 'lucide-react';
 import { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { MamutHerdSello } from '../brand/MamutHerdSello';
 import { MAMUT_HERD } from '../brand/mamutHerd';
+import { isDesktop } from '../desktop';
 import styles from './Portada.module.css';
 
 const INTRO_KEY = 'impromptu-intro-vista';
@@ -50,7 +51,13 @@ export function Portada() {
   return (
     <div className={styles.portada}>
       <header className={styles.cabecera}>
-        <span className="ui-aparece-texto">
+        {/* De vuelta a la página principal (pedido de Jacobo). En la app de PC no hay página web. */}
+        {!isDesktop() && (
+          <Link to="/" className={`${styles.volver} ui-aparece-texto`}>
+            <ArrowLeft aria-hidden="true" /> Página principal
+          </Link>
+        )}
+        <span className={`${styles.logo} ui-aparece-texto`}>
           <Logo size="clamp(40px, 9vw, 72px)" />
         </span>
         <p className={`${styles.lema} ui-aparece-texto`} style={delay(2)}>
