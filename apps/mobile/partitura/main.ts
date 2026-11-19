@@ -94,9 +94,14 @@ const futuro: Take[] = [];
 let quitarClics: (() => void) | null = null;
 let barra: BarraEdicion | null = null;
 
-async function dibujar(take: Take): Promise<void> {
+async function dibujar(take: Take, editable = true): Promise<void> {
   const beats = beatsOf(take);
-  partitura = buildScore(take, { beats, timeSignature: compasActual, instrument: instrumento });
+  partitura = buildScore(take, {
+    beats,
+    timeSignature: compasActual,
+    instrument: instrumento,
+    ...(editable ? {} : { compasesMinimos: 4 }),
+  });
   xml = toMusicXml(partitura, { instrument: instrumento, soloTablatura: soloTab });
   const el = document.getElementById('partitura')!;
   el.innerHTML = '';
@@ -113,8 +118,10 @@ async function dibujar(take: Take): Promise<void> {
   recorrido = leerRecorrido(vista.cursor);
   linea = new LineaDeLectura(el, document.scrollingElement as HTMLElement, recorrido);
   linea.mover(0);
-  // Editor (fase 10): tocar una nota de la hoja la elige.
   quitarClics?.();
+  quitarClics = null;
+  if (!editable) return;
+  // Editor (fase 10): tocar una nota de la hoja la elige.
   quitarClics = hacerSeleccionable(
     vista as unknown as Parameters<typeof hacerSeleccionable>[0],
     partitura,
@@ -217,6 +224,33 @@ function cuadro(): void {
 }
 requestAnimationFrame(cuadro);
 
+/**
+ * Grabar directo en la partitura (fase 10): Kotlin manda lo grabado cada segundo y la hoja se
+ * reescribe sin editor; la vista baja hasta lo último que se tocó.
+ */
+let dibujandoEnVivo = false;
+async function enVivo(pieza: PiezaWeb, compas: string): Promise<void> {
+  if (dibujandoEnVivo) return; // si un dibujo tarda, se salta este aviso
+  dibujandoEnVivo = true;
+  try {
+    instrumento = pieza.instrument ?? 'piano';
+    compasActual = compas.split('/').map(Number) as [number, number];
+    soloTab = false;
+    barra?.quitar();
+    barra = null;
+    seleccion = null;
+    actual = aTake(pieza);
+    await dibujar(actual, false);
+    const caja = document.scrollingElement as HTMLElement;
+    caja.scrollTo({ top: caja.scrollHeight });
+    puente?.listo(Math.round(partitura!.bpm));
+  } catch (e) {
+    puente?.error(e instanceof Error ? e.message : String(e));
+  } finally {
+    dibujandoEnVivo = false;
+  }
+}
+
 /** Ancho de la imagen de la hoja para el video (px); el alto sale de la proporción. */
 const ANCHO_IMAGEN = 1600;
 /** Cola del video: igual que el exportador (4 s con fundido). */
@@ -279,6 +313,7 @@ async function paraVideo(fps: number): Promise<void> {
 
 (globalThis as unknown as Record<string, unknown>).impromptu = {
   paraVideo: (fps: number) => void paraVideo(fps),
+  enVivo: (json: string, compas: string) => void enVivo(JSON.parse(json) as PiezaWeb, compas),
   mostrar: (json: string, compas: string, soloTab?: boolean) =>
     void mostrar(JSON.parse(json) as PiezaWeb, compas, soloTab === true),
   reloj,

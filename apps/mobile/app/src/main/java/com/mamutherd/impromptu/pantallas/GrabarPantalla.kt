@@ -42,6 +42,17 @@ import com.mamutherd.impromptu.ui.Tecla
 import com.mamutherd.impromptu.ui.Tipos
 import com.mamutherd.impromptu.visual.Renderizador
 import kotlinx.coroutines.delay
+import android.annotation.SuppressLint
+import android.webkit.JavascriptInterface
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.webkit.WebViewAssetLoader
+import com.mamutherd.impromptu.datos.Pieza
+import com.mamutherd.impromptu.ui.Chip
+import org.json.JSONObject
 
 /**
  * Grabar con el teclado MIDI, en horizontal: las notas salen del teclado hacia arriba mientras
@@ -56,6 +67,8 @@ fun GrabarPantalla(nav: Navegador) {
     var grabacion by remember { mutableStateOf<Grabacion?>(null) }
     var segundos by remember { mutableDoubleStateOf(0.0) }
     var salir by remember { mutableStateOf(false) }
+    // Ver las notas subiendo o la hoja escribiéndose mientras se toca (fase 10).
+    var verHoja by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         onDispose { Impromptu.grabacion = null }
@@ -91,7 +104,8 @@ fun GrabarPantalla(nav: Navegador) {
     BackHandler(enabled = grabacion != null) { salir = true }
 
     Box(Modifier.fillMaxSize().background(C3.FondoVisualizador)) {
-        Lienzo(Modifier.fillMaxSize().semantics { contentDescription = "Teclado y notas grabadas" }) { c, w, h ->
+        if (verHoja) HojaEnVivo(grabacion, instrumento, Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(top = 56.dp))
+        else Lienzo(Modifier.fillMaxSize().semantics { contentDescription = "Teclado y notas grabadas" }) { c, w, h ->
             val g = grabacion
             renderizador.dibujar(
                 c, w, h,
@@ -126,6 +140,8 @@ fun GrabarPantalla(nav: Navegador) {
                 modifier = Modifier.weight(1f),
             )
             if (Impromptu.motor == null) Text("SIN SONIDO", style = Tipos.Etiqueta.copy(color = C3.Ambar))
+            Chip("Notas", !verHoja, { verHoja = false })
+            Chip(if (instrumento.cuerdas) "Tablatura" else "Hoja", verHoja, { verHoja = true })
             Lcd(formatoTiempo(segundos), tamano = 14)
             if (grabacion == null) {
                 Tecla(
@@ -162,4 +178,56 @@ fun GrabarPantalla(nav: Navegador) {
             no = "Seguir grabando",
         )
     }
+}
+
+/**
+ * La hoja escribiéndose mientras se graba (fase 10, "grabar directo en la partitura"): cada
+ * segundo se manda lo tocado (las notas apretadas, cortadas en el instante actual) a la página
+ * de la partitura, que la redibuja sin editor y baja hasta el final.
+ */
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+private fun HojaEnVivo(grabacion: Grabacion?, instrumento: Instrumento, modifier: Modifier) {
+    var web by remember { mutableStateOf<WebView?>(null) }
+    LaunchedEffect(web, grabacion) {
+        val w = web ?: return@LaunchedEffect
+        while (true) {
+            val g = grabacion
+            val ahora = g?.segundos() ?: 0.0
+            val sonando = g != null
+            val vistas = (g?.vista ?: emptyList()).map { if (it.fin < 0) it.copy(fin = maxOf(ahora, it.inicio + 0.05)) else it }
+            val notas = if (instrumento.cuerdas && vistas.isNotEmpty()) {
+                Guitarra.asignar(vistas.sortedBy { it.inicio }, Guitarra.afinacion(instrumento, Impromptu.conversiones.afinacionGuitarra))
+            } else vistas.sortedBy { it.inicio }
+            val p = Pieza("en-vivo", if (g != null) "Grabando" else "", 0L, Origen.Teclado, notas, emptyList(), instrumento.clave)
+            val json = JSONObject.quote(p.aJsonWeb().toString())
+            w.evaluateJavascript("window.impromptu && impromptu.enVivo($json, '4/4')", null)
+            w.evaluateJavascript("window.impromptu && impromptu.reloj($ahora, $sonando, 1)", null)
+            delay(1000)
+        }
+    }
+    AndroidView(
+        factory = { ctx ->
+            val cargador = WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(ctx))
+                .build()
+            WebView(ctx).apply {
+                settings.javaScriptEnabled = true
+                settings.allowFileAccess = false
+                setBackgroundColor(0xFFE8E4DC.toInt())
+                addJavascriptInterface(object {
+                    @JavascriptInterface fun listo(b: Int) = Unit
+                    @JavascriptInterface fun error(m: String) = Unit
+                }, "Puente")
+                webViewClient = object : WebViewClient() {
+                    override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
+                        cargador.shouldInterceptRequest(request.url)
+                }
+                loadUrl("https://appassets.androidplatform.net/assets/partitura/index.html")
+                web = this
+            }
+        },
+        onRelease = { it.destroy() },
+        modifier = modifier,
+    )
 }
