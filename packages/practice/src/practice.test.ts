@@ -48,6 +48,21 @@ describe('separación de manos', () => {
     const out = separateHands([fixed, note(40, 0)]);
     expect(out.find((x) => x.id === fixed.id)).toMatchObject({ hand: 'L', handSource: 'user' });
   });
+
+  it('una mano que sostiene un acorde no alcanza una nota lejana (pedido 36)', () => {
+    // La derecha sostiene Do5–Mi5; el Do#4 queda a 15 semitonos: lo toma la izquierda.
+    const lejana = note(61, 0.5);
+    const out = separateHands([note(72, 0, 2), note(76, 0, 2), note(48, 0, 2), lejana]);
+    expect(out.find((x) => x.id === lejana.id)?.hand).toBe('L');
+  });
+
+  it('mira adelante: una escala que baja en la derecha no se parte entre las manos', () => {
+    const escala = [72, 71, 69, 67, 65, 64, 62, 60, 59, 57, 55].map((p, i) =>
+      note(p, i * 0.25, 0.25),
+    );
+    const out = separateHands(escala);
+    expect(new Set(out.map((x) => x.hand)).size).toBe(1);
+  });
 });
 
 describe('digitación', () => {
