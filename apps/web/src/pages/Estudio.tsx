@@ -59,6 +59,7 @@ import { transport, useStudio } from '../studio/store';
 import type { Aspect } from '../studio/store';
 import { formatTime } from '../studio/transport';
 import { useOwnAudio } from '../studio/ownAudio';
+import { Burbuja } from '../studio/Burbuja';
 import styles from './Estudio.module.css';
 
 const ASPECTS = [
@@ -643,6 +644,7 @@ export function Estudio() {
           />
         </div>
       </footer>
+      <Burbuja />
     </div>
   );
 }

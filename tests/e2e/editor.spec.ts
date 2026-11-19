@@ -128,11 +128,16 @@ test('exporta el video de la partitura', async ({ page }, info) => {
   });
   await page.getByRole('tab', { name: 'Partitura' }).click();
   await expect(page.locator('[data-compas="0"]').first()).toBeVisible({ timeout: 60_000 });
+  // Pedido 29: sigue en segundo plano aunque se cambie de pestaña y se descarga solo.
+  const descarga = page.waitForEvent('download', { timeout: 200_000 });
   await page.getByRole('button', { name: 'Video de la partitura' }).click();
-  const enlace = page.getByRole('link', { name: 'Descargar el video de la partitura' });
-  await expect(enlace).toBeVisible({ timeout: 200_000 });
-  const descarga = page.waitForEvent('download');
-  await enlace.click();
+  await page.getByRole('tab', { name: 'Estudio' }).click();
+  const burbuja = page.getByRole('button', { name: /trabajos en segundo plano/ });
+  await expect(burbuja).toBeVisible();
+  await burbuja.click();
+  await expect(page.getByRole('list', { name: 'Trabajos en segundo plano' })).toContainText(
+    'Video de la partitura',
+  );
   const archivo = await descarga;
   expect(archivo.suggestedFilename()).toMatch(/^escala-partitura\.(mp4|webm)$/);
   await archivo.saveAs(
