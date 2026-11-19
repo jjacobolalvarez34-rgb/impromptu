@@ -303,6 +303,18 @@ export function SettingsPanel() {
         checked={settings.effects.beatGuides}
         onChange={(beatGuides) => setEffect({ beatGuides })}
       />
+      <Switch
+        label="Pulso en una esquina"
+        checked={!!settings.show.pulse}
+        onChange={(pulse) => setSettings({ show: { ...settings.show, pulse } })}
+      />
+      {settings.show.pulse && (
+        <Switch
+          label="Que suene el pulso"
+          checked={!!settings.show.pulseSound}
+          onChange={(pulseSound) => setSettings({ show: { ...settings.show, pulseSound } })}
+        />
+      )}
 
       {piano && (
         <>

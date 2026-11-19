@@ -90,6 +90,8 @@ export interface VisualProject {
     noteNames: boolean;
     pedals: PedalKind[];
     bigPedal?: boolean; // pedal grande, para tutoriales (ADR-017)
+    pulse?: boolean; // fase 11 (pedido 18): el pulso del tempo en una esquina
+    pulseSound?: boolean; // y que suene (un clic por pulso al reproducir)
   };
   colors: { right: string; left: string; unassigned: string };
   background?: { kind: 'color' | 'image' | 'video' | 'blur'; value: string };

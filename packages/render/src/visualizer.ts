@@ -168,6 +168,10 @@ export class Visualizer {
   private readonly sparkTints: number[] = [];
   /** Pulsos y compases de la toma (vacío si no tiene tempo). */
   private beats: Beat[] = [];
+  /** Pulso del tempo en una esquina (fase 11, pedido 18). */
+  private readonly pulso = new Graphics();
+  private pulsoIdx = 0;
+  private pulsosPorCompas = 4;
   private readonly barLabels = new Container();
   /** Números de dedo y nombres de nota sobre las notas (fase 4). */
   private readonly noteLabels = new Container();
@@ -294,6 +298,7 @@ export class Visualizer {
       this.pedal,
       this.pedalLabel,
       this.nombresParches,
+      this.pulso,
       this.insetLayer,
     );
   }
@@ -341,6 +346,8 @@ export class Visualizer {
     this.keyboard =
       this.carriles?.layout ?? layoutKeyboard(take?.keyboardRange ?? { low: 36, high: 96 });
     this.beats = take ? beatGrid(take.tempoMap, take.timeSignature, take.duration + 2) : [];
+    this.pulsosPorCompas = take?.timeSignature?.[0] ?? 4;
+    this.pulsoIdx = 0;
     this.revisarBase();
   }
 
@@ -510,6 +517,7 @@ export class Visualizer {
     this.drawVideo(scale, camera);
 
     this.drawGuides(t);
+    this.drawPulso(t, scale);
 
     // Notas que caen
     this.notePool.begin();
@@ -668,6 +676,39 @@ export class Visualizer {
   }
 
   /** Dedo o nombre al pie de la nota, si cabe; oscuro sobre notas claras y claro sobre oscuras. */
+  /**
+   * Pulso del tempo (pedido 18): un punto por pulso del compás en la esquina de arriba a la
+   * derecha; el que suena se enciende y crece un poco, el primero del compás en ámbar.
+   */
+  private drawPulso(t: number, scale: number): void {
+    const g = this.pulso.clear();
+    const beats = this.beats;
+    if (!this.settings.show.pulse || beats.length === 0 || this.direction !== 'fall') return;
+    let i = this.pulsoIdx < beats.length && beats[this.pulsoIdx]!.time <= t ? this.pulsoIdx : 0;
+    while (i + 1 < beats.length && beats[i + 1]!.time <= t) i++;
+    this.pulsoIdx = i;
+    const b = beats[i]!;
+    const empezo = b.time <= t;
+    const n = Math.max(1, Math.min(12, this.pulsosPorCompas));
+    const r = Math.max(4, 8 * scale);
+    const paso = r * 3.2;
+    const m = Math.max(12, 26 * scale);
+    const x0 = this.layout.width - m - (n - 1) * paso - r;
+    const y = m + r;
+    g.roundRect(x0 - r * 1.8, y - r * 1.8, (n - 1) * paso + r * 3.6, r * 3.6, r * 1.8).fill({
+      color: 0x000000,
+      alpha: 0.4,
+    });
+    for (let k = 0; k < n; k++) {
+      const actual = empezo && k === b.beat - 1;
+      const destello = actual ? Math.exp(-(t - b.time) / 0.16) : 0;
+      g.circle(x0 + k * paso, y, r * (1 + 0.4 * destello)).fill({
+        color: k === 0 ? 0xff9f1c : 0xe8e4dc,
+        alpha: actual ? 0.6 + 0.4 * destello : 0.2,
+      });
+    }
+  }
+
   /**
    * Número de traste legible (pedido 15): un círculo del color de la cuerda en la punta de la
    * nota, con tamaño propio (no depende de lo angosta que sea la nota).

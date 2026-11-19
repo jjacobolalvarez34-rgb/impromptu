@@ -10,9 +10,9 @@ async function abrirPrueba(page: Page, nombre: RegExp, instrumento: RegExp) {
   await page.getByRole('button', { name: nombre }).filter({ hasText: instrumento }).first().click();
   await expect(page.getByRole('button', { name: /Reproducir/ }).first()).toBeEnabled();
   // Que suene un rato: las notas quedan cerca del mástil o de los parches.
-  await page.keyboard.press('Space');
+  await page.getByRole('button', { name: 'Reproducir', exact: true }).click();
   await page.waitForTimeout(2500);
-  await page.keyboard.press('Space');
+  await page.getByRole('button', { name: 'Pausar', exact: true }).click();
   await page.waitForTimeout(300);
 }
 
@@ -24,6 +24,10 @@ test('guitarra: números de traste legibles', async ({ page }, info) => {
 
 test('batería: golpes como gemas que no se pegan', async ({ page }, info) => {
   test.skip(info.project.name === 'celular', 'Capturas de escritorio');
+  await page.goto('/estudio');
+  // El pulso del tempo en la esquina (pedido 18), con la opción de que suene.
+  await page.getByRole('switch', { name: 'Pulso en una esquina' }).click();
+  await expect(page.getByRole('switch', { name: 'Que suene el pulso' })).toBeVisible();
   await abrirPrueba(page, /rock/, /Batería/);
   await page.screenshot({ path: 'test-results/capturas/fase11-bateria.png' });
 });

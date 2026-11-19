@@ -60,7 +60,7 @@ export class Clicker {
 }
 
 /** Un clic corto: más agudo y fuerte en el primer pulso del compás. */
-function click(context: AudioContext, at: number, accent: boolean): void {
+export function click(context: BaseAudioContext, at: number, accent: boolean): void {
   const osc = context.createOscillator();
   const gain = context.createGain();
   osc.frequency.value = accent ? 1760 : 1175;

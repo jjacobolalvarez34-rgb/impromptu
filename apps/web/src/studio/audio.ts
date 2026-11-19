@@ -1,6 +1,8 @@
 import { LivePlayer, Piano, Sintes, takeVoices } from '@impromptu/audio';
 import type { LiveVoiceHandle, Voice } from '@impromptu/audio';
-import type { Hand, Take, Instrument } from '@impromptu/core';
+import type { Beat, Hand, Take, Instrument } from '@impromptu/core';
+import { beatGrid } from '@impromptu/core';
+import { click } from './metronome';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { audioOffset, useOwnAudio } from './ownAudio';
@@ -57,6 +59,9 @@ class AudioEngine {
   sintes: Sintes | null = null;
   private voices: Voice[] = [];
   private cursor = 0;
+  /** Pulsos de la toma, para que suene el pulso (fase 11, pedido 18). */
+  private pulsos: Beat[] = [];
+  private cursorPulso = 0;
   private timer = 0;
   private latency = 0;
   private livePlayer: LivePlayer<LiveVoiceHandle> | null = null;
@@ -176,6 +181,10 @@ class AudioEngine {
 
   setTake(take: Take | null): void {
     this.take = take;
+    this.pulsos =
+      take && take.tempoMap.length > 0
+        ? beatGrid(take.tempoMap, take.timeSignature, take.duration + 1)
+        : [];
     const voices = take ? takeVoices(take) : [];
     // Sin mano asignada cuenta como derecha (igual que en el modo espera).
     this.voices =
@@ -197,6 +206,7 @@ class AudioEngine {
     window.clearInterval(this.timer);
     const t = transport.now();
     this.cursor = lowerBound(this.voices, t);
+    this.cursorPulso = this.primerPulso(t);
     if (!transport.playing || !useAudio.getState().enabled) return;
     if (this.usingOwnAudio) {
       this.startOwn(t);
@@ -206,6 +216,25 @@ class AudioEngine {
       this.tick();
     }
     this.timer = window.setInterval(() => this.tick(), TICK_MS);
+  }
+
+  private primerPulso(t: number): number {
+    let i = 0;
+    while (i < this.pulsos.length && this.pulsos[i]!.time < t - 0.02) i++;
+    return i;
+  }
+
+  /** Un clic por pulso (más fuerte al empezar el compás) si está pedido en los ajustes. */
+  private sonarPulsos(t: number, horizon: number, loopEnd: number): void {
+    const context = this.context;
+    const pedido = useStudio.getState().settings.show.pulseSound;
+    while (this.cursorPulso < this.pulsos.length) {
+      const b = this.pulsos[this.cursorPulso]!;
+      if (b.time > horizon || b.time >= loopEnd) break;
+      this.cursorPulso++;
+      if (!pedido || !context || b.time < t - 0.02) continue;
+      click(context, transport.toClock(b.time) + this.latency, b.beat === 1);
+    }
   }
 
   /** Hace sonar el audio propio desde el instante t de la toma, con su desfase. */
@@ -300,10 +329,12 @@ class AudioEngine {
       this.piano?.stopAll();
       this.sintes?.stopAll();
       this.cursor = lowerBound(this.voices, t);
+      this.cursorPulso = this.primerPulso(t);
       this.chase(t);
     }
     const horizon = t + HORIZON * transport.speed;
     const loopEnd = transport.loop?.end ?? Infinity;
+    this.sonarPulsos(t, horizon, loopEnd);
     while (this.cursor < this.voices.length) {
       const v = this.voices[this.cursor]!;
       if (v.start > horizon || v.start >= loopEnd) break;
