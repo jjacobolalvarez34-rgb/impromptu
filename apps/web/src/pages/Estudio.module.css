@@ -345,3 +345,42 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Pedido 47: tocar en vivo dentro del estudio, con el acceso a la pantalla para transmitir. */
+.barraEnVivo {
+  position: absolute;
+  top: var(--e-3);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-2) var(--e-3);
+  border: 1px solid #3d3d39;
+  border-radius: var(--radio);
+  background: rgb(28 28 26 / 0.92);
+  color: var(--tinta);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.puntoEnVivo {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--grabacion, #e5484d);
+  animation: late 1.2s ease-in-out infinite;
+}
+
+@keyframes late {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .puntoEnVivo {
+    animation: none;
+  }
+}

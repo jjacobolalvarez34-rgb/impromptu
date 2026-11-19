@@ -13,6 +13,7 @@ import {
   Undo2,
   Volume2,
   VolumeX,
+  MonitorPlay,
 } from 'lucide-react';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, DragEvent } from 'react';
@@ -44,7 +45,7 @@ import {
   instrumentoPorNombre,
 } from '../studio/Instrumento';
 import { saveMidi } from '../studio/saveMidi';
-import { isDesktop, onMenuAction, requestConvertAudio } from '../desktop';
+import { abrirPantalla, isDesktop, onMenuAction, requestConvertAudio } from '../desktop';
 import { Welcome } from '../studio/Welcome';
 import { practice } from '../studio/practice';
 import { TutorialPanel } from '../studio/TutorialPanel';
@@ -321,9 +322,15 @@ export function Estudio() {
           label="Secciones"
           idPrefix="app"
           tabs={tabsPara(instrumentoHoja)}
-          value={tab}
+          // Pedido 47: "En vivo" es el estudio en modo en vivo (no otra pantalla).
+          value={tab === 'estudio' && view === 'live' ? 'en-vivo' : tab}
           onChange={(id) => {
-            if (id === 'en-vivo') void navigate('/en-vivo');
+            if (id === 'en-vivo') {
+              setTab('estudio');
+              setView('live');
+              return;
+            }
+            if (id === 'estudio' && view === 'live') setView('take');
             if (id === 'estudio' || id === 'tutorial' || id === 'partitura') setTab(id);
           }}
         />
@@ -541,6 +548,15 @@ export function Estudio() {
             />
             <EditBar />
             <AnuncioInstrumento />
+            {view === 'live' && (
+              <div className={styles.barraEnVivo} role="status">
+                <span className={styles.puntoEnVivo} aria-hidden="true" />
+                <span>En vivo · toca tu instrumento</span>
+                <Button icon={<MonitorPlay />} onClick={() => abrirPantalla('/en-vivo', navigate)}>
+                  Pantalla para transmitir
+                </Button>
+              </div>
+            )}
             {!take && view !== 'live' && (
               <div className={styles.vacio}>
                 <p>Abre un MIDI o arrástralo aquí para verlo caer.</p>

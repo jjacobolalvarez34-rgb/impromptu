@@ -92,3 +92,26 @@ test('se bajan los sonidos grabados del instrumento elegido (pedido 25)', async 
   expect(Object.keys(picos)).toHaveLength(5);
   for (const pico of Object.values(picos)) expect(pico).toBeGreaterThan(0.05);
 });
+
+test('En vivo dentro del estudio y la pantalla para transmitir (pedido 47)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'celular', 'El estudio de escritorio');
+  test.setTimeout(120_000);
+  await page.goto('/estudio');
+  await page.getByRole('tab', { name: 'En vivo' }).click();
+  // Sigue en el estudio, con sus columnas, y la pestaña En vivo marcada.
+  await expect(page).toHaveURL(/\/estudio/);
+  await expect(page.getByRole('tab', { name: 'En vivo' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('complementary', { name: 'Ajustes del visualizador' })).toBeVisible();
+  const barra = page.getByRole('status').filter({ hasText: 'En vivo · toca tu instrumento' });
+  await expect(barra).toBeVisible();
+  const [pantalla] = await Promise.all([
+    page.waitForEvent('popup'),
+    barra.getByRole('button', { name: 'Pantalla para transmitir' }).click(),
+  ]);
+  await expect(pantalla).toHaveURL(/\/en-vivo/);
+  // Volver a la pestaña Estudio sale del modo en vivo.
+  await page.getByRole('tab', { name: 'Estudio' }).click();
+  await expect(barra).toHaveCount(0);
+});
