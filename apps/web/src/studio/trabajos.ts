@@ -6,7 +6,7 @@ import { create } from 'zustand';
  */
 export interface Trabajo {
   id: number;
-  tipo: 'video-partitura';
+  tipo: 'video-partitura' | 'video';
   nombre: string;
   /** 0 a 1. */
   avance: number;

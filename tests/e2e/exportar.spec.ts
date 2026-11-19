@@ -42,3 +42,31 @@ test('la pantalla principal anuncia la cuenta y la nube', async ({ page }) => {
   await page.goto('/app');
   await expect(page.getByRole('heading', { name: 'Próximamente: cuenta y nube' })).toBeVisible();
 });
+
+test('el video sigue en segundo plano al cerrar la ventana y se descarga solo', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'celular', 'Exportar está en el estudio de escritorio');
+  test.setTimeout(300_000);
+  await page.goto('/estudio');
+  await page
+    .getByRole('button', { name: /melodía/ })
+    .filter({ hasText: /Guitarra/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: 'Exportar video' }).first().click();
+  const dialogo = page.getByRole('dialog', { name: 'Exportar video' });
+  await dialogo.getByRole('radio', { name: '30 fps' }).click();
+  const descarga = page.waitForEvent('download', { timeout: 280_000 });
+  await dialogo.getByRole('button', { name: 'Exportar', exact: true }).click();
+  await dialogo.getByRole('button', { name: 'Seguir en segundo plano' }).click();
+  await expect(dialogo).toBeHidden();
+  const burbuja = page.getByRole('button', { name: /trabajos en segundo plano/ });
+  await expect(burbuja).toBeVisible();
+  await burbuja.click();
+  await expect(page.getByRole('list', { name: 'Trabajos en segundo plano' })).toContainText(
+    'Video: ',
+  );
+  const archivo = await descarga;
+  expect(archivo.suggestedFilename()).toMatch(/\.(mp4|webm)$/);
+});

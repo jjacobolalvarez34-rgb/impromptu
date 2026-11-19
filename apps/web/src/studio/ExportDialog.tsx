@@ -8,6 +8,13 @@ import { audioOffset, useOwnAudio } from './ownAudio';
 import { useVideo, videoOffset } from './video';
 import { ExportPreview } from './ExportPreview';
 import { useStudio } from './store';
+import {
+  actualizarTrabajo,
+  descargar,
+  nuevoTrabajo,
+  quitarTrabajo,
+  terminarTrabajo,
+} from './trabajos';
 import type { Aspect } from './store';
 import styles from './ExportDialog.module.css';
 
@@ -52,6 +59,8 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
   const [tutorial, setTutorial] = useState(false);
   const [state, setState] = useState<State>({ step: 'form' });
   const abort = useRef<AbortController | null>(null);
+  /** El video sigue en segundo plano aunque se cierre la ventana (pedido de Jacobo). */
+  const trabajo = useRef<number | null>(null);
 
   useEffect(() => {
     const dialog = ref.current;
@@ -68,8 +77,8 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
   }, [state]);
 
   const close = () => {
-    if (state.step === 'working') cancel();
-    else setState({ step: 'form' });
+    // Si se está armando, sigue por detrás: la burbuja muestra el avance y se descarga solo.
+    if (state.step !== 'working') setState({ step: 'form' });
     onClose();
   };
 
@@ -77,6 +86,8 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
   const cancel = () => {
     abort.current?.abort();
     abort.current = null;
+    if (trabajo.current !== null) quitarTrabajo(trabajo.current);
+    trabajo.current = null;
     useStudio.setState({ exporting: false });
     setState({ step: 'form' });
   };
@@ -86,6 +97,12 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
     const controller = new AbortController();
     abort.current = controller;
     setState({ step: 'working', phase: 'Descargando el piano', value: 0 });
+    const id = nuevoTrabajo('video', `Video: ${take.title}`, () => {
+      controller.abort();
+      useStudio.setState({ exporting: false });
+      setState({ step: 'form' });
+    });
+    trabajo.current = id;
     // Si el piano aún se está descargando, se espera (con su avance en la barra).
     const usingOwn = useOwnAudio.getState().audio?.use === true;
     const piano = withPiano && !usingOwn ? await engine.preload() : null;
@@ -125,19 +142,35 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
         piano,
         sintes: engine.sintes,
         signal: controller.signal,
-        onProgress: ({ phase, value }) =>
-          setState({ step: 'working', phase: PHASES[phase] ?? '', value }),
+        onProgress: ({ phase, value }) => {
+          setState({ step: 'working', phase: PHASES[phase] ?? '', value });
+          actualizarTrabajo(id, {
+            avance:
+              phase === 'audio'
+                ? value * 0.1
+                : phase === 'video'
+                  ? 0.1 + value * 0.85
+                  : 0.95 + value * 0.05,
+          });
+        },
       });
+      const nombre = fileName(take.title, result.extension);
+      // Se descarga solo (pedido de Jacobo); el enlace queda por si hace falta otra vez.
+      descargar(result.blob, nombre);
+      terminarTrabajo(id, { estado: 'listo', avance: 1 });
       setState({
         step: 'done',
         url: URL.createObjectURL(result.blob),
-        name: fileName(take.title, result.extension),
+        name: nombre,
         size: `${(result.blob.size / 1_048_576).toFixed(1)} MB`,
       });
     } catch (e) {
-      if (controller.signal.aborted)
+      if (controller.signal.aborted) {
+        quitarTrabajo(id);
         return; // ya se volvió al formulario al cancelar
-      else if (e instanceof ExportFailure && e.reason === 'unsupported')
+      }
+      terminarTrabajo(id, { estado: 'error', mensaje: 'No se pudo terminar el video' });
+      if (e instanceof ExportFailure && e.reason === 'unsupported')
         setState({
           step: 'error',
           message:
@@ -246,7 +279,14 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
           <Lcd size="md">{Math.round(state.value * 100)} %</Lcd>
           <div className={styles.acciones}>
             <Button onClick={cancel}>Cancelar</Button>
+            <Button variant="primary" onClick={close}>
+              Seguir en segundo plano
+            </Button>
           </div>
+          <p className="ui-secundario">
+            Puedes cerrar esta ventana y seguir usando la app: el video se descarga solo al
+            terminar.
+          </p>
         </div>
       )}
 
