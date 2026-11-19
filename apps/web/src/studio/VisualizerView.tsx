@@ -73,25 +73,65 @@ export function VisualizerView({
   const selection = useStudio((s) => s.selection);
   useEffect(() => viz?.setSelection(new Set(selection)), [viz, selection]);
 
-  // Editor (fase 4): con la pieza pausada, un clic en una nota la selecciona; Shift suma.
+  // Editor (fase 4): con la pieza pausada, un clic en una nota la selecciona; Shift o Ctrl suman
+  // o quitan. Arrastrar desde un espacio vacío selecciona todas las notas de la zona (pedido de
+  // Jacobo): así se transponen o se cambian de mano muchas a la vez.
+  const cajaRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!viz) return;
     const canvas = viz.canvas;
+    let desde: { x: number; y: number; suma: boolean; previa: string[] } | null = null;
+    const punto = (e: PointerEvent) => {
+      const r = canvas.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    };
     const onDown = (e: PointerEvent) => {
       const { view } = useStudio.getState();
       if (view !== 'take' || transport.playing) return;
-      const r = canvas.getBoundingClientRect();
-      const id = viz.noteAt(e.clientX - r.left, e.clientY - r.top);
+      const p = punto(e);
+      const id = viz.noteAt(p.x, p.y);
       const { selection: current, select } = useStudio.getState();
-      if (!id) return select(e.shiftKey ? current : []);
-      if (e.shiftKey) {
-        select(current.includes(id) ? current.filter((x) => x !== id) : [...current, id]);
-      } else {
-        select([id]);
+      const suma = e.shiftKey || e.ctrlKey || e.metaKey;
+      if (id) {
+        if (suma) select(current.includes(id) ? current.filter((x) => x !== id) : [...current, id]);
+        else select([id]);
+        return;
       }
+      // Espacio vacío: empieza la zona.
+      desde = { ...p, suma, previa: suma ? current : [] };
+      canvas.setPointerCapture(e.pointerId);
+      if (!suma) select([]);
+    };
+    const onMove = (e: PointerEvent) => {
+      const caja = cajaRef.current;
+      if (!desde || !caja) return;
+      const p = punto(e);
+      const r = canvas.getBoundingClientRect();
+      const host = caja.parentElement!.getBoundingClientRect();
+      Object.assign(caja.style, {
+        display: 'block',
+        left: `${Math.min(desde.x, p.x) + r.left - host.left}px`,
+        top: `${Math.min(desde.y, p.y) + r.top - host.top}px`,
+        width: `${Math.abs(p.x - desde.x)}px`,
+        height: `${Math.abs(p.y - desde.y)}px`,
+      });
+      const ids = viz.notesIn(desde.x, desde.y, p.x, p.y);
+      useStudio.getState().select([...new Set([...desde.previa, ...ids])]);
+    };
+    const onUp = () => {
+      desde = null;
+      if (cajaRef.current) cajaRef.current.style.display = 'none';
     };
     canvas.addEventListener('pointerdown', onDown);
-    return () => canvas.removeEventListener('pointerdown', onDown);
+    canvas.addEventListener('pointermove', onMove);
+    canvas.addEventListener('pointerup', onUp);
+    canvas.addEventListener('pointercancel', onUp);
+    return () => {
+      canvas.removeEventListener('pointerdown', onDown);
+      canvas.removeEventListener('pointermove', onMove);
+      canvas.removeEventListener('pointerup', onUp);
+      canvas.removeEventListener('pointercancel', onUp);
+    };
   }, [viz]);
   useEffect(() => viz?.setSettings(settings), [viz, settings]);
   useEffect(() => viz?.setBackground(background), [viz, background]);
@@ -175,6 +215,7 @@ export function VisualizerView({
   return (
     <div ref={stageRef} className={styles.stage} data-fill={fill}>
       <div ref={hostRef} className={styles.host} />
+      <div ref={cajaRef} className={styles.zona} aria-hidden="true" />
       {failed && (
         <p className={styles.error}>
           Tu navegador no pudo iniciar el visualizador (WebGL). Prueba con Chrome o Edge

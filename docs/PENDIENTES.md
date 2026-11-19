@@ -63,6 +63,9 @@ Con eso Claude sube las muestras y el modelo, y las apps los descargan la primer
   20. **Nombre de la pestaña según el instrumento**: "Partitura" en piano, "Tablatura" en guitarra y bajo, "Partitura de batería" en batería.
   21. **Elegir el instrumento con un panel arriba** (como un tablero) que cambie todo el estudio a ese instrumento, en vez de los botones del panel izquierdo.
   - MIDIs de prueba de cada instrumento en el estudio, sección **Pruebas** (`fixtures/demos`, generados con `node scripts/demos-midi.mjs`).
+  22. **Seleccionar varias notas** en el visualizador (arrastrar una zona, o Ctrl + clic) y transponerlas o cambiarlas de mano juntas. **Hecho el 2026-11-18** (sin verificar por Jacobo).
+  23. **Actualizar la página de presentación** (landing): más videos de fondo, de guitarra, batería y editando; y los enlaces de descarga directa a los releases de GitHub. **Al final de todo.**
+  24. **Fondo animado que haga sentir viva la app** (celular y PC): propuesta de Claude, para que Jacobo la apruebe: una rejilla de "pads" (como los de un controlador de DJ o un MPC) en gris muy oscuro detrás de las pantallas de inicio y de las listas; de vez en cuando unos pocos pads se encienden y se apagan suave (gris claro y, a veces, ámbar), siguiendo un pulso lento, como si alguien tocara. Muy poco contraste para no distraer, nunca detrás del visualizador ni de la partitura, y quieto si el sistema pide reducir el movimiento.
 - **Orden pedido por Jacobo:** (a) llevar a la web y a la PC la presentación y mejorar la pantalla principal de la PC (que se parezca a la de la web, que sí le gusta); (b) guitarra, misma idea del piano; (c) batería; (d) fase 10; (e) integrar todo en web, PC y celular; (f) compilar al final.
 
 ## Lo que queda (resumen al 2026-11-17)

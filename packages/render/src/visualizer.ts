@@ -446,6 +446,17 @@ export class Visualizer {
     return null;
   }
 
+  /** Notas visibles que tocan un rectángulo (seleccionar una zona arrastrando). */
+  notesIn(x0: number, y0: number, x1: number, y1: number): string[] {
+    const [ax, bx] = x0 < x1 ? [x0, x1] : [x1, x0];
+    const [ay, by] = y0 < y1 ? [y0, y1] : [y1, y0];
+    const ids = new Set<string>();
+    for (const r of this.hitRects) {
+      if (r.x + r.width >= ax && r.x <= bx && r.y + r.height >= ay && r.y <= by) ids.add(r.id);
+    }
+    return [...ids];
+  }
+
   setVideoFrame(frame: CanvasImageSource | null, width = 0, height = 0): void {
     this.videoFrame = frame;
     if (frame) this.videoSize = { width, height };

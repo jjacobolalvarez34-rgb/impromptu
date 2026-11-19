@@ -43,3 +43,14 @@
   border: 0;
   border-radius: 0;
 }
+
+/* Zona que se arrastra para seleccionar varias notas. */
+.zona {
+  position: absolute;
+  z-index: 3;
+  display: none;
+  border: 1px solid var(--ambar);
+  border-radius: 2px;
+  background: rgb(255 159 28 / 0.12);
+  pointer-events: none;
+}

@@ -1,6 +1,18 @@
 import type { Finger, Hand } from '@impromptu/core';
+import { instrumentoDe } from '@impromptu/render';
 import { IconButton } from '@impromptu/ui';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Minus, Plus, Trash2, X } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  ChevronsDown,
+  ChevronsUp,
+  Minus,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useEffect } from 'react';
 import { removeNotes, resizeNotes, setFinger, setHand, shiftNotes, transposeNotes } from './edit';
 import { transport, useStudio } from './store';
@@ -59,8 +71,8 @@ export function useEditShortcuts(): void {
       else if (k.toLowerCase() === 'd') editActions.hand('R');
       else if (k === 'ArrowLeft') editActions.move(-STEP);
       else if (k === 'ArrowRight') editActions.move(STEP);
-      else if (k === 'ArrowUp') editActions.transpose(1);
-      else if (k === 'ArrowDown') editActions.transpose(-1);
+      else if (k === 'ArrowUp') editActions.transpose(e.shiftKey ? 12 : 1);
+      else if (k === 'ArrowDown') editActions.transpose(e.shiftKey ? -12 : -1);
       else if (k === 'Delete' || k === 'Backspace') editActions.remove();
       else if (k === 'Escape') select([]);
       else handled = false;
@@ -78,51 +90,57 @@ export function EditBar() {
   if (selection.length === 0 || !take) return null;
   const selected = take.tracks.flatMap((t) => t.notes).filter((n) => selection.includes(n.id));
   const hand = selected.every((n) => n.hand === selected[0]?.hand) ? selected[0]?.hand : null;
+  // Mano y dedo son del piano: en guitarra, bajo y batería no se muestran.
+  const piano = instrumentoDe(take) === 'piano';
   const finger = selected.every((n) => n.finger === selected[0]?.finger)
     ? selected[0]?.finger
     : null;
 
   return (
     <div className={styles.barra} role="toolbar" aria-label="Editar notas seleccionadas">
-      <span className={styles.cuenta}>
+      <span className={styles.cuenta} role="status">
         {selected.length} {selected.length === 1 ? 'nota' : 'notas'}
       </span>
-      <div className={styles.grupo} role="group" aria-label="Mano">
-        {(['L', 'R'] as const).map((h) => (
-          <button
-            key={h}
-            type="button"
-            className={styles.chip}
-            aria-pressed={hand === h}
-            title={h === 'L' ? 'Mano izquierda (I)' : 'Mano derecha (D)'}
-            onClick={() => editActions.hand(h)}
-          >
-            {h === 'L' ? 'MI' : 'MD'}
-          </button>
-        ))}
-      </div>
-      <div className={styles.grupo} role="group" aria-label="Dedo">
-        {([1, 2, 3, 4, 5] as const).map((f) => (
-          <button
-            key={f}
-            type="button"
-            className={styles.chip}
-            aria-pressed={finger === f}
-            title={`Dedo ${f} (${f})`}
-            onClick={() => editActions.finger(f)}
-          >
-            {f}
-          </button>
-        ))}
-        <button
-          type="button"
-          className={styles.chip}
-          title="Dedo automático (0)"
-          onClick={() => editActions.finger(null)}
-        >
-          Auto
-        </button>
-      </div>
+      {piano && (
+        <>
+          <div className={styles.grupo} role="group" aria-label="Mano">
+            {(['L', 'R'] as const).map((h) => (
+              <button
+                key={h}
+                type="button"
+                className={styles.chip}
+                aria-pressed={hand === h}
+                title={h === 'L' ? 'Mano izquierda (I)' : 'Mano derecha (D)'}
+                onClick={() => editActions.hand(h)}
+              >
+                {h === 'L' ? 'MI' : 'MD'}
+              </button>
+            ))}
+          </div>
+          <div className={styles.grupo} role="group" aria-label="Dedo">
+            {([1, 2, 3, 4, 5] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={styles.chip}
+                aria-pressed={finger === f}
+                title={`Dedo ${f} (${f})`}
+                onClick={() => editActions.finger(f)}
+              >
+                {f}
+              </button>
+            ))}
+            <button
+              type="button"
+              className={styles.chip}
+              title="Dedo automático (0)"
+              onClick={() => editActions.finger(null)}
+            >
+              Auto
+            </button>
+          </div>
+        </>
+      )}
       <div className={styles.grupo}>
         <IconButton
           label="Mover antes (←)"
@@ -145,6 +163,16 @@ export function EditBar() {
           label="Bajar un semitono (↓)"
           icon={<ArrowDown />}
           onClick={() => editActions.transpose(-1)}
+        />
+        <IconButton
+          label="Subir una octava (Shift ↑)"
+          icon={<ChevronsUp />}
+          onClick={() => editActions.transpose(12)}
+        />
+        <IconButton
+          label="Bajar una octava (Shift ↓)"
+          icon={<ChevronsDown />}
+          onClick={() => editActions.transpose(-12)}
         />
         <IconButton label="Borrar (Supr)" icon={<Trash2 />} onClick={editActions.remove} />
         <IconButton
