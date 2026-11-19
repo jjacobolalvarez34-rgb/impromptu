@@ -76,6 +76,8 @@ export const DEFAULT_SETTINGS: VisualSettings = {
 };
 
 const MAX_SPARKS = 4000;
+/** Franja derecha para el panel de rasgueo (pedido 31). */
+const PANEL_RASGUEO = 0.09;
 /** Borde (px) de la textura del halo que no se estira. */
 const HALO_EDGE = 24;
 const NOTE_RADIUS = 3;
@@ -183,8 +185,14 @@ export class Visualizer {
   /** Rasgueos de la guitarra (fase 11): una flecha junto a cada acorde. */
   private rasgueos: Rasgueo[] = [];
   private readonly rasgueoDe = new Map<string, number>();
-  private readonly cajasRasgueo = new Map<number, { x: number; y: number; fondo: number }>();
   private readonly flechas = new Graphics();
+  /** Panel de rasgueo a la derecha (pedido 31): el mástil se angosta para dejarle lugar. */
+  private anchoMastil = 1;
+  private tomaActual: Take | null = null;
+  private readonly textoRasgueo = new Text({
+    text: '',
+    style: { fontFamily: 'Archivo, sans-serif', fontSize: 14, fill: 0xe8e4dc, align: 'center' },
+  });
   private readonly insigniaPool: Pool<Sprite>;
   /** Golpe de batería que se está dibujando (la gema no depende de la duración). */
   private readonly golpe = { pitch: 0, start: 0, end: 0 } as NoteEvent;
@@ -299,6 +307,7 @@ export class Visualizer {
       this.insignias,
       this.noteLabels,
       this.flechas,
+      this.textoRasgueo,
       this.selectionOutline,
       this.keys,
       this.glowLayer,
@@ -337,6 +346,7 @@ export class Visualizer {
   }
 
   setTake(take: Take | null): void {
+    this.tomaActual = take;
     this.direction = 'fall';
     this.carriles = take ? carriles(take.tracks, instrumentoDe(take)) : null;
     this.index = this.carriles
@@ -362,6 +372,15 @@ export class Visualizer {
     this.rasgueos.forEach((r, i) => {
       for (const id of r.ids) this.rasgueoDe.set(id, i);
     });
+    // Con rasgueos, el mástil deja la franja derecha para el panel de flechas.
+    this.anchoMastil =
+      this.rasgueos.length > 0 && this.settings.show.strums !== false ? 1 - PANEL_RASGUEO : 1;
+    if (this.anchoMastil < 1 && this.carriles) {
+      for (const k of this.carriles.layout.keys) {
+        k.x *= this.anchoMastil;
+        k.width *= this.anchoMastil;
+      }
+    }
     this.revisarBase();
   }
 
@@ -399,7 +418,9 @@ export class Visualizer {
   }
 
   setSettings(settings: VisualSettings): void {
+    const cambianFlechas = this.settings.show.strums !== settings.show.strums;
     this.settings = settings;
+    if (cambianFlechas && this.carriles?.instrument === 'guitar') this.setTake(this.tomaActual);
     this.theme = getTheme(settings.themeId);
     this.applyBackground();
     this.layout = frameLayout(
@@ -541,8 +562,6 @@ export class Visualizer {
     const { fingers: showFingers, noteNames: showNames } = this.settings.show;
     const esBateria = this.carriles?.instrument === 'drums';
     const esCuerda = !!this.carriles && !esBateria;
-    const conFlechas = esCuerda && this.settings.show.strums !== false && this.rasgueos.length > 0;
-    this.cajasRasgueo.clear();
     // Gemas de batería (pedido 16): alto fijo, así los golpes seguidos no se pegan (pedido 15).
     const altoGema = Math.max(10, 20 * scale);
     this.hitRects.length = 0;
@@ -604,22 +623,6 @@ export class Visualizer {
         sprite.height = rect.height;
         sprite.tint = tint;
         sprite.alpha = abierto ? 0.12 : esBateria ? 0.55 + 0.45 * v : 0.72 + 0.28 * v;
-        if (conFlechas) {
-          // Caja del acorde: la flecha va a su izquierda, a la altura de su punta.
-          const r = this.rasgueoDe.get(note.id);
-          if (r !== undefined) {
-            const caja = this.cajasRasgueo.get(r);
-            const fondo = rect.y + rect.height;
-            if (!caja) this.cajasRasgueo.set(r, { x: rect.x, y: rect.y, fondo });
-            else {
-              caja.x = Math.min(caja.x, rect.x);
-              caja.fondo =
-                this.direction === 'fall'
-                  ? Math.max(caja.fondo, fondo)
-                  : Math.min(caja.fondo, fondo);
-            }
-          }
-        }
         if (esCuerda) {
           const traste = this.carriles?.meta.get(note.id)?.etiqueta;
           if (traste) this.insignia(traste, rect, tint, scale);
@@ -640,7 +643,7 @@ export class Visualizer {
     this.haloPool.end();
     this.noteLabelPool.end();
     this.insigniaPool.end();
-    this.drawFlechas(scale);
+    this.drawFlechas(t, scale);
 
     if (camera) this.keys.clear();
     else this.drawKeyboard(colors);
@@ -737,38 +740,80 @@ export class Visualizer {
 
   /** Dedo o nombre al pie de la nota, si cabe; oscuro sobre notas claras y claro sobre oscuras. */
   /**
-   * Cómo rasguear (fase 11): una flecha a la izquierda de cada acorde; hacia abajo en ámbar
-   * (de la 6.ª a la 1.ª cuerda) y hacia arriba en verde. Su ritmo es el de las flechas.
+   * Cómo rasguear (pedido 31, estilo Friday Night Funkin'): un panel a la derecha donde las
+   * flechas bajan hasta un cuadro en la línea de golpe; abajo en ámbar, arriba en verde. El cuadro
+   * se enciende con cada rasgueo y dice qué toca: "Abajo", "Arriba" o "Silencio".
    */
-  private drawFlechas(scale: number): void {
+  private drawFlechas(t: number, scale: number): void {
     const g = this.flechas.clear();
-    if (this.cajasRasgueo.size === 0) return;
-    const largo = Math.max(30, 70 * scale);
-    const ancho = Math.max(4, 7 * scale);
-    const punta = Math.max(11, 18 * scale);
-    for (const [i, caja] of this.cajasRasgueo) {
-      const r = this.rasgueos[i];
-      if (!r) continue;
-      const cx = Math.max(punta, caja.x - punta - 4 * scale);
-      const fin = caja.fondo;
-      const inicio = fin - largo;
-      const color = r.dir === 'abajo' ? 0xff9f1c : 0x7fd1b9;
-      if (r.dir === 'abajo') {
-        g.rect(cx - ancho / 2, inicio, ancho, largo - punta).fill(color);
-        g.poly([cx - punta / 2 - 2, fin - punta, cx + punta / 2 + 2, fin - punta, cx, fin]).fill(
-          color,
-        );
-      } else {
-        g.rect(cx - ancho / 2, inicio + punta, ancho, largo - punta).fill(color);
-        g.poly([
-          cx - punta / 2 - 2,
-          inicio + punta,
-          cx + punta / 2 + 2,
-          inicio + punta,
-          cx,
-          inicio,
-        ]).fill(color);
+    const texto = this.textoRasgueo;
+    texto.visible = false;
+    if (this.anchoMastil >= 1 || this.rasgueos.length === 0 || this.direction !== 'fall') return;
+    const L = this.layout;
+    const x0 = L.width * this.anchoMastil;
+    const w = L.width - x0;
+    const cx = x0 + w / 2;
+    const linea = L.keyLineY;
+    g.rect(x0, 0, w, L.height).fill({ color: 0x141413, alpha: 0.94 });
+    g.rect(x0, 0, Math.max(1, 2 * scale), L.height).fill(0x3d3d39);
+    const lado = Math.min(w * 0.6, 64 * Math.max(scale, 0.5));
+    const color = (r: Rasgueo) => (r.dir === 'abajo' ? 0xff9f1c : 0x7fd1b9);
+    // Cuadro de la meta, en la línea de golpe.
+    const caja = lado * 1.3;
+    let activo: Rasgueo | null = null;
+    let siguiente: Rasgueo | null = null;
+    for (const r of this.rasgueos) {
+      if (r.time <= t && t - r.time < 0.22) activo = r;
+      if (r.time > t) {
+        siguiente = r;
+        break;
       }
+    }
+    const destello = activo ? Math.exp(-(t - activo.time) / 0.12) : 0;
+    g.roundRect(cx - caja / 2, linea - caja / 2, caja, caja, 6 * scale)
+      .fill({ color: activo ? color(activo) : 0x232321, alpha: activo ? 0.25 + 0.5 * destello : 1 })
+      .stroke({ width: Math.max(2, 3 * scale), color: activo ? color(activo) : 0x5a5a55 });
+    // Silueta de las dos flechas en la meta, como guía.
+    this.flecha(g, cx, linea, lado * 0.7, 'abajo', 0x5a5a55, 0.35);
+    // Flechas que bajan con la música.
+    const span = linea / L.pps;
+    for (const r of this.rasgueos) {
+      if (r.time < t) continue;
+      if (r.time > t + span) break;
+      const y = linea - (r.time - t) * L.pps;
+      this.flecha(g, cx, y, lado, r.dir, color(r), 1);
+    }
+    if (activo)
+      this.flecha(g, cx, linea, lado * (1 + 0.25 * destello), activo.dir, color(activo), 1);
+    // Qué toca ahora: lo que suena, lo que viene pronto o silencio.
+    const ahora = activo ?? (siguiente && siguiente.time - t < 0.6 ? siguiente : null);
+    texto.text = ahora ? (ahora.dir === 'abajo' ? 'Abajo' : 'Arriba') : 'Silencio';
+    texto.style.fontSize = Math.max(12, 19 * scale);
+    texto.style.fill = ahora ? color(ahora) : 0x9a968c;
+    texto.anchor.set(0.5, 0);
+    texto.position.set(cx, linea + caja / 2 + 6 * scale);
+    texto.visible = true;
+  }
+
+  /** Una flecha centrada en (cx, cy) que apunta abajo o arriba. */
+  private flecha(
+    g: Graphics,
+    cx: number,
+    cy: number,
+    lado: number,
+    dir: Rasgueo['dir'],
+    color: number,
+    alpha: number,
+  ): void {
+    const h = lado / 2;
+    const ancho = lado * 0.22;
+    const punta = lado * 0.5;
+    if (dir === 'abajo') {
+      g.rect(cx - ancho / 2, cy - h, ancho, lado - punta).fill({ color, alpha });
+      g.poly([cx - h, cy + h - punta, cx + h, cy + h - punta, cx, cy + h]).fill({ color, alpha });
+    } else {
+      g.rect(cx - ancho / 2, cy - h + punta, ancho, lado - punta).fill({ color, alpha });
+      g.poly([cx - h, cy - h + punta, cx + h, cy - h + punta, cx, cy - h]).fill({ color, alpha });
     }
   }
 
@@ -1071,8 +1116,8 @@ export class Visualizer {
         nombre.position.set((i + 0.5) * w, top + h * 0.5);
       }
     } else {
-      const col = L.width / c.trastes;
-      g.rect(0, top, L.width, h).fill(0x2b2017);
+      const col = (L.width * this.anchoMastil) / c.trastes;
+      g.rect(0, top, L.width * this.anchoMastil, h).fill(0x2b2017);
       // Marcas del mástil (3, 5, 7, 9, 12 doble, 15…).
       for (const f of [3, 5, 7, 9, 12, 15, 17, 19, 21]) {
         if (f >= c.trastes) continue;
@@ -1098,7 +1143,7 @@ export class Visualizer {
         const grosor = Math.max(1, (0.6 + s * 0.35) * (h / 160));
         // Cada cuerda se tiende de izquierda a derecha, una tras otra.
         const a = this.aparecer(s, c.cuerdas + 2);
-        g.rect(0, fila(s) - grosor / 2, L.width * a, grosor).fill(0xd8d4cc);
+        g.rect(0, fila(s) - grosor / 2, L.width * this.anchoMastil * a, grosor).fill(0xd8d4cc);
       }
       // Donde se pisa ahora: un punto del color de la cuerda.
       for (const pitch of this.active.keys()) {
