@@ -26,6 +26,7 @@
         android:theme="@style/Theme.Impromptu">
         <activity
             android:name=".MainActivity"
+            android:theme="@style/Theme.Impromptu.Splash"
             android:exported="true"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|uiMode"
             android:windowSoftInputMode="adjustResize">

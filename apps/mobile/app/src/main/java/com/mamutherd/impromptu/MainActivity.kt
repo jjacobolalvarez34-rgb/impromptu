@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -93,6 +94,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var nav: Navegador
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Splash screen del sistema mientras arranca (pedido 44).
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(C3.Carbon.toArgb()),

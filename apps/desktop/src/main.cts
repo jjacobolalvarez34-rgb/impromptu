@@ -148,8 +148,51 @@ function menu(win: BrowserWindow): void {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
+/**
+ * Splash screen (pedido 44 de Jacobo, como en osu! o Kdenlive): una ventanita con el logo apenas
+ * se abre la app, mientras carga la ventana principal. Va en el código (no en archivos aparte).
+ */
+const SPLASH = `<!doctype html><html lang="es"><meta charset="utf-8"><style>
+html,body{margin:0;height:100%;background:#1C1C1A;color:#E8E4DC;font-family:"Martian Mono",ui-monospace,Consolas,monospace;overflow:hidden}
+body{display:grid;place-items:center;transition:opacity .25s ease}
+body.fuera{opacity:0}
+.caja{display:grid;gap:14px;justify-items:center;animation:entra .5s cubic-bezier(.2,.8,.2,1)}
+.marca{font-size:34px;letter-spacing:.02em}.marca b{color:#FF9F1C;font-weight:400}
+.teclas{display:flex;gap:2px}.teclas i{width:18px;height:10px;border:1px solid #3D3D39;display:block}
+.teclas i:first-child{background:#FF9F1C;border-color:#FF9F1C}
+.carga{width:180px;height:2px;background:#3D3D39;overflow:hidden;border-radius:1px}
+.carga span{display:block;width:40%;height:100%;background:#FF9F1C;animation:va 1.1s ease-in-out infinite}
+p{margin:0;font-size:11px;letter-spacing:.2em;color:#9A968C;text-transform:uppercase}
+@keyframes va{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+@keyframes entra{from{opacity:0;transform:translateY(6px)}}
+</style><body><div class="caja"><div class="marca"><b>i</b>mpromptu</div>
+<div class="teclas"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<div class="carga"><span></span></div><p>Cargando</p></div></body></html>`;
+
+function createSplash(): BrowserWindow {
+  const splash = new BrowserWindow({
+    width: 420,
+    height: 260,
+    frame: false,
+    resizable: false,
+    movable: true,
+    center: true,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    show: true,
+    backgroundColor: '#1C1C1A',
+    webPreferences: { sandbox: true, contextIsolation: true },
+  });
+  void splash.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(SPLASH)}`);
+  return splash;
+}
+
 function createWindow(): void {
+  const abierta = Date.now();
+  const splash = createSplash();
   const win = new BrowserWindow({
+    // Se muestra cuando ya pintó su primer cuadro; mientras tanto se ve el splash.
+    show: false,
     width: 1440,
     height: 900,
     minWidth: 1024,
@@ -168,6 +211,20 @@ function createWindow(): void {
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (!url.startsWith(`${SCHEME}://`)) void shell.openExternal(url);
     return { action: 'deny' };
+  });
+  win.once('ready-to-show', () => {
+    // El splash se ve al menos un momento (si no, parpadea) y se va con un fundido.
+    const espera = Math.max(0, 900 - (Date.now() - abierta));
+    setTimeout(() => {
+      win.show();
+      if (splash.isDestroyed()) return;
+      void splash.webContents
+        .executeJavaScript("document.body.classList.add('fuera')")
+        .catch(() => undefined);
+      setTimeout(() => {
+        if (!splash.isDestroyed()) splash.close();
+      }, 260);
+    }, espera);
   });
   void win.loadURL(START);
 }

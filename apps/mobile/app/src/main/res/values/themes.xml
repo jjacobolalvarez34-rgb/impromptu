@@ -7,5 +7,12 @@
         <item name="android:navigationBarColor">@color/carbon</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
+    <!-- Splash screen al abrir (pedido 44): el ícono sobre carbón y luego la app. -->
+    <style name="Theme.Impromptu.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/carbon</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimationDuration">600</item>
+        <item name="postSplashScreenTheme">@style/Theme.Impromptu</item>
+    </style>
     <color name="carbon">#1C1C1A</color>
 </resources>
