@@ -1,6 +1,8 @@
 import {
   TranscriptionCancelled,
   detectarBateria,
+  separarInstrumento,
+  PARTE_DE,
   peakLevel,
   prepareTranscriber,
   takeFromTranscription,
@@ -64,6 +66,12 @@ interface Store {
   cola: Conversion[];
   model: Model;
   setModel: (model: Model) => void;
+  /**
+   * Pedido 35: con guitarra, bajo o batería, separar primero ese instrumento de la canción
+   * (como Moises) antes de pasarlo a notas. Solo con archivos de audio, no con el micrófono.
+   */
+  separar: boolean;
+  setSeparar: (separar: boolean) => void;
   /** Vuelve al estado inicial (cerrar un aviso de error). */
   reset: () => void;
   /** Cancela una conversión (o la que trabaja, si no se dice cuál). */
@@ -173,16 +181,42 @@ export const useTranscribe = create<Store>((set, get) => {
       }
       let take: Take;
       const instrumento = useStudio.getState().instrumento;
+      // Canción completa: primero se separa el instrumento del resto (pedido 35).
+      let fuente: AudioBuffer = buffer;
+      if (!fromMic && get().separar && instrumento !== 'piano' && PIANO_MODEL_URL) {
+        const nombreParte =
+          instrumento === 'drums'
+            ? 'la batería'
+            : instrumento === 'bass'
+              ? 'el bajo'
+              : 'la guitarra';
+        fuente = await separarInstrumento(buffer, PARTE_DE[instrumento], {
+          baseUrl: PIANO_MODEL_URL,
+          signal: controller.signal,
+          onStage: (st) => {
+            if (st.stage === 'downloading')
+              show(
+                'descargando',
+                st.total ? st.loaded / st.total : null,
+                `Descargando el separador de instrumentos (${mb(st.total || 79e6)} MB, solo la primera vez)`,
+              );
+            else if (st.stage === 'preparing')
+              show('preparando', null, 'Preparando el separador de instrumentos');
+            else
+              show('escuchando', st.progress, `Separando ${nombreParte} del resto de la canción`);
+          },
+        });
+      }
       if (instrumento === 'drums') {
         show('escuchando', null, 'Buscando los golpes de la batería');
-        const canales = Array.from({ length: buffer.numberOfChannels }, (_, i) =>
-          buffer.getChannelData(i),
+        const canales = Array.from({ length: fuente.numberOfChannels }, (_, i) =>
+          fuente.getChannelData(i),
         );
-        const mono = new Float32Array(buffer.length);
+        const mono = new Float32Array(fuente.length);
         for (const c of canales)
           for (let i = 0; i < mono.length; i++) mono[i] = mono[i]! + c[i]! / canales.length;
         take = tomaDeGolpes(
-          detectarBateria(mono, buffer.sampleRate, 2 - useStudio.getState().sensibilidadBateria),
+          detectarBateria(mono, fuente.sampleRate, 2 - useStudio.getState().sensibilidadBateria),
           name,
           buffer.duration,
         );
@@ -203,7 +237,7 @@ export const useTranscribe = create<Store>((set, get) => {
         });
         take = takeFromTranskun(result, name, buffer.duration);
       } else {
-        const raw = await transcribe(buffer, {
+        const raw = await transcribe(fuente, {
           signal: controller.signal,
           onStage: (stage) =>
             stage === 'preparing'
@@ -248,6 +282,8 @@ export const useTranscribe = create<Store>((set, get) => {
     cola: [],
     model: PIANO_MODEL_URL ? 'piano' : 'rapido',
     setModel: (model) => set({ model }),
+    separar: true,
+    setSeparar: (separar) => set({ separar }),
     reset: () => set({ state: { step: 'idle' } }),
     cancel: (id) => {
       if (id === undefined || id === actual) {

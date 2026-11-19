@@ -19,3 +19,5 @@ export { AvanceSuave, fraseDeEspera, textoRestante } from './avance';
 export type { EtapaDeEspera } from './avance';
 export { detectarBateria } from './bateria';
 export type { Golpe } from './bateria';
+export { separarInstrumento, PARTE_DE } from './separar';
+export type { Parte, SepararEtapa } from './separar';

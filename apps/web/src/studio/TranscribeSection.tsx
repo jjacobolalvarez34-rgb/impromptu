@@ -1,4 +1,4 @@
-import { Button, Chips, Lcd } from '@impromptu/ui';
+import { Button, Chips, Lcd, Switch } from '@impromptu/ui';
 import { FileAudio, Mic, Square, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { fraseDeEspera, prepareTranscriber, textoRestante } from '@impromptu/transcribe';
@@ -116,6 +116,9 @@ export function ConvertAudioButton({ label = 'Convertir un audio' }: { label?: s
   const input = useRef<HTMLInputElement>(null);
   // Se puede convertir otro mientras uno trabaja (cola); no mientras se graba.
   const busy = useTranscribe((s) => s.state.step === 'recording');
+  // Pedido 35: con una canción completa, separar primero el instrumento (como Moises).
+  const separar = useTranscribe((s) => s.separar);
+  const instrumento = useStudio((s) => s.instrumento);
   // Menú de la app de escritorio: Archivo › Convertir un audio.
   useEffect(() => onMenuAction((a) => a === 'convertir-audio' && input.current?.click()), []);
   return (
@@ -135,6 +138,13 @@ export function ConvertAudioButton({ label = 'Convertir un audio' }: { label?: s
       <Button icon={<FileAudio />} disabled={busy} onClick={() => input.current?.click()}>
         {label}
       </Button>
+      {instrumento !== 'piano' && PIANO_MODEL_URL && (
+        <Switch
+          label="Separar el instrumento de la canción"
+          checked={separar}
+          onChange={(v) => useTranscribe.getState().setSeparar(v)}
+        />
+      )}
     </>
   );
 }
