@@ -28,6 +28,8 @@ export interface ExportOptions {
   fps: FrameRate;
   /** Piano ya cargado cuyas muestras se reutilizan; sin él, el video sale sin audio. */
   piano?: Piano | null;
+  /** Guitarra, bajo y batería del estudio (con la batería grabada ya cargada). */
+  sintes?: Sintes | null;
   /**
    * Audio propio de la pieza (MP3, WAV…) que suena en lugar del piano. `offset`: segundo
    * de la toma en que suena el segundo 0 del archivo (MediaRef.offset).
@@ -110,6 +112,7 @@ export async function exportVideo(opts: ExportOptions): Promise<ExportResult> {
       opts.piano ?? null,
       (value) => opts.onProgress?.({ phase: 'audio', value }),
       signal,
+      opts.sintes ?? null,
     );
     check();
   }
@@ -190,6 +193,7 @@ export async function renderPianoAudio(
   source: Piano | null,
   onProgress?: (value: number) => void,
   signal?: AbortSignal,
+  sintesFuente?: Sintes | null,
 ): Promise<AudioBuffer> {
   const seconds = take.duration + TAIL;
   const length = Math.ceil(seconds * SAMPLE_RATE);
@@ -198,6 +202,7 @@ export async function renderPianoAudio(
   if (source) piano.shareSamplesFrom(source);
   // Guitarra, bajo y batería (fase 9) se sintetizan aquí mismo.
   const sintes = new Sintes(context);
+  if (sintesFuente) sintes.compartirBateria(sintesFuente);
   for (const voice of takeVoices(take)) {
     if (!voice.instrument || voice.instrument === 'piano')
       piano.play(voice, voice.start, voice.release);

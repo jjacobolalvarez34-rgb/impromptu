@@ -60,6 +60,8 @@ Con eso Claude sube las muestras y el modelo, y las apps los descargan la primer
   17. **Batería: elegir la vista**: la de carriles actual o una vista como una batería real, donde los golpes van (bajando o subiendo) hacia la pieza que toca golpear, para que un baterista la pueda seguir.
   18. **Batería: el tempo a la vista**: en una esquina, algo que marque el pulso (el click), con opción de que suene.
   19. **Partitura de guitarra y bajo**: elegir ver notas y tablatura, o solo tablatura.
+  20. **Nombre de la pestaña según el instrumento**: "Partitura" en piano, "Tablatura" en guitarra y bajo, "Partitura de batería" en batería.
+  21. **Elegir el instrumento con un panel arriba** (como un tablero) que cambie todo el estudio a ese instrumento, en vez de los botones del panel izquierdo.
   - MIDIs de prueba de cada instrumento en el estudio, sección **Pruebas** (`fixtures/demos`, generados con `node scripts/demos-midi.mjs`).
 - **Orden pedido por Jacobo:** (a) llevar a la web y a la PC la presentación y mejorar la pantalla principal de la PC (que se parezca a la de la web, que sí le gusta); (b) guitarra, misma idea del piano; (c) batería; (d) fase 10; (e) integrar todo en web, PC y celular; (f) compilar al final.
 

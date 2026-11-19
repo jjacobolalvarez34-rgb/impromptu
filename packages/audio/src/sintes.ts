@@ -182,6 +182,36 @@ export const TIMBRE_DE: Record<Exclude<Instrument, 'piano' | 'drums'>, Timbre> =
   bass: 'bajo',
 };
 
+/**
+ * Batería grabada (Sonic Pi, CC0; ver docs/LICENCIAS.md): para cada nota General MIDI, la
+ * grabación fuerte y, si hay, la suave.
+ */
+export const MUESTRAS_BATERIA: Readonly<Record<number, readonly [string, string?]>> = {
+  35: ['drum_bass_hard', 'drum_bass_soft'],
+  36: ['drum_bass_hard', 'drum_bass_soft'],
+  37: ['drum_snare_soft'],
+  38: ['drum_snare_hard', 'drum_snare_soft'],
+  39: ['drum_snare_hard'],
+  40: ['drum_snare_hard', 'drum_snare_soft'],
+  41: ['drum_tom_lo_hard', 'drum_tom_lo_soft'],
+  43: ['drum_tom_lo_hard', 'drum_tom_lo_soft'],
+  42: ['drum_cymbal_closed'],
+  44: ['drum_cymbal_pedal'],
+  45: ['drum_tom_mid_hard', 'drum_tom_mid_soft'],
+  46: ['drum_cymbal_open'],
+  47: ['drum_tom_mid_hard', 'drum_tom_mid_soft'],
+  48: ['drum_tom_hi_hard', 'drum_tom_hi_soft'],
+  49: ['drum_cymbal_hard'],
+  50: ['drum_tom_hi_hard', 'drum_tom_hi_soft'],
+  51: ['drum_cymbal_soft'],
+  52: ['drum_cymbal_hard'],
+  53: ['drum_cymbal_soft'],
+  55: ['drum_splash_hard'],
+  56: ['drum_cowbell'],
+  57: ['drum_cymbal_hard'],
+  59: ['drum_cymbal_soft'],
+};
+
 interface Activa {
   source: AudioBufferSourceNode;
   gain: GainNode;
@@ -221,28 +251,87 @@ export class Sintes {
     return b;
   }
 
+  /** Grabaciones de batería acústica (CC0, de Sonic Pi), por nombre de archivo. */
+  private readonly bateria = new Map<string, AudioBuffer>();
+  /** Hi-hat abierto sonando: el cerrado o el pie lo cortan, como en una batería real. */
+  private hihatAbierto: Activa[] = [];
+
+  /**
+   * Descarga y decodifica la batería grabada (unos 800 kB, una vez). Mientras no esté, suena la
+   * sintetizada. `base`: carpeta de los .flac (termina en /).
+   */
+  async cargarBateria(base: string): Promise<void> {
+    const nombres = new Set(
+      Object.values(MUESTRAS_BATERIA)
+        .flat()
+        .filter((n): n is string => !!n),
+    );
+    await Promise.all(
+      [...nombres].map(async (n) => {
+        if (this.bateria.has(n)) return;
+        const res = await fetch(`${base}${n}.flac`);
+        if (!res.ok) return;
+        this.bateria.set(n, await this.context.decodeAudioData(await res.arrayBuffer()));
+      }),
+    );
+  }
+
+  /** Usa la batería ya decodificada de otro (por ejemplo, para exportar sin volver a descargar). */
+  compartirBateria(otro: Sintes): void {
+    for (const [n, b] of otro.bateria) this.bateria.set(n, b);
+    this.timbreGuitarra = otro.timbreGuitarra;
+  }
+
+  /** Grabación para un golpe: la fuerte o la suave según la fuerza. */
+  private muestraBateria(nota: number, velocity: number): AudioBuffer | null {
+    const par = MUESTRAS_BATERIA[nota];
+    if (!par) return null;
+    const [fuerte, suave] = par;
+    return this.bateria.get(velocity < 64 && suave ? suave : fuerte) ?? null;
+  }
+
   /** Programa una voz: la cuerda se apaga al soltar (con un apagado corto); la batería suena entera. */
   play(voice: Voice, at: number, releaseAt: number, offset = 0): void {
     const instrument = voice.instrument ?? 'guitar';
-    const b = this.buffer(instrument, voice.note.pitch, voice.note.velocity);
+    const nota = voice.note.pitch;
+    const grabada = instrument === 'drums' ? this.muestraBateria(nota, voice.note.velocity) : null;
+    const b = grabada ?? this.buffer(instrument, nota, voice.note.velocity);
     if (offset >= b.duration) return;
     const source = this.context.createBufferSource();
     source.buffer = b;
     const gain = this.context.createGain();
-    gain.gain.setValueAtTime(voice.gain, at);
+    // Las grabaciones tienen dos capas (suave y fuerte); dentro de cada una, la fuerza escala.
+    const nivel = grabada
+      ? voice.gain * (0.35 + 0.65 * (voice.note.velocity / 127)) * 1.4
+      : voice.gain;
+    gain.gain.setValueAtTime(nivel, at);
     source.connect(gain).connect(this.output);
     // Primero start: el navegador no deja programar stop antes (era lo que dejaba mudas a la
     // guitarra y el bajo).
     source.start(at, offset);
     if (instrument !== 'drums' && Number.isFinite(releaseAt)) {
-      gain.gain.setValueAtTime(voice.gain, releaseAt);
+      gain.gain.setValueAtTime(nivel, releaseAt);
       gain.gain.setTargetAtTime(0, releaseAt, 0.04);
       source.stop(releaseAt + 0.3);
     }
     const a = { source, gain };
+    if (instrument === 'drums' && (nota === 42 || nota === 44)) {
+      // El hi-hat cerrado (o el pie) calla al abierto.
+      for (const h of this.hihatAbierto) {
+        h.gain.gain.setTargetAtTime(0, at, 0.015);
+        try {
+          h.source.stop(at + 0.1);
+        } catch {
+          // Ya terminó.
+        }
+      }
+      this.hihatAbierto = [];
+    }
+    if (instrument === 'drums' && nota === HIHAT_ABIERTO) this.hihatAbierto.push(a);
     this.activas.push(a);
     source.onended = () => {
       this.activas = this.activas.filter((x) => x !== a);
+      this.hihatAbierto = this.hihatAbierto.filter((x) => x !== a);
     };
   }
 

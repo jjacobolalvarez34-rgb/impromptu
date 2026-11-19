@@ -104,6 +104,8 @@ class AudioEngine {
     if (!this.sintes) {
       this.sintes = new Sintes(this.context);
       this.sintes.timbreGuitarra = useStudio.getState().guitarra.timbre;
+      // Batería grabada (CC0): se baja una vez, ~800 kB.
+      void this.sintes.cargarBateria(`${import.meta.env.BASE_URL}bateria/`).catch(() => undefined);
       useStudio.subscribe((s) => {
         if (this.sintes) this.sintes.timbreGuitarra = s.guitarra.timbre;
       });

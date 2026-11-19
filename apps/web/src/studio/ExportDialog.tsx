@@ -123,6 +123,7 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
         resolution,
         fps,
         piano,
+        sintes: engine.sintes,
         signal: controller.signal,
         onProgress: ({ phase, value }) =>
           setState({ step: 'working', phase: PHASES[phase] ?? '', value }),

@@ -39,7 +39,8 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 | ADTOF (batería, Zehren et al.) | Evaluado para batería (fase 9) | CC BY-NC-SA 4.0 (no comercial) | **No se usa** |
 | Omnizart (batería) | Evaluado (fase 9) | Código MIT; licencia de los pesos sin aclarar | No se usa hasta confirmar la licencia de los pesos |
 | Guitar-Transcription (ErenReyhanlioglu) | Evaluado para guitarra (fase 9) | Código MIT; pesos en otro repositorio, licencia sin aclarar | No se usa; la guitarra usa Basic Pitch (Apache-2.0) |
-| Sonidos de guitarra, bajo y batería | Síntesis propia (Karplus-Strong y percusión por código) | Código del proyecto (GPL-3.0) | Ninguna |
+| Batería grabada de Sonic Pi (`etc/samples/drum_*`, 17 archivos FLAC, 844 kB) | Sonido de la batería (`apps/web/public/bateria`) | **CC0 1.0** (verificado en LICENSE.md de Sonic Pi: "All the bundled samples are individually licensed under a CC0 1.0 Universal Public Domain Dedication") | Ninguna (se acredita igual en "Acerca de") |
+| Sonidos de guitarra y bajo (y la batería de respaldo) | Síntesis propia (Karplus-Strong y percusión por código) | Código del proyecto (GPL-3.0) | Ninguna |
 | Modelo de piano de Kong et al. | Se evaluó y se dejó (ADR-014, ADR-015) | CC BY 4.0 | Ya no se usa |
 | Dexie (IndexedDB) | Almacenamiento | [VERIFICAR] | |
 | Tauri 2 | Escritorio | MIT o Apache-2.0 [VERIFICAR] | |

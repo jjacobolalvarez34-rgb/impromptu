@@ -1,7 +1,7 @@
 # Graph Report - impromptu  (2026-11-18)
 
 ## Corpus Check
-- 272 files · ~138,628 words
+- 272 files · ~138,735 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 56 file(s) not represented in the graph (top: .css 32, .xml 8, (none) 5)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a58a1e30`
+- Built from commit: `a17fb502`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -656,7 +656,7 @@ Cohesion: 0.33
 Nodes (4): TipoPedal, Sostenuto, Sustain, UnaCorda
 
 ## Knowledge Gaps
-- **53 isolated node(s):** `ADR-0010`, `Ia`, `Quieta`, `On`, `Partitura` (+48 more)
+- **53 isolated node(s):** `Ia`, `Quieta`, `On`, `Partitura`, `Presentacion` (+48 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1048 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **62 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -664,8 +664,8 @@ Nodes (4): TipoPedal, Sostenuto, Sustain, UnaCorda
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `BUG-004 · Celular: la app se cierra al convertir una grabación` connect `align.ts` to `TranskunTest.kt`?**
-  _High betweenness centrality (0.316) - this node is a cross-community bridge._
-- **What connects `ADR-0010`, `Ia`, `Quieta` to the rest of the system?**
+  _High betweenness centrality (0.293) - this node is a cross-community bridge._
+- **What connects `Ia`, `Quieta`, `On` to the rest of the system?**
   _53 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ui/src/index.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.07617051013277429 - nodes in this community are weakly interconnected._
