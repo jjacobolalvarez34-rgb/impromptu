@@ -313,22 +313,29 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
       try {
         const enVivo =
           useLive.getState().recording || useTranscribe.getState().state.step === 'recording';
-        if (!enVivo) setStatus('loading');
+        // Al editar (pedido 28), la hoja anterior queda a la vista hasta que la nueva está
+        // lista: el "Escribiendo…" solo sale la primera vez.
+        if (!enVivo && !osmd.current) setStatus('loading');
         const { OpenSheetMusicDisplay } = await import('opensheetmusicdisplay');
         if (cancelled) return;
-        el.innerHTML = '';
-        const view = new OpenSheetMusicDisplay(el, {
-          autoResize: true,
-          backend: 'svg',
-          drawTitle: true,
-          drawPartNames: false,
-          followCursor: true,
-        });
+        let view = osmd.current;
+        if (!view) {
+          el.innerHTML = '';
+          view = new OpenSheetMusicDisplay(el, {
+            autoResize: true,
+            backend: 'svg',
+            drawTitle: true,
+            drawPartNames: false,
+            followCursor: true,
+          });
+          osmd.current = view;
+        }
         await view.load(xml);
         if (cancelled) return;
         view.render();
         // Cada nota de la hoja se puede tocar para editarla (solo con una pieza abierta).
         quitarClics.current?.();
+        quitarClics.current = null;
         const sc = estado.current.score;
         if (sc && useStudio.getState().take && !enVivo) {
           quitarClics.current = hacerSeleccionable(
@@ -339,28 +346,39 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
           );
           marcarSeleccion(el, estado.current.seleccion);
         }
-        // Cursor suave: se lee una vez dónde cae cada nota y una línea propia se desliza.
         linea.current?.quitar();
-        recorrido.current = leerRecorrido(view.cursor);
-        linea.current = new LineaDeLectura(el, el.parentElement ?? el, recorrido.current);
-        osmd.current = view;
+        linea.current = null;
         setStatus('ready');
         // Grabando: la hoja baja sola hasta lo último que se tocó.
         if (enVivo) {
           const caja = hoja.current;
           caja?.scrollTo({ top: caja.scrollHeight });
         }
+        // Cursor suave: dónde cae cada nota se lee justo después de mostrar la hoja (tarda unos
+        // 200 ms en piezas largas y no hace falta para ver ni para editar).
+        const dibujada = view;
+        window.setTimeout(() => {
+          if (cancelled) return;
+          recorrido.current = leerRecorrido(dibujada.cursor);
+          linea.current = new LineaDeLectura(el, el.parentElement ?? el, recorrido.current);
+        }, 0);
       } catch {
         if (!cancelled) setStatus('error');
       }
     })();
     return () => {
       cancelled = true;
-      osmd.current = null;
       linea.current?.quitar();
       linea.current = null;
     };
   }, [xml]);
+  // Al salir de la pestaña se suelta la hoja (al volver se crea de nuevo).
+  useEffect(
+    () => () => {
+      osmd.current = null;
+    },
+    [],
+  );
 
   // Cursor sincronizado con la reproducción: en cada cuadro, sin saltos de nota en nota.
   useEffect(() => {

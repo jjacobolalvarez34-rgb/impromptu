@@ -75,3 +75,34 @@ test('en una pieza real, tocar una nota elige esa misma nota', async ({ page }, 
   console.log(editadas.join('\n'));
   expect(editadas.filter((e) => !/corrida [0-9] px$/.test(e))).toEqual([]);
 });
+
+test('cuánto tarda una edición en una pieza larga (pedido 28)', async ({ page }, info) => {
+  test.skip(info.project.name === 'celular' || !existsSync(PIEZA), 'Solo en el equipo de Jacobo');
+  test.setTimeout(180_000);
+  await page.goto('/estudio?instrumento=piano');
+  await page.locator('input[accept=".mid,.midi,audio/midi"]').setInputFiles({
+    name: 'consuelo.mid',
+    mimeType: 'audio/midi',
+    buffer: readFileSync(PIEZA),
+  });
+  await page.getByRole('tab', { name: 'Partitura' }).click();
+  await page.getByRole('radio', { name: '3/4' }).click();
+  await expect(page.locator('[data-compas="1"]').first()).toBeVisible({ timeout: 90_000 });
+  const tiempos: number[] = [];
+  for (let i = 0; i < 3; i++) {
+    const cabeza = page.locator('[data-compas="2"][data-pentagrama="1"] .vf-notehead').first();
+    const caja = (await cabeza.boundingBox())!;
+    await page.mouse.click(caja.x + caja.width / 2, caja.y + caja.height / 2);
+    // Se marca la hoja vieja; la edición la redibuja y la marca desaparece hasta el final.
+    await page.evaluate(() =>
+      document.querySelector('[data-compas="2"]')?.setAttribute('data-vieja', '1'),
+    );
+    const inicio = Date.now();
+    await page.keyboard.press(i % 2 ? 'ArrowDown' : 'ArrowUp');
+    await expect(page.locator('[data-vieja]')).toHaveCount(0, { timeout: 60_000 });
+    await expect(page.locator('[data-compas="2"]').first()).toBeVisible({ timeout: 60_000 });
+    tiempos.push(Date.now() - inicio);
+  }
+  // eslint-disable-next-line no-console
+  console.log('TIEMPOS de edición (ms):', tiempos.join(', '));
+});
