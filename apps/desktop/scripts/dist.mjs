@@ -1,4 +1,4 @@
-// Instalador de Windows: web compilada + modelo de piano (sin internet) + Electron.
+// Instalador de Windows: web compilada + modelo de piano y separador (sin internet) + Electron.
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,7 +11,9 @@ const run = (cmd, args, cwd) => {
 const models = process.env.IMPROMPTU_MODELS ?? 'D:/.cache/models';
 mkdirSync('modelos', { recursive: true });
 if (existsSync(models)) {
-  for (const f of readdirSync(models).filter((n) => n.startsWith('transkun-'))) {
+  // Modelo de piano y separador de instrumentos (pedido 35): en la PC funcionan sin internet.
+  const incluir = (n) => n.startsWith('transkun-') || (n.startsWith('spleeter-') && n.endsWith('.onnx'));
+  for (const f of readdirSync(models).filter(incluir)) {
     copyFileSync(join(models, f), join('modelos', f));
   }
 } else {

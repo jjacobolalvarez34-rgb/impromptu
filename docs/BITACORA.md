@@ -14,6 +14,15 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-19 (tarde) · Todo al celular, video en segundo plano, separar instrumentos y compilados
+- Orden que pidió Jacobo: (1) pasar todo al celular, (2) el video del visualizador en segundo plano, (3) pedido 35, (4) compilar. Hecho en ese orden:
+  1. Celular: trastes en círculos, gemas de batería, hi-hat abierto, batería real, panel de rasgueo, volumen, hoja más rápida y manos nuevas (ver la entrada de la mañana).
+  2. Web y PC: "Seguir en segundo plano" al exportar video; sale en la burbuja y se descarga solo.
+  3. **Separar instrumentos (pedido 35)** con Spleeter (pesos MIT; Demucs descartado por sus pesos solo para investigación), en web, PC y celular. Pruebas: `separar.spec.ts` (canción sintética; la web publicada baja el separador de Hugging Face) y `SeparadorTest` en el celular.
+  4. **Compilados**: APK firmado `apps/mobile/release/Impromptu-0.1.0.apk` (116 MB) e instalador de PC `apps/desktop/release/Impromptu-0.0.0-instalador.exe` (187 MB; ahora lleva también el separador para usarlo sin internet; sin certificado de firma de Windows, así que la primera vez Windows avisa).
+- **Sin verificar por Jacobo**: todo lo de esta entrada y de la mañana. En el celular nada se probó en el teléfono.
+- Pendiente: pedido 37 (la página principal con todo lo nuevo y un tutorial opcional al empezar), pedido 38 (nombre: decisión de Jacobo), el teclado de piano más realista (fase 11), la versión del instalador de PC dice 0.0.0 y la del APK 0.1.0 (igualarlas), publicar las redes en la cuenta de Mamut Herd (P21).
+
 ### 2026-11-19 · Pedido 25: sonidos grabados de guitarra, bajo y batería
 - Lo que pasó en la noche: después de grabar en la hoja (web y celular) y el video de la hoja en el celular (3 commits, CI verde), un comando de Claude quedó esperando permiso (un `curl` a GitHub para ver el CI, que Jacobo había prohibido en modo nocturno) y no se avanzó más hasta la mañana. Anotado en la memoria para que no vuelva a pasar.
 - Hecho (web y PC). **Sin verificar de oído por Jacobo**:
