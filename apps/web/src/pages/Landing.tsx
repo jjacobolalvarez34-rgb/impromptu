@@ -22,6 +22,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { HeroVisualizer } from '../landing/HeroVisualizer';
 import { useReveal } from '../landing/useReveal';
+import { abrirPantalla } from '../desktop';
 import styles from './Landing.module.css';
 import { MamutHerdSello } from '../brand/MamutHerdSello';
 import { MAMUT_HERD } from '../brand/mamutHerd';
@@ -180,7 +181,7 @@ export function Landing() {
           <a href="#descargar">Descargar</a>
           <a href="#apoyar">Apoyar</a>
         </div>
-        <Button variant="primary" onClick={() => navigate('/app')}>
+        <Button variant="primary" onClick={() => abrirPantalla('/app', navigate)}>
           Abrir la app
         </Button>
       </nav>
@@ -214,7 +215,11 @@ export function Landing() {
             video con tus manos, la partitura y efectos de luz. Sin suscripciones.
           </p>
           <div className={styles.ctas}>
-            <Button variant="primary" icon={<Globe />} onClick={() => navigate('/app')}>
+            <Button
+              variant="primary"
+              icon={<Globe />}
+              onClick={() => abrirPantalla('/app', navigate)}
+            >
               Usar en la web
             </Button>
             <a className={styles.ctaSecundario} href="#descargar">
@@ -266,7 +271,7 @@ export function Landing() {
             </ul>
             <Button
               variant="primary"
-              onClick={() => navigate(`/estudio?instrumento=${elegido.id}`)}
+              onClick={() => abrirPantalla(`/estudio?instrumento=${elegido.id}`, navigate)}
             >
               Abrir con {elegido.nombre.toLowerCase()}
             </Button>
@@ -330,7 +335,7 @@ export function Landing() {
               text="Ábrela en Chrome o Edge. Sin instalar nada; se puede instalar como app."
               index={0}
               action={
-                <Button variant="primary" onClick={() => navigate('/app')}>
+                <Button variant="primary" onClick={() => abrirPantalla('/app', navigate)}>
                   Usar en la web
                 </Button>
               }

@@ -5,7 +5,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { MamutHerdSello } from '../brand/MamutHerdSello';
 import { MAMUT_HERD } from '../brand/mamutHerd';
-import { isDesktop } from '../desktop';
+import { abrirPantalla, isDesktop } from '../desktop';
 import { Recorrido } from '../recorrido/Recorrido';
 import styles from './Portada.module.css';
 
@@ -89,14 +89,14 @@ export function Portada() {
                 variant="primary"
                 className="ui-aparece-tecla"
                 style={delay(7)}
-                onClick={() => navigate('/estudio?instrumento=piano')}
+                onClick={() => abrirPantalla('/estudio?instrumento=piano', navigate)}
               >
                 Abrir el estudio
               </Button>
               <Button
                 className="ui-aparece-tecla"
                 style={delay(8)}
-                onClick={() => navigate('/en-vivo')}
+                onClick={() => abrirPantalla('/en-vivo', navigate)}
               >
                 Tocar en vivo
               </Button>
@@ -110,7 +110,7 @@ export function Portada() {
               <Button
                 className="ui-aparece-tecla"
                 style={delay(8)}
-                onClick={() => navigate('/estudio?instrumento=guitarra')}
+                onClick={() => abrirPantalla('/estudio?instrumento=guitarra', navigate)}
               >
                 Abrir con guitarra
               </Button>
@@ -124,7 +124,7 @@ export function Portada() {
               <Button
                 className="ui-aparece-tecla"
                 style={delay(9)}
-                onClick={() => navigate('/estudio?instrumento=bateria')}
+                onClick={() => abrirPantalla('/estudio?instrumento=bateria', navigate)}
               >
                 Abrir con batería
               </Button>

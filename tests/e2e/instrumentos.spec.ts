@@ -28,8 +28,13 @@ test('el estudio se abre con guitarra o batería y muestra sus opciones', async 
 
 test('la pantalla principal abre el estudio con guitarra', async ({ page }) => {
   await page.goto('/app');
-  await page.getByRole('button', { name: 'Abrir con guitarra' }).click();
-  await expect(page).toHaveURL(/instrumento=guitarra/);
+  // Pedido 46: el estudio se abre en otra pestaña.
+  const [nueva] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: 'Abrir con guitarra' }).click(),
+  ]);
+  await expect(nueva).toHaveURL(/instrumento=guitarra/);
+  await expect(page).toHaveURL(/\/app$/);
 });
 
 test('se bajan los sonidos grabados del instrumento elegido (pedido 25)', async ({

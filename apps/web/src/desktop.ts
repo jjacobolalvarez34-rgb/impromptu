@@ -45,3 +45,19 @@ export function onMenuAction(listener: (action: MenuAction) => void): () => void
 /** Pide abrir el selector de "Convertir un audio" (lo atiende ConvertAudioButton). */
 export const requestConvertAudio = () =>
   window.dispatchEvent(new CustomEvent<MenuAction>(EVENT, { detail: 'convertir-audio' }));
+
+/**
+ * Abre una pantalla de la app (pedido 46 de Jacobo): en la web, en otra pestaña; en la app de
+ * escritorio, en la misma ventana (ahí no hay pestañas).
+ */
+export function abrirPantalla(ruta: string, navigate: (ruta: string) => void): void {
+  if (isDesktop()) {
+    navigate(ruta);
+    return;
+  }
+  const url = `${import.meta.env.BASE_URL}${ruta.replace(/^\//, '')}`;
+  const ventana = window.open(url, '_blank');
+  // Si el navegador bloquea la pestaña nueva, se abre aquí mismo.
+  if (!ventana) navigate(ruta);
+  else ventana.opener = null;
+}
