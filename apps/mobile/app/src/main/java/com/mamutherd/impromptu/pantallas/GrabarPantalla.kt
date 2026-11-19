@@ -63,7 +63,7 @@ fun GrabarPantalla(nav: Navegador) {
     val teclado = Impromptu.teclado
     val renderizador = remember { Renderizador() }
     val instrumento = Impromptu.instrumento
-    val opciones = remember(instrumento) { Renderizador.Opciones(subiendo = true, instrumento = instrumento) }
+    val opciones = remember(instrumento) { Impromptu.opcionesVista(instrumento, subiendo = true) }
     var grabacion by remember { mutableStateOf<Grabacion?>(null) }
     var segundos by remember { mutableDoubleStateOf(0.0) }
     var salir by remember { mutableStateOf(false) }

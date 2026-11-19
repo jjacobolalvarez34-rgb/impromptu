@@ -237,7 +237,7 @@ fun ExportarPantalla(id: String, nav: Navegador) {
 private fun VistaPrevia(pieza: Pieza, formato: Formato, modifier: Modifier) {
     val renderizador = remember { Renderizador() }
     val rango = remember(pieza) { pieza.rango() }
-    val opciones = remember(pieza) { Renderizador.Opciones(instrumento = pieza.instr) }
+    val opciones = remember(pieza) { Impromptu.opcionesVista(pieza.instr) }
     val desde = remember(pieza) { maxOf(0.0, (pieza.notas.firstOrNull()?.inicio ?: 0.0) - 1.0) }
     val ciclo = minOf(10.0, maxOf(4.0, pieza.duracion - desde))
     val inicio = remember { System.nanoTime() }

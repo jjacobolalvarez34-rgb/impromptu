@@ -208,16 +208,33 @@ class Sampler(private val banco: Banco, val tasa: Int = 44_100) {
 }
 
 /** Limitador suave para que muchas notas con pedal nunca saturen. */
-class Limitador {
+/**
+ * Cadena maestra de salida (pedido 32, igual que packages/audio/src/maestro.ts): compresor suave
+ * (sobre -20 dB, razón 3), +6 dB y un limitador de picos para que nada recorte. Las muestras
+ * vienen intercaladas (estéreo).
+ */
+class Limitador(tasa: Int = 48_000) {
     private var ganancia = 1f
+    private var envolvente = 0f
+    private val ataque = kotlin.math.exp(-1.0 / (0.01 * tasa * 2)).toFloat()
+    private val suelta = kotlin.math.exp(-1.0 / (0.25 * tasa * 2)).toFloat()
 
     fun procesar(buf: FloatArray, muestras: Int) {
         for (i in 0 until muestras) {
-            val x = buf[i] * ganancia
+            val entrada = buf[i]
+            val a0 = abs(entrada)
+            envolvente = if (a0 > envolvente) ataque * envolvente + (1 - ataque) * a0 else suelta * envolvente + (1 - suelta) * a0
+            val comp = if (envolvente > UMBRAL) UMBRAL * (envolvente / UMBRAL).pow(1f / 3f) / envolvente else 1f
+            val x = entrada * comp * VOLUMEN_EXTRA * ganancia
             val a = abs(x)
             if (a > 0.9f) ganancia *= 0.9f / a
             else if (ganancia < 1f) ganancia = minOf(1f, ganancia + 0.00002f)
-            buf[i] = (buf[i] * ganancia).coerceIn(-1f, 1f)
+            buf[i] = (entrada * comp * VOLUMEN_EXTRA * ganancia).coerceIn(-1f, 1f)
         }
+    }
+
+    private companion object {
+        const val UMBRAL = 0.1f // -20 dB
+        const val VOLUMEN_EXTRA = 2f // ≈ +6 dB
     }
 }

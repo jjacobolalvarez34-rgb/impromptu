@@ -126,7 +126,7 @@ class Exportador(
 
             val r = Renderizador()
             val rango = pieza.rango()
-            val op = Renderizador.Opciones(instrumento = pieza.instr)
+            val op = com.mamutherd.impromptu.Impromptu.opcionesVista(pieza.instr)
             val negro = Paint().apply { color = Color.BLACK }
             val cuadros = (total * fps).toInt()
             for (k in 0 until cuadros) {
@@ -163,7 +163,7 @@ class Exportador(
         val sampler = Sampler(banco, tasa)
         val sintes = Sintes(tasa, bateria, bancos).also { it.timbreGuitarra = timbre }
         val sec = Secuencia(pieza)
-        val limitador = Limitador()
+        val limitador = Limitador(tasa)
         val formato = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, tasa, 2).apply {
             setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
             setInteger(MediaFormat.KEY_BIT_RATE, 192_000)

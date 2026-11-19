@@ -92,7 +92,7 @@ class Motor(
     /** Guitarra, bajo y batería (fase 9). */
     val sintes = Sintes(tasa, bateria, bancos)
     private val cola = ConcurrentLinkedQueue<(Sampler) -> Unit>()
-    private val limitador = Limitador()
+    private val limitador = Limitador(tasa)
 
     @Volatile private var secuencia: Secuencia? = null
     private var indice = 0

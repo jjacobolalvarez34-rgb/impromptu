@@ -104,20 +104,30 @@ async function dibujar(take: Take, editable = true): Promise<void> {
   });
   xml = toMusicXml(partitura, { instrument: instrumento, soloTablatura: soloTab });
   const el = document.getElementById('partitura')!;
-  el.innerHTML = '';
-  vista = new OpenSheetMusicDisplay(el, {
-    autoResize: true,
-    backend: 'svg',
-    drawTitle: true,
-    drawPartNames: false,
-    followCursor: true,
-  });
-  await vista.load(xml);
-  vista.render();
+  // Se reusa la misma hoja (pedido 28): al editar, la anterior queda a la vista hasta que la
+  // nueva está lista.
+  if (!vista) {
+    el.innerHTML = '';
+    vista = new OpenSheetMusicDisplay(el, {
+      autoResize: true,
+      backend: 'svg',
+      drawTitle: true,
+      drawPartNames: false,
+      followCursor: true,
+    });
+  }
+  const hoja = vista;
+  await hoja.load(xml);
+  hoja.render();
   linea?.quitar();
-  recorrido = leerRecorrido(vista.cursor);
-  linea = new LineaDeLectura(el, document.scrollingElement as HTMLElement, recorrido);
-  linea.mover(0);
+  linea = null;
+  // El recorrido del cursor se lee justo después de mostrar la hoja.
+  window.setTimeout(() => {
+    if (vista !== hoja) return;
+    recorrido = leerRecorrido(hoja.cursor);
+    linea = new LineaDeLectura(el, document.scrollingElement as HTMLElement, recorrido);
+    linea.mover(0);
+  }, 0);
   quitarClics?.();
   quitarClics = null;
   if (!editable) return;

@@ -79,7 +79,7 @@ fun PiezaPantalla(id: String, nav: Navegador) {
     val motor = Impromptu.motor
     val renderizador = remember { Renderizador() }
     val rango = remember(pieza) { pieza.rango() }
-    val opciones = remember(pieza) { Renderizador.Opciones(instrumento = pieza.instr) }
+    val opciones = remember(pieza) { Impromptu.opcionesVista(pieza.instr) }
     var tocando by remember { mutableStateOf(false) }
     var tiempo by remember { mutableDoubleStateOf(0.0) }
     var velocidad by remember { mutableDoubleStateOf(1.0) }

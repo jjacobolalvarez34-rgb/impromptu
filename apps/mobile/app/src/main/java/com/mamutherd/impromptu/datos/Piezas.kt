@@ -55,7 +55,9 @@ class Piezas(context: Context) {
         titulo = titulo,
         creada = System.currentTimeMillis(),
         origen = origen,
-        notas = notas.sortedWith(compareBy({ it.inicio }, { it.tecla })),
+        // Piano sin manos: se decide qué mano toca cada nota (pedido 36).
+        notas = (if (instrumento == "piano" && notas.all { it.mano == null }) com.mamutherd.impromptu.instrumentos.Manos.separar(notas) else notas)
+            .sortedWith(compareBy({ it.inicio }, { it.tecla })),
         pedales = pedales.sortedBy { it.tiempo },
         instrumento = instrumento,
     )

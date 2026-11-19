@@ -67,6 +67,17 @@ object Impromptu {
     val bancos = ConcurrentHashMap<String, com.mamutherd.impromptu.audio.BancoGrabado>()
     private val cargandoBancos = ConcurrentHashMap<String, kotlinx.coroutines.Deferred<Unit>>()
 
+    /** Opciones del visualizador con lo elegido en Ajustes (vista de batería, flechas de rasgueo). */
+    fun opcionesVista(instrumento: Instrumento, subiendo: Boolean = false): com.mamutherd.impromptu.visual.Renderizador.Opciones {
+        val ajustes = app.getSharedPreferences("ajustes", Context.MODE_PRIVATE)
+        return com.mamutherd.impromptu.visual.Renderizador.Opciones(
+            subiendo = subiendo,
+            instrumento = instrumento,
+            vistaKit = ajustes.getString("vistaBateria", "carriles") == "kit",
+            rasgueo = ajustes.getBoolean("rasgueo", true),
+        )
+    }
+
     /** Timbre de la guitarra elegido en Ajustes. */
     fun timbreGuardado(): Sintes.Timbre =
         Sintes.Timbre.entries.firstOrNull { t -> t.name == app.getSharedPreferences("ajustes", Context.MODE_PRIVATE).getString("timbre", "Acero") }

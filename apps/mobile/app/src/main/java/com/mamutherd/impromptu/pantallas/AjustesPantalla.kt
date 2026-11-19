@@ -44,6 +44,8 @@ fun AjustesPantalla(nav: Navegador) {
     var timbre by remember { mutableStateOf(Sintes.Timbre.entries.firstOrNull { it.name == prefs.getString("timbre", "Acero") } ?: Sintes.Timbre.Acero) }
     var afinacion by remember { mutableStateOf(prefs.getString("afinacion", "estandar") ?: "estandar") }
     var sensibilidad by remember { mutableDoubleStateOf(prefs.getFloat("sensibilidadBateria", 1f).toDouble()) }
+    var vistaBateria by remember { mutableStateOf(prefs.getString("vistaBateria", "carriles") ?: "carriles") }
+    var rasgueo by remember { mutableStateOf(prefs.getBoolean("rasgueo", true)) }
 
     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
         Encabezado("Ajustes", { nav.volver() })
@@ -81,6 +83,15 @@ fun AjustesPantalla(nav: Navegador) {
                         })
                     }
                 }
+                Etiqueta("Flechas de rasgueo", Modifier.padding(top = 12.dp, bottom = 6.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    for ((texto, v) in listOf("Ver" to true, "Ocultar" to false)) {
+                        Chip(texto, rasgueo == v, {
+                            rasgueo = v
+                            prefs.edit().putBoolean("rasgueo", v).apply()
+                        })
+                    }
+                }
                 Etiqueta("Afinación", Modifier.padding(top = 12.dp, bottom = 6.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     for ((texto, a) in listOf("Estándar" to "estandar", "Drop D" to "drop-d", "Medio tono abajo" to "medio-tono-abajo")) {
@@ -94,7 +105,16 @@ fun AjustesPantalla(nav: Navegador) {
             }
             Panel(Modifier.fillMaxWidth()) {
                 Text("Batería", style = Tipos.TituloPanel)
-                Etiqueta("Sensibilidad del micrófono", Modifier.padding(top = 10.dp, bottom = 6.dp))
+                Etiqueta("Vista", Modifier.padding(top = 10.dp, bottom = 6.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    for ((texto, v) in listOf("Carriles" to "carriles", "Batería real" to "kit")) {
+                        Chip(texto, vistaBateria == v, {
+                            vistaBateria = v
+                            prefs.edit().putString("vistaBateria", v).apply()
+                        })
+                    }
+                }
+                Etiqueta("Sensibilidad del micrófono", Modifier.padding(top = 12.dp, bottom = 6.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     for ((texto, v) in listOf("Baja" to 0.6, "Media" to 1.0, "Alta" to 1.4)) {
                         Chip(texto, sensibilidad == v, {
