@@ -166,6 +166,13 @@ export function SettingsPanel() {
             número de traste.
           </p>
           {instrumento === 'guitar' && (
+            <Switch
+              label="Flechas de rasgueo"
+              checked={settings.show.strums !== false}
+              onChange={(strums) => setSettings({ show: { ...settings.show, strums } })}
+            />
+          )}
+          {instrumento === 'guitar' && (
             <>
               <Chips
                 label="Sonido de la guitarra"

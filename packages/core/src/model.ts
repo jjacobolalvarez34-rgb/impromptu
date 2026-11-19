@@ -93,6 +93,7 @@ export interface VisualProject {
     pulse?: boolean; // fase 11 (pedido 18): el pulso del tempo en una esquina
     pulseSound?: boolean; // y que suene (un clic por pulso al reproducir)
     drumView?: 'carriles' | 'kit'; // fase 11 (pedido 17): carriles o una batería real
+    strums?: boolean; // fase 11: flechas de rasgueo en la guitarra (encendidas si falta)
   };
   colors: { right: string; left: string; unassigned: string };
   background?: { kind: 'color' | 'image' | 'video' | 'blur'; value: string };

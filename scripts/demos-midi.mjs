@@ -53,9 +53,12 @@ for (const nombre of ['Am', 'F', 'C', 'G', 'Am', 'F', 'C', 'G']) {
 }
 for (const nombre of ['Am', 'F', 'C', 'G']) {
   for (const golpe of [0, 1, 1.5, 2.5, 3]) {
-    // Rasgueo: las cuerdas una tras otra, muy seguidas.
+    // Rasgueo: las cuerdas una tras otra, muy seguidas; en el contratiempo, hacia arriba
+    // (de la aguda a la grave).
+    const arriba = golpe % 1 !== 0;
+    const n = acordes[nombre].length;
     acordes[nombre].forEach((p, i) =>
-      guitarra.push([p, t + golpe + i * 0.03, 0.45, golpe === 0 ? 105 : 80]),
+      guitarra.push([p, t + golpe + (arriba ? n - 1 - i : i) * 0.03, 0.45, golpe === 0 ? 105 : 80]),
     );
   }
   t += 4;

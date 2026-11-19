@@ -22,6 +22,8 @@ import type {
 import { calibratedKeyLine, calibratedKeyboard, coverRect } from './calibration';
 import { layoutKeyboard } from './keyboard-layout';
 import { COLOR_CUERDA, COLOR_PIEZA, KIT_REAL, carriles, instrumentoDe } from './instrumentos';
+import { rasgueos } from './rasgueo';
+import type { Rasgueo } from './rasgueo';
 import type { Carriles } from './instrumentos';
 import type { KeyboardLayout } from './keyboard-layout';
 import {
@@ -178,6 +180,11 @@ export class Visualizer {
   private readonly noteLabelPool: Pool<BitmapText>;
   /** Fase 11 (pedido 15): el número de traste va en un círculo del color de la cuerda. */
   private readonly insignias = new Container();
+  /** Rasgueos de la guitarra (fase 11): una flecha junto a cada acorde. */
+  private rasgueos: Rasgueo[] = [];
+  private readonly rasgueoDe = new Map<string, number>();
+  private readonly cajasRasgueo = new Map<number, { x: number; y: number; fondo: number }>();
+  private readonly flechas = new Graphics();
   private readonly insigniaPool: Pool<Sprite>;
   /** Golpe de batería que se está dibujando (la gema no depende de la duración). */
   private readonly golpe = { pitch: 0, start: 0, end: 0 } as NoteEvent;
@@ -291,6 +298,7 @@ export class Visualizer {
       this.noteLayer,
       this.insignias,
       this.noteLabels,
+      this.flechas,
       this.selectionOutline,
       this.keys,
       this.glowLayer,
@@ -348,6 +356,12 @@ export class Visualizer {
     this.beats = take ? beatGrid(take.tempoMap, take.timeSignature, take.duration + 2) : [];
     this.pulsosPorCompas = take?.timeSignature?.[0] ?? 4;
     this.pulsoIdx = 0;
+    this.rasgueos =
+      this.carriles?.instrument === 'guitar' ? rasgueos(this.carriles.notas, this.beats) : [];
+    this.rasgueoDe.clear();
+    this.rasgueos.forEach((r, i) => {
+      for (const id of r.ids) this.rasgueoDe.set(id, i);
+    });
     this.revisarBase();
   }
 
@@ -527,6 +541,8 @@ export class Visualizer {
     const { fingers: showFingers, noteNames: showNames } = this.settings.show;
     const esBateria = this.carriles?.instrument === 'drums';
     const esCuerda = !!this.carriles && !esBateria;
+    const conFlechas = esCuerda && this.settings.show.strums !== false && this.rasgueos.length > 0;
+    this.cajasRasgueo.clear();
     // Gemas de batería (pedido 16): alto fijo, así los golpes seguidos no se pegan (pedido 15).
     const altoGema = Math.max(10, 20 * scale);
     this.hitRects.length = 0;
@@ -575,6 +591,22 @@ export class Visualizer {
         sprite.height = rect.height;
         sprite.tint = tint;
         sprite.alpha = esBateria ? 0.55 + 0.45 * v : 0.72 + 0.28 * v;
+        if (conFlechas) {
+          // Caja del acorde: la flecha va a su izquierda, a la altura de su punta.
+          const r = this.rasgueoDe.get(note.id);
+          if (r !== undefined) {
+            const caja = this.cajasRasgueo.get(r);
+            const fondo = rect.y + rect.height;
+            if (!caja) this.cajasRasgueo.set(r, { x: rect.x, y: rect.y, fondo });
+            else {
+              caja.x = Math.min(caja.x, rect.x);
+              caja.fondo =
+                this.direction === 'fall'
+                  ? Math.max(caja.fondo, fondo)
+                  : Math.min(caja.fondo, fondo);
+            }
+          }
+        }
         if (esCuerda) {
           const traste = this.carriles?.meta.get(note.id)?.etiqueta;
           if (traste) this.insignia(traste, rect, tint, scale);
@@ -595,6 +627,7 @@ export class Visualizer {
     this.haloPool.end();
     this.noteLabelPool.end();
     this.insigniaPool.end();
+    this.drawFlechas(scale);
 
     if (camera) this.keys.clear();
     else this.drawKeyboard(colors);
@@ -690,6 +723,42 @@ export class Visualizer {
   }
 
   /** Dedo o nombre al pie de la nota, si cabe; oscuro sobre notas claras y claro sobre oscuras. */
+  /**
+   * Cómo rasguear (fase 11): una flecha a la izquierda de cada acorde; hacia abajo en ámbar
+   * (de la 6.ª a la 1.ª cuerda) y hacia arriba en verde. Su ritmo es el de las flechas.
+   */
+  private drawFlechas(scale: number): void {
+    const g = this.flechas.clear();
+    if (this.cajasRasgueo.size === 0) return;
+    const largo = Math.max(30, 70 * scale);
+    const ancho = Math.max(4, 7 * scale);
+    const punta = Math.max(11, 18 * scale);
+    for (const [i, caja] of this.cajasRasgueo) {
+      const r = this.rasgueos[i];
+      if (!r) continue;
+      const cx = Math.max(punta, caja.x - punta - 4 * scale);
+      const fin = caja.fondo;
+      const inicio = fin - largo;
+      const color = r.dir === 'abajo' ? 0xff9f1c : 0x7fd1b9;
+      if (r.dir === 'abajo') {
+        g.rect(cx - ancho / 2, inicio, ancho, largo - punta).fill(color);
+        g.poly([cx - punta / 2 - 2, fin - punta, cx + punta / 2 + 2, fin - punta, cx, fin]).fill(
+          color,
+        );
+      } else {
+        g.rect(cx - ancho / 2, inicio + punta, ancho, largo - punta).fill(color);
+        g.poly([
+          cx - punta / 2 - 2,
+          inicio + punta,
+          cx + punta / 2 + 2,
+          inicio + punta,
+          cx,
+          inicio,
+        ]).fill(color);
+      }
+    }
+  }
+
   /**
    * Pulso del tempo (pedido 18): un punto por pulso del compás en la esquina de arriba a la
    * derecha; el que suena se enciende y crece un poco, el primero del compás en ámbar.

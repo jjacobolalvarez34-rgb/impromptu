@@ -9,4 +9,6 @@ export { calibratedKeyboard, calibratedKeyLine, coverRect } from './calibration'
 export type { VideoRect } from './calibration';
 export type { Direction, VisualSettings } from './scene';
 export { carriles, instrumentoDe, COLOR_CUERDA, COLOR_PIEZA } from './instrumentos';
+export { rasgueos } from './rasgueo';
+export type { Rasgueo } from './rasgueo';
 export type { Carriles } from './instrumentos';
