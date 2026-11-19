@@ -1,0 +1,115 @@
+/* Recorrido opcional (pedido 37). Tokens de DESIGN.md. */
+.oferta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-4);
+  padding: var(--e-4) var(--e-5);
+  border: 1px solid var(--ambar);
+  border-radius: var(--radio);
+  background: var(--panel);
+  animation: aparece 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.brujula {
+  width: 28px;
+  height: 28px;
+  color: var(--ambar);
+}
+
+.textoOferta {
+  flex: 1;
+  min-width: 200px;
+  display: grid;
+  gap: 2px;
+}
+
+.botones,
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+
+.dialogo {
+  width: min(520px, calc(100vw - 32px));
+  padding: var(--e-6);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--panel);
+  color: var(--tinta);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.55);
+}
+
+.dialogo::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}
+
+.paso {
+  display: grid;
+  gap: var(--e-3);
+  animation: aparece 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.paso h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.icono {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ambar);
+  border-radius: var(--radio);
+  color: var(--ambar);
+}
+
+.icono svg {
+  width: 24px;
+  height: 24px;
+}
+
+.texto {
+  margin: 0;
+  color: var(--chasis);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.puntos {
+  display: flex;
+  gap: 6px;
+  margin: var(--e-5) 0;
+}
+
+.puntos span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--linea);
+  transition: background 200ms ease;
+}
+
+.puntos span[data-activo='true'] {
+  background: var(--ambar);
+}
+
+.acciones {
+  justify-content: flex-end;
+}
+
+@keyframes aparece {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oferta,
+  .paso {
+    animation: none;
+  }
+}

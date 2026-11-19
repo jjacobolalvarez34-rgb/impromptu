@@ -619,3 +619,92 @@ html:has(.landing) {
   justify-content: space-between;
   gap: var(--e-3);
 }
+
+/* Elige tu instrumento (pedido 37): pestañas para no saturar con todo a la vez. */
+.pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  margin-bottom: var(--e-5);
+}
+
+.pestana {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: 44px;
+  padding: 0 var(--e-5);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--panel);
+  color: var(--chasis);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.pestana svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pestana[aria-selected='true'] {
+  border-color: var(--ambar);
+  background: color-mix(in srgb, var(--ambar) 16%, var(--panel));
+  color: var(--tinta);
+}
+
+.pestana:focus-visible {
+  outline: 2px solid var(--ambar);
+  outline-offset: 2px;
+}
+
+.panelInstrumento {
+  display: grid;
+  gap: var(--e-5);
+  justify-items: start;
+  padding: var(--e-6);
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  animation: entraPanel 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.panelInstrumento ul {
+  margin: 0;
+  padding-left: var(--e-5);
+  display: grid;
+  gap: var(--e-3);
+  color: var(--tinta);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.panelInstrumento li::marker {
+  color: var(--ambar);
+}
+
+@keyframes entraPanel {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.recorrido {
+  margin-top: var(--e-6);
+  color: var(--chasis);
+}
+
+.recorrido a {
+  color: var(--ambar);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panelInstrumento {
+    animation: none;
+  }
+}

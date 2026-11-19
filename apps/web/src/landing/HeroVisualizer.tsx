@@ -1,10 +1,11 @@
 import { DEFAULT_SETTINGS, Visualizer } from '@impromptu/render';
 import { useEffect, useRef } from 'react';
-import { createDemoPiece } from './demo';
+import { createDemoBateria, createDemoGuitarra, createDemoPiece } from './demo';
 import styles from './HeroVisualizer.module.css';
 
 /**
- * Visualizador real de Impromptu tocando la pieza de demostración, de fondo en la portada.
+ * Visualizador real de Impromptu de fondo en la portada: se turnan piano, guitarra y batería
+ * (pedido 23 de Jacobo: más fondos), cada uno una vuelta de su pieza.
  * Optimizado: densidad de píxeles limitada y se pausa si no se ve o si la pestaña está oculta.
  */
 export function HeroVisualizer() {
@@ -17,13 +18,23 @@ export function HeroVisualizer() {
     let raf = 0;
     let visible = true;
     let alive = true;
-    const take = createDemoPiece();
-    const start = performance.now();
+    const piezas = [createDemoPiece(), createDemoGuitarra(), createDemoBateria()];
+    let actual = 0;
+    let take = piezas[0]!;
+    let start = performance.now();
 
     const loop = () => {
       raf = 0;
       if (!viz || !visible || document.hidden) return;
-      const t = ((performance.now() - start) / 1000) % take.duration;
+      let t = (performance.now() - start) / 1000;
+      // Al terminar una vuelta, pasa al siguiente instrumento.
+      if (t >= take.duration) {
+        actual = (actual + 1) % piezas.length;
+        take = piezas[actual]!;
+        viz.setTake(take);
+        start = performance.now();
+        t = 0;
+      }
       viz.render(t + 0.0001);
       raf = requestAnimationFrame(loop);
     };

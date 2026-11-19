@@ -88,3 +88,67 @@ export function createDemoPiece(): Take {
     keyboardRange: { ...KEYBOARD_PRESETS[61] },
   });
 }
+
+/**
+ * Guitarra para la portada (pedido 23: más fondos): rasgueos abajo y arriba sobre la misma
+ * progresión, para que se vean el mástil, los trastes y el panel de flechas.
+ */
+export function createDemoGuitarra(): Take {
+  const acordes = [
+    [48, 52, 55, 60, 64], // Do
+    [43, 47, 50, 55, 59, 67], // Sol
+    [45, 52, 57, 60, 64], // Lam
+    [41, 48, 53, 57, 60, 65], // Fa
+  ];
+  const notes: NoteEvent[] = [];
+  const golpes = [0, 1, 1.5, 2.5, 3, 3.5];
+  acordes.forEach((acorde, c) => {
+    for (const g of golpes) {
+      const arriba = g % 1 !== 0;
+      const orden = arriba ? [...acorde].reverse() : acorde;
+      orden.forEach((pitch, i) => {
+        const start = (c * 4 + g) * BEAT + i * 0.012;
+        notes.push(
+          createNoteEvent({
+            pitch,
+            start,
+            end: start + BEAT * 0.45,
+            velocity: arriba ? 70 : 95,
+            origin: 'midi-file',
+          }),
+        );
+      });
+    }
+  });
+  return createTake({
+    title: 'Guitarra',
+    tracks: [createTrack({ instrument: 'guitar', name: 'Guitarra', notes })],
+    tempoMap: [{ time: 0, bpm: BPM }],
+    duration: 16 * BEAT,
+  });
+}
+
+/** Batería para la portada: un ritmo de rock con hi-hat en corcheas y uno abierto al final. */
+export function createDemoBateria(): Take {
+  const notes: NoteEvent[] = [];
+  const golpe = (pitch: number, pulso: number, velocity: number) => {
+    const start = pulso * BEAT;
+    notes.push(createNoteEvent({ pitch, start, end: start + 0.1, velocity, origin: 'midi-file' }));
+  };
+  for (let compas = 0; compas < 4; compas++) {
+    const b = compas * 4;
+    for (let i = 0; i < 8; i++)
+      golpe(compas === 3 && i === 7 ? 46 : 42, b + i / 2, i % 2 ? 70 : 95);
+    golpe(36, b, 110);
+    golpe(36, b + 2.5, 95);
+    golpe(38, b + 1, 105);
+    golpe(38, b + 3, 105);
+    if (compas === 0) golpe(49, b, 115);
+  }
+  return createTake({
+    title: 'Batería',
+    tracks: [createTrack({ instrument: 'drums', name: 'Batería', notes })],
+    tempoMap: [{ time: 0, bpm: BPM }],
+    duration: 16 * BEAT,
+  });
+}

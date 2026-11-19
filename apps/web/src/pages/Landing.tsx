@@ -1,7 +1,11 @@
 import { Button, Logo, LogoIntro } from '@impromptu/ui';
 import {
+  AudioLines,
   Cable,
   Download,
+  Drum,
+  Guitar,
+  Piano,
   Film,
   GitBranch,
   Globe,
@@ -9,7 +13,6 @@ import {
   Heart,
   Monitor,
   FileMusic,
-  Palette,
   Smartphone,
   Star,
   Video,
@@ -27,43 +30,84 @@ const INTRO_KEY = 'impromptu-intro-vista';
 const REPO = 'https://github.com/jjacobolalvarez34-rgb/impromptu';
 /** PROVISIONAL(P7): GitHub Sponsors aún no está activado. */
 const SPONSORS = 'https://github.com/sponsors/jjacobolalvarez34-rgb';
-/** Instaladores (fase 8). null = aún no hay; el botón queda en "Próximamente". */
+/**
+ * Instaladores (pedido 23): la última versión publicada en GitHub. PROVISIONAL: hasta que Jacobo
+ * publique la primera versión ahí (el APK firmado y el instalador de PC ya están armados).
+ */
+const RELEASES = `${REPO}/releases/latest`;
 const DOWNLOADS: { windows: string | null; android: string | null } = {
-  windows: null,
-  android: null,
+  windows: RELEASES,
+  android: RELEASES,
 };
+
+/** Cada instrumento con lo suyo (pedido 37: que no se sature todo en una sola lista). */
+const INSTRUMENTOS = [
+  {
+    id: 'piano',
+    nombre: 'Piano',
+    icono: <Piano />,
+    puntos: [
+      'Tu teclado por USB, con sustain, sostenuto, una corda y medio pedal a la vista.',
+      'Manos de colores y números de dedo para tutoriales.',
+      'Calidad del piano a elegir: hasta las 16 capas del Salamander Grand Piano.',
+      'Grabación directo en la partitura mientras tocas.',
+    ],
+  },
+  {
+    id: 'guitarra',
+    nombre: 'Guitarra y bajo',
+    icono: <Guitar />,
+    puntos: [
+      'Cada nota cae sobre su traste y su cuerda, con el número bien legible.',
+      'Panel de rasgueo: flechas que te dicen abajo, arriba o silencio.',
+      'Tablatura editable (sola o con la partitura) y afinaciones Drop D y medio tono abajo.',
+      'Sonidos grabados: nylon, acero, eléctrica y bajo.',
+    ],
+  },
+  {
+    id: 'bateria',
+    nombre: 'Batería',
+    icono: <Drum />,
+    puntos: [
+      'Carriles por pieza o una vista de batería real: los golpes bajan hasta cada parche.',
+      'Hi-hat abierto o cerrado a la vista y el pulso del tempo en una esquina, con clic.',
+      'Partitura de batería editable.',
+      'Una batería de rock grabada, con golpes suaves y fuertes.',
+    ],
+  },
+] as const;
 
 const delay = (ms: number) => ({ '--retraso': `${ms}ms` }) as CSSProperties;
 
 const FEATURES: { icon: ReactNode; title: string; text: string }[] = [
   {
-    icon: <Cable />,
-    title: 'Tu teclado, en vivo',
-    text: 'Conéctalo por USB y toca: cada nota sale de la tecla con brillo y chispas. Con sustain, sostenuto y una corda, y medio pedal.',
-  },
-  {
-    icon: <Video />,
-    title: 'Tus manos en el video',
-    text: 'Importa el video de la cámara y calibra las teclas: las notas caen exactamente sobre tu teclado real.',
+    icon: <AudioLines />,
+    title: 'De audio a notas',
+    text: 'Graba con el micrófono o abre una canción: la IA la pasa a notas. Con una canción completa, primero separa tu instrumento del resto, como Moises.',
   },
   {
     icon: <FileMusic />,
-    title: 'Tu MIDI y tu audio',
-    text: 'Abre el MIDI y el MP3 de tu DAW: se sincronizan solos. O usa el piano de cola incluido, que funciona sin internet.',
+    title: 'Partitura y tablatura',
+    text: 'Se escriben solas y se editan tocando la nota. Exporta MusicXML, MIDI, PDF o un video de la hoja con su línea de lectura.',
   },
   {
     icon: <Film />,
     title: 'Video listo para publicar',
-    text: 'MP4 hecho cuadro por cuadro, sin saltos: horizontal, vertical o cuadrado, en 1080p o 4K, a 30 o 60 fps.',
+    text: 'MP4 cuadro por cuadro en horizontal, vertical o cuadrado, hasta 4K. Se arma en segundo plano y se descarga solo.',
   },
   {
-    icon: <Palette />,
-    title: 'Tu estilo',
-    text: 'Temas, colores por mano, notas brillantes, haces de luz, líneas de compás y velocidad de caída.',
+    icon: <Video />,
+    title: 'Tus manos en el video',
+    text: 'Importa el video de la cámara y calibra: las notas caen exactamente sobre tu instrumento real.',
+  },
+  {
+    icon: <Cable />,
+    title: 'Practica y transmite',
+    text: 'Modo práctica que espera tus notas, y una vista en vivo para OBS mientras tocas.',
   },
   {
     icon: <Hand />,
-    title: 'Hecho por un pianista',
+    title: 'Hecho por un músico',
     text: 'Gratis y de código abierto. Todo corre en tu equipo: tu música nunca sale de él.',
   },
 ];
@@ -76,18 +120,18 @@ const STEPS = [
 ] as const;
 
 const COMING = [
-  'Números de dedo',
-  'Partitura y PDF',
-  'Audio a notas con IA',
-  'Modo práctica',
-  'Guitarra',
-  'Batería',
+  'Cuenta y nube (opcional)',
+  'Teclado más realista',
+  'Más sonidos de instrumentos',
+  'IA más precisa para guitarra y batería',
 ];
 
 /** Página principal: qué es, cómo funciona, descargas y donaciones (pedido de Jacobo). */
 export function Landing() {
   const rootRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const [instrumento, setInstrumento] = useState<(typeof INSTRUMENTOS)[number]['id']>('piano');
+  const elegido = INSTRUMENTOS.find((i) => i.id === instrumento) ?? INSTRUMENTOS[0];
   const [intro, setIntro] = useState(() => {
     if (new URLSearchParams(window.location.search).has('intro')) return true;
     try {
@@ -126,7 +170,8 @@ export function Landing() {
           <Logo size={18} keyboard={false} />
         </a>
         <div className={styles.enlaces}>
-          <a href="#que-es">Qué es</a>
+          <a href="#instrumentos">Instrumentos</a>
+          <a href="#que-es">Qué hace</a>
           <a href="#como">Cómo funciona</a>
           <a href="#descargar">Descargar</a>
           <a href="#apoyar">Apoyar</a>
@@ -141,8 +186,8 @@ export function Landing() {
         <div className={styles.veloHero} aria-hidden="true" />
         <div className={styles.heroTexto} data-intro={intro}>
           <p className={`${styles.kicker} ui-etiqueta`}>Gratis · Código abierto · En tu equipo</p>
-          <h1 className={styles.titulo} aria-label="Videos de piano con notas cayendo">
-            {'Videos de piano con notas cayendo'.split(' ').map((word, w, words) => (
+          <h1 className={styles.titulo} aria-label="Videos de música con notas cayendo">
+            {'Videos de música con notas cayendo'.split(' ').map((word, w, words) => (
               <span key={w} className={styles.palabra}>
                 {word.split('').map((ch, i) => {
                   const index = words.slice(0, w).join('').length + i;
@@ -161,8 +206,8 @@ export function Landing() {
             ))}
           </h1>
           <p className={styles.lema}>
-            Conecta tu teclado, toca y exporta un video con tus manos, tus pedales y efectos de luz.
-            Sin suscripciones.
+            Piano, guitarra, bajo y batería. Conecta tu instrumento o abre un audio, y exporta un
+            video con tus manos, la partitura y efectos de luz. Sin suscripciones.
           </p>
           <div className={styles.ctas}>
             <Button variant="primary" icon={<Globe />} onClick={() => navigate('/app')}>
@@ -173,14 +218,59 @@ export function Landing() {
             </a>
           </div>
         </div>
-        <a href="#que-es" className={styles.bajar} aria-label="Ver más">
+        <a href="#instrumentos" className={styles.bajar} aria-label="Ver más">
           <span />
         </a>
       </header>
 
       <main>
+        <section id="instrumentos" className={styles.seccion}>
+          <Heading kicker="Instrumentos" title="Elige el tuyo" />
+          <div
+            className={styles.pestanas}
+            role="tablist"
+            aria-label="Instrumento"
+            data-revelar="cae"
+          >
+            {INSTRUMENTOS.map((i) => (
+              <button
+                key={i.id}
+                type="button"
+                role="tab"
+                id={`pestana-${i.id}`}
+                aria-selected={instrumento === i.id}
+                aria-controls="panel-instrumento"
+                className={styles.pestana}
+                onClick={() => setInstrumento(i.id)}
+              >
+                <span aria-hidden="true">{i.icono}</span>
+                {i.nombre}
+              </button>
+            ))}
+          </div>
+          <div
+            id="panel-instrumento"
+            role="tabpanel"
+            aria-labelledby={`pestana-${elegido.id}`}
+            className={styles.panelInstrumento}
+            key={elegido.id}
+          >
+            <ul>
+              {elegido.puntos.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
+            <Button
+              variant="primary"
+              onClick={() => navigate(`/estudio?instrumento=${elegido.id}`)}
+            >
+              Abrir con {elegido.nombre.toLowerCase()}
+            </Button>
+          </div>
+        </section>
+
         <section id="que-es" className={styles.seccion}>
-          <Heading kicker="Qué es" title="Todo lo de un estudio de piano, en una sola app" />
+          <Heading kicker="Qué hace" title="Para todos los instrumentos" />
           <div className={styles.rejilla}>
             {FEATURES.map((f, i) => (
               <article
@@ -200,7 +290,7 @@ export function Landing() {
         </section>
 
         <section id="como" className={styles.seccion}>
-          <Heading kicker="Cómo funciona" title="De tu teclado a tu canal en cuatro pasos" />
+          <Heading kicker="Cómo funciona" title="De tu instrumento a tu canal en cuatro pasos" />
           <ol className={styles.pasos}>
             <span className={styles.riel} data-revelar="traza" aria-hidden="true" />
             {STEPS.map(([title, text], i) => (
@@ -211,6 +301,9 @@ export function Landing() {
               </li>
             ))}
           </ol>
+          <p className={styles.recorrido} data-revelar="texto">
+            ¿Primera vez? <Link to="/app?recorrido">Haz el recorrido de un minuto</Link> por la app.
+          </p>
         </section>
 
         <section className={styles.seccion}>
@@ -241,14 +334,14 @@ export function Landing() {
             <DownloadCard
               icon={<Monitor />}
               title="PC"
-              text="App para Windows, macOS y Linux, con MIDI nativo y archivos en tu disco."
+              text="App para Windows, con MIDI nativo, archivos en tu disco y la IA sin internet."
               index={1}
               href={DOWNLOADS.windows}
             />
             <DownloadCard
               icon={<Smartphone />}
               title="Android"
-              text="Instálala en tu celular: graba con tu teclado por OTG, también sin conexión."
+              text="Instálala en tu celular: graba con tu instrumento por OTG o con el micrófono, también sin conexión."
               index={2}
               href={DOWNLOADS.android}
             />
@@ -260,7 +353,7 @@ export function Landing() {
           <h2>Impromptu es gratis y lo seguirá siendo</h2>
           <p>
             No hay suscripciones ni funciones bloqueadas. Si te sirve, ayúdanos a mantenerlo y a
-            sumar dedos, partitura, tutoriales y más instrumentos.
+            sumar más instrumentos, sonidos y una IA más precisa.
           </p>
           <div className={styles.ctas}>
             <a className={styles.ctaPrincipal} href={SPONSORS} target="_blank" rel="noreferrer">
@@ -336,8 +429,8 @@ function DownloadCard({
       <p>{text}</p>
       {action ??
         (href ? (
-          <a className={styles.ctaPrincipal} href={href}>
-            <Download aria-hidden="true" /> Descargar
+          <a className={styles.ctaPrincipal} href={href} target="_blank" rel="noreferrer">
+            <Download aria-hidden="true" /> Descargar en GitHub
           </a>
         ) : (
           <span className={styles.pronto}>Próximamente</span>

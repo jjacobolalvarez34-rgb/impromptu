@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router';
 import { MamutHerdSello } from '../brand/MamutHerdSello';
 import { MAMUT_HERD } from '../brand/mamutHerd';
 import { isDesktop } from '../desktop';
+import { Recorrido } from '../recorrido/Recorrido';
 import styles from './Portada.module.css';
 
 const INTRO_KEY = 'impromptu-intro-vista';
@@ -67,6 +68,8 @@ export function Portada() {
       </header>
 
       <main className={styles.contenido}>
+        {/* Recorrido opcional la primera vez (pedido 37). */}
+        <Recorrido />
         <section aria-labelledby="instrumentos" className={styles.instrumentos}>
           <h2 id="instrumentos" className={`ui-etiqueta ui-aparece-texto`} style={delay(3)}>
             Elige tu instrumento
