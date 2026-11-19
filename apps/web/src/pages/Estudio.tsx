@@ -60,6 +60,7 @@ import type { Aspect } from '../studio/store';
 import { formatTime } from '../studio/transport';
 import { useOwnAudio } from '../studio/ownAudio';
 import { Burbuja } from '../studio/Burbuja';
+import { PantallaCarga } from '../studio/PantallaCarga';
 import styles from './Estudio.module.css';
 
 const ASPECTS = [
@@ -662,6 +663,7 @@ export function Estudio() {
         </div>
       </footer>
       <Burbuja />
+      <PantallaCarga />
     </div>
   );
 }

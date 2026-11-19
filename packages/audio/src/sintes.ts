@@ -271,19 +271,22 @@ export class Sintes {
    * Descarga y decodifica un banco grabado una sola vez. `base`: carpeta de los bancos
    * (termina en /), con una subcarpeta por banco y su `manifiesto.json`.
    */
-  cargarBanco(base: string, banco: Banco): Promise<void> {
+  cargarBanco(base: string, banco: Banco, avance?: (v: number) => void): Promise<void> {
     let p = this.cargando.get(banco);
     if (!p) {
       p = (async () => {
         const res = await fetch(`${base}${banco}/manifiesto.json`);
         if (!res.ok) throw new Error(`No se pudo bajar ${banco}`);
         const m = (await res.json()) as Manifiesto;
+        const archivos = archivosDe(m);
+        let listos = 0;
         await Promise.all(
-          archivosDe(m).map(async (archivo) => {
+          archivos.map(async (archivo) => {
             const r = await fetch(`${base}${banco}/${archivo}`);
             if (!r.ok) return;
             const audio = await this.context.decodeAudioData(await r.arrayBuffer());
             this.grabadas.set(`${banco}/${archivo}`, audio);
+            avance?.(++listos / archivos.length);
           }),
         );
         // El manifiesto se guarda al final: así no se usa un banco a medio bajar.
@@ -296,9 +299,16 @@ export class Sintes {
   }
 
   /** Carga el banco que necesita un instrumento (la guitarra, según su timbre). */
-  cargarPara(base: string, instrument: Instrument): Promise<void> {
+  cargarPara(
+    base: string,
+    instrument: Instrument,
+    avance?: (banco: Banco, v: number) => void,
+  ): Promise<void> {
     const banco = bancoDe(instrument, this.timbreGuitarra);
-    return banco ? this.cargarBanco(base, banco) : Promise.resolve();
+    if (!banco) return Promise.resolve();
+    // Si ya está (o ya se pidió), no se vuelve a avisar el avance.
+    const nuevo = !this.cargando.has(banco);
+    return this.cargarBanco(base, banco, nuevo && avance ? (v) => avance(banco, v) : undefined);
   }
 
   /** Espera los bancos que se están bajando (antes de exportar, para que el video suene igual). */

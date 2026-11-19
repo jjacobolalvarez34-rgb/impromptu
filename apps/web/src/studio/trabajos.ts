@@ -54,3 +54,39 @@ export function descargar(blob: Blob, nombre: string): void {
   a.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
+
+/**
+ * Descargas en curso (pedido 45): el piano, los sonidos de cada instrumento… La burbuja y la
+ * pantalla de carga las muestran con su avance.
+ */
+export interface Descarga {
+  id: string;
+  nombre: string;
+  /** 0 a 1. */
+  avance: number;
+}
+
+/** `inicioListo`: ya terminó la primera tanda (la pantalla de carga no vuelve a salir). */
+export const useDescargas = create<{ lista: Descarga[]; inicioListo: boolean }>(() => ({
+  lista: [],
+  inicioListo: false,
+}));
+
+export function avisarDescarga(id: string, nombre: string, avance: number): void {
+  useDescargas.setState((s) => {
+    const otras = s.lista.filter((d) => d.id !== id);
+    return { lista: [...otras, { id, nombre, avance: Math.min(1, Math.max(0, avance)) }] };
+  });
+}
+
+export function terminarDescarga(id: string): void {
+  useDescargas.setState((s) => {
+    const lista = s.lista.filter((d) => d.id !== id);
+    return { lista, inicioListo: s.inicioListo || lista.length === 0 };
+  });
+}
+
+/** "Seguir sin esperar" en la pantalla de carga. */
+export function saltarCarga(): void {
+  useDescargas.setState({ inicioListo: true });
+}

@@ -1,7 +1,7 @@
 import { Loader2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { avanceVisible, useTranscribe } from './transcribeStore';
-import { quitarTrabajo, useTrabajos } from './trabajos';
+import { quitarTrabajo, useDescargas, useTrabajos } from './trabajos';
 import styles from './Burbuja.module.css';
 
 /**
@@ -11,6 +11,7 @@ import styles from './Burbuja.module.css';
 export function Burbuja() {
   const trabajos = useTrabajos((s) => s.lista);
   const cola = useTranscribe((s) => s.cola);
+  const descargas = useDescargas((s) => s.lista);
   const [abierta, setAbierta] = useState(false);
   // Las conversiones avanzan entre avisos: se refresca dos veces por segundo mientras haya.
   const [ahora, setAhora] = useState(() => performance.now());
@@ -21,6 +22,14 @@ export function Burbuja() {
   }, [cola.length]);
 
   const filas = [
+    ...descargas.map((d) => ({
+      clave: `d${d.id}`,
+      nombre: `Descargando: ${d.nombre}`,
+      avance: d.avance as number | null,
+      texto: `${Math.round(d.avance * 100)} %`,
+      cancelar: undefined as (() => void) | undefined,
+      textoCancelar: 'Cancelar',
+    })),
     ...trabajos.map((t) => ({
       clave: `t${t.id}`,
       nombre: t.nombre,

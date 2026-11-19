@@ -1,0 +1,63 @@
+/* Pantalla de carga al entrar (pedido 45). Tokens de DESIGN.md. */
+.carga {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: var(--e-4);
+  background: var(--carbon);
+  animation: aparece 300ms ease;
+}
+
+.caja {
+  width: min(440px, 100%);
+  display: grid;
+  gap: var(--e-4);
+  justify-items: start;
+}
+
+.lista {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--e-3);
+}
+
+.lista li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px var(--e-3);
+  color: var(--tinta);
+  font-size: 14px;
+}
+
+.barra {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  height: 4px;
+  border-radius: 2px;
+  background: #3d3d39;
+  overflow: hidden;
+}
+
+.barra > span {
+  display: block;
+  height: 100%;
+  background: var(--ambar);
+  transition: width 300ms linear;
+}
+
+@keyframes aparece {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carga {
+    animation: none;
+  }
+}

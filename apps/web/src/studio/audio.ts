@@ -7,6 +7,16 @@ import { click } from './metronome';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { audioOffset, useOwnAudio } from './ownAudio';
+import { avisarDescarga, terminarDescarga } from './trabajos';
+
+/** Nombre de cada banco de sonidos, para la burbuja. */
+const NOMBRE_BANCO = {
+  nylon: 'guitarra de nylon',
+  acero: 'guitarra de acero',
+  electrica: 'guitarra eléctrica',
+  bajo: 'bajo',
+  bateria: 'batería',
+} as const;
 import { transport, useStudio } from './store';
 
 /** Cuánto por delante se programa el audio y cada cuánto se revisa (s / ms). */
@@ -132,7 +142,19 @@ class AudioEngine {
         if (!sintes) return;
         sintes.timbreGuitarra = s.guitarra.timbre;
         const usados = new Set([s.instrumento, ...(s.take?.tracks.map((t) => t.instrument) ?? [])]);
-        for (const i of usados) void sintes.cargarPara(bancos, i).catch(() => undefined);
+        for (const i of usados) {
+          // Pedido 45: cada descarga se ve en la burbuja con su avance.
+          let id = '';
+          void sintes
+            .cargarPara(bancos, i, (banco, v) => {
+              id = `banco-${banco}`;
+              avisarDescarga(id, `Sonidos: ${NOMBRE_BANCO[banco]}`, v);
+            })
+            .catch(() => undefined)
+            .finally(() => {
+              if (id) terminarDescarga(id);
+            });
+        }
       };
       cargar();
       useStudio.subscribe(cargar);
@@ -158,20 +180,26 @@ class AudioEngine {
       layers: CAPAS_POR_CALIDAD[useAudio.getState().calidad],
     });
     useAudio.setState({ status: 'loading', progress: 0 });
+    avisarDescarga('piano', 'Piano', 0);
     // Si se cambia la calidad a medio bajar, gana el último pedido.
     const carga = ++this.cargas;
     this.loading = piano
-      .load(({ loaded, total }) => useAudio.setState({ progress: loaded / total }))
+      .load(({ loaded, total }) => {
+        useAudio.setState({ progress: loaded / total });
+        avisarDescarga('piano', 'Piano', loaded / total);
+      })
       .then(() => {
         if (carga !== this.cargas) return piano;
         this.piano = piano;
         this.livePlayer = new LivePlayer(piano);
         useAudio.setState({ status: 'ready', progress: 1 });
+        terminarDescarga('piano');
         this.reschedule();
         return piano;
       })
       .catch(() => {
         useAudio.setState({ status: 'error' });
+        terminarDescarga('piano');
         this.loading = null; // se puede reintentar
         return null;
       });

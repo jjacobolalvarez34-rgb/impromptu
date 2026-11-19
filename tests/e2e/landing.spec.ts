@@ -65,3 +65,23 @@ test('el intro se desvanece y deja ver la pantalla de atrás (pedido 43)', async
   await expect(saltar).toBeHidden({ timeout: 3000 });
   await expect(page.getByRole('heading', { name: 'Elige tu instrumento' })).toBeVisible();
 });
+
+test('pantalla de carga al entrar y las descargas en la burbuja (pedido 45)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'celular', 'Basta con el escritorio');
+  test.setTimeout(120_000);
+  await page.goto('/estudio?carga');
+  const carga = page.getByRole('dialog', { name: 'Preparando Impromptu' });
+  await expect(carga).toBeVisible({ timeout: 20_000 });
+  await expect(carga).toContainText('Piano');
+  await carga.getByRole('button', { name: 'Seguir sin esperar' }).click();
+  await expect(carga).toBeHidden();
+  // La descarga sigue y se ve en la burbuja.
+  const burbuja = page.getByRole('button', { name: /trabajos en segundo plano/ });
+  await expect(burbuja).toBeVisible();
+  await burbuja.click();
+  await expect(page.getByRole('list', { name: 'Trabajos en segundo plano' })).toContainText(
+    'Descargando: Piano',
+  );
+});
