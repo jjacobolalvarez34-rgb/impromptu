@@ -58,12 +58,19 @@ import { Timeline } from '../studio/Timeline';
 import { transport, useStudio } from '../studio/store';
 import type { Aspect } from '../studio/store';
 import { formatTime } from '../studio/transport';
+import { useOwnAudio } from '../studio/ownAudio';
 import styles from './Estudio.module.css';
 
 const ASPECTS = [
   { value: '16:9', label: 'Horizontal 16:9' },
   { value: '9:16', label: 'Vertical 9:16' },
   { value: '1:1', label: 'Cuadrado 1:1' },
+] as const;
+
+/** Pedido 34: con audio propio, escuchar la grabación original o el MIDI con nuestros sonidos. */
+const ESCUCHAR = [
+  { value: 'original', label: 'Original' },
+  { value: 'midi', label: 'Nuestros sonidos' },
 ] as const;
 
 const SPEEDS = [
@@ -110,6 +117,7 @@ export function Estudio() {
   const canRedo = useStudio((s) => s.future.length > 0);
   useEditShortcuts();
   const speed = useStudio((s) => s.speed);
+  const audioPropio = useOwnAudio((s) => s.audio);
   const {
     open,
     setAspect,
@@ -614,6 +622,17 @@ export function Estudio() {
           </p>
         )}
 
+        {audioPropio && (
+          <div className={styles.velocidad}>
+            <span className="ui-etiqueta">Escuchar</span>
+            <Chips
+              label="Qué se escucha"
+              options={ESCUCHAR}
+              value={audioPropio.use ? 'original' : 'midi'}
+              onChange={(v) => useOwnAudio.getState().patch({ use: v === 'original' })}
+            />
+          </div>
+        )}
         <div className={styles.velocidad}>
           <span className="ui-etiqueta">Velocidad</span>
           <Chips
