@@ -1,4 +1,6 @@
 import { createNoteEvent, createTake, createTrack, fitKeyboardRange } from '@impromptu/core';
+import { instrumentoDe } from '@impromptu/render';
+import type { Instrument } from '@impromptu/core';
 import type { NoteEvent, Take } from '@impromptu/core';
 import { importMidi } from '@impromptu/midi';
 import type { ImportWarning } from '@impromptu/midi';
@@ -102,4 +104,13 @@ export function createDemoTake(visibleNotes = 2000, seconds = 30): Take {
     tracks: [track],
     keyboardRange: fitKeyboardRange(notes.map((n) => n.pitch)),
   });
+}
+
+/** Instrumento de una pieza local (para la insignia de la lista). */
+export async function instrumentoDePieza(path: string): Promise<Instrument> {
+  try {
+    return instrumentoDe((await openLocalPiece(path)).take);
+  } catch {
+    return 'piano';
+  }
 }

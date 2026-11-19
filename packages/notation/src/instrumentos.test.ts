@@ -28,6 +28,23 @@ describe('partitura de otros instrumentos', () => {
     expect(xml).toContain('<part-name>Guitarra</part-name>');
   });
 
+  it('guitarra: solo la tablatura, sin el pentagrama de notas', () => {
+    const t = toma('guitar', [40, 45, 50]);
+    const xml = toMusicXml(buildScore(t, { beats: beatsOf(t), instrument: 'guitar' }), {
+      instrument: 'guitar',
+      soloTablatura: true,
+    });
+    expect(xml).toContain('<clef><sign>TAB</sign>');
+    expect(xml).not.toContain('<staves>2</staves>');
+    expect(xml).not.toContain('<backup>');
+  });
+
+  it('hoja vacía con varios compases', () => {
+    const t = toma('guitar', []);
+    const score = buildScore(t, { beats: beatsOf(t), instrument: 'guitar', compasesMinimos: 4 });
+    expect(score.measures).toHaveLength(4);
+  });
+
   it('batería: pentagrama de percusión con platillos en cruz', () => {
     const t = toma('drums', [36, 42, 38, 42]);
     const score = buildScore(t, { beats: beatsOf(t), instrument: 'drums' });

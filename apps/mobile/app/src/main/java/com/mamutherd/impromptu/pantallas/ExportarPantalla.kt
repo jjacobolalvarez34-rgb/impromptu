@@ -204,7 +204,7 @@ fun ExportarPantalla(id: String, nav: Navegador) {
                         }
                         val ocupado = estado is Exportacion.Estado.Trabajando
                         Tecla(
-                            if (ocupado) "Ya hay otro video armándose" else "Exportar video",
+                            if (ocupado) "Espera: se arma un video a la vez" else "Exportar video",
                             {
                                 val escala = if (hd) 1.0 else 2.0 / 3
                                 Exportacion.iniciar(context, pieza, par(formato.ancho * escala), par(formato.alto * escala))
@@ -267,7 +267,7 @@ private fun AvanceExportacion(e: Exportacion.Estado.Trabajando) {
         }
         Avance(v, Modifier.padding(vertical = 12.dp))
         Text(
-            (falta?.let { "$it · " } ?: "") + "Puedes salir de la app: el video sigue armándose.",
+            (falta?.let { "$it · " } ?: "") + "Puedes salir de la app: el video sigue en segundo plano (se arma uno a la vez).",
             style = Tipos.Secundario,
         )
         Tecla("Cancelar", Exportacion::cancelar, modifier = Modifier.padding(top = 12.dp))

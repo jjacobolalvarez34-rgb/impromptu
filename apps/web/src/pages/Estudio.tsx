@@ -17,12 +17,15 @@ import {
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, DragEvent } from 'react';
 import { beatAt, beatGrid, tempoAt } from '@impromptu/core';
+import type { Instrument } from '@impromptu/core';
+import { instrumentoDe } from '@impromptu/render';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { VisualizerView } from '../studio/VisualizerView';
 import {
   LOCAL_PIECES,
   DEMO_PIECES,
   createDemoTake,
+  instrumentoDePieza,
   openLocalPiece,
   openMidiFile,
 } from '../studio/sources';
@@ -33,7 +36,13 @@ import { AudioSection, openOwnAudio } from '../studio/AudioSection';
 import { EditBar, useEditShortcuts } from '../studio/EditBar';
 import { ExportDialog } from '../studio/ExportDialog';
 import { ConvertAudioButton, MicSection, TranscribeStatus } from '../studio/TranscribeSection';
-import { ElegirInstrumento, instrumentoDeTexto } from '../studio/Instrumento';
+import {
+  AnuncioInstrumento,
+  InsigniaInstrumento,
+  SelectorInstrumento,
+  instrumentoDeTexto,
+  instrumentoPorNombre,
+} from '../studio/Instrumento';
 import { saveMidi } from '../studio/saveMidi';
 import { isDesktop, onMenuAction, requestConvertAudio } from '../desktop';
 import { Welcome } from '../studio/Welcome';
@@ -65,15 +74,26 @@ const SPEEDS = [
   { value: '1.5', label: '1,5×' },
 ] as const;
 
-const TABS = [
-  { id: 'estudio', label: 'Estudio' },
-  { id: 'tutorial', label: 'Tutorial' },
-  { id: 'partitura', label: 'Partitura' },
-  { id: 'en-vivo', label: 'En vivo' },
-] as const;
+/** La pestaña de la hoja se llama según el instrumento (pedido de Jacobo). */
+const NOMBRE_HOJA: Record<Instrument, string> = {
+  piano: 'Partitura',
+  guitar: 'Tablatura',
+  bass: 'Tablatura',
+  drums: 'Partitura de batería',
+};
+
+const tabsPara = (instrumento: Instrument) =>
+  [
+    { id: 'estudio', label: 'Estudio' },
+    { id: 'tutorial', label: 'Tutorial' },
+    { id: 'partitura', label: NOMBRE_HOJA[instrumento] },
+    { id: 'en-vivo', label: 'En vivo' },
+  ] as const;
 
 export function Estudio() {
   const take = useStudio((s) => s.take);
+  // Instrumento de la hoja: el de la pieza abierta o, sin pieza, el elegido.
+  const instrumentoHoja = useStudio((s) => (s.take ? instrumentoDe(s.take) : s.instrumento));
   const [tab, setTab] = useState<'estudio' | 'tutorial' | 'partitura'>('estudio');
   // El tutorial (modo espera, mano que se practica) solo está activo en su pestaña.
   useEffect(() => {
@@ -164,6 +184,17 @@ export function Estudio() {
     meterLive.current = meter;
   }, [meter]);
   const [params] = useSearchParams();
+  // Instrumento de cada pieza de "Tus piezas" (se lee una vez al abrir el estudio).
+  const [instrLocales, setInstrLocales] = useState<Record<string, Instrument>>({});
+  useEffect(() => {
+    let vivo = true;
+    void Promise.all(
+      LOCAL_PIECES.map(async (p) => [p.path, await instrumentoDePieza(p.path)] as const),
+    ).then((r) => vivo && setInstrLocales(Object.fromEntries(r)));
+    return () => {
+      vivo = false;
+    };
+  }, []);
   // ?instrumento=guitarra (desde la pantalla principal) elige el instrumento.
   useEffect(() => {
     const i = instrumentoDeTexto(params.get('instrumento'));
@@ -258,10 +289,11 @@ export function Estudio() {
               : 'Abre un MIDI para empezar'}
           </span>
         </div>
+        <SelectorInstrumento />
         <Tabs
           label="Secciones"
           idPrefix="app"
-          tabs={TABS}
+          tabs={tabsPara(instrumentoHoja)}
           value={tab}
           onChange={(id) => {
             if (id === 'en-vivo') void navigate('/en-vivo');
@@ -365,7 +397,6 @@ export function Estudio() {
             <h2 id="bloque-grabar" className="ui-etiqueta">
               Grabar
             </h2>
-            <ElegirInstrumento />
             <KeyboardSection />
             <MicSection />
           </section>
@@ -407,7 +438,10 @@ export function Estudio() {
                         aria-current={take?.title.toLowerCase() === p.name.toLowerCase()}
                         onClick={() => void load(openLocalPiece(p.path))}
                       >
-                        {p.name}
+                        <span className={styles.nombreFila}>{p.name}</span>
+                        {instrLocales[p.path] && (
+                          <InsigniaInstrumento instrumento={instrLocales[p.path]!} />
+                        )}
                       </button>
                     </li>
                   ))}
@@ -433,7 +467,8 @@ export function Estudio() {
                     className={styles.fila}
                     onClick={() => void load(openLocalPiece(p.path))}
                   >
-                    {p.name}
+                    <span className={styles.nombreFila}>{p.name.replace(/^[^:]*: /, '')}</span>
+                    <InsigniaInstrumento instrumento={instrumentoPorNombre(p.name)} />
                   </button>
                 </li>
               ))}
@@ -478,6 +513,7 @@ export function Estudio() {
               showFps={params.has('fps') || take?.title.startsWith('Prueba') === true}
             />
             <EditBar />
+            <AnuncioInstrumento />
             {!take && view !== 'live' && (
               <div className={styles.vacio}>
                 <p>Abre un MIDI o arrástralo aquí para verlo caer.</p>

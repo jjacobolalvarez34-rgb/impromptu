@@ -42,6 +42,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mamutherd.impromptu.Impromptu
+import com.mamutherd.impromptu.instrumentos.Instrumento
 import com.mamutherd.impromptu.Navegador
 import com.mamutherd.impromptu.Pantalla
 import com.mamutherd.impromptu.datos.Smf
@@ -126,7 +127,7 @@ fun PiezaPantalla(id: String, nav: Navegador) {
             ) {
                 BotonIcono(Iconos.Volver, "Volver", { nav.volver() })
                 Text(pieza.titulo, style = Tipos.TituloPanel, maxLines = 1, modifier = Modifier.weight(1f).padding(start = 4.dp))
-                Tecla("Partitura", { motor?.pausar(); nav.ir(Pantalla.Partitura(id)) }, altura = 40.dp, icono = { Icono(Iconos.Partitura, null, tamano = 18.dp) })
+                Tecla(when (pieza.instr) { Instrumento.Guitarra, Instrumento.Bajo -> "Tablatura"; else -> "Partitura" }, { motor?.pausar(); nav.ir(Pantalla.Partitura(id)) }, altura = 40.dp, icono = { Icono(Iconos.Partitura, null, tamano = 18.dp) })
                 Box(Modifier.width(8.dp))
                 Tecla("Video", { motor?.pausar(); nav.ir(Pantalla.Exportar(id)) }, altura = 40.dp, icono = { Icono(Iconos.Video, null, tamano = 18.dp) })
                 Box(Modifier.width(8.dp))

@@ -12,6 +12,9 @@
 
 /* Barra superior */
 .barra {
+  /* Encima del resto: el tablero de instrumentos se despliega sobre el visualizador. */
+  position: relative;
+  z-index: 20;
   display: flex;
   align-items: center;
   gap: var(--e-5);
@@ -332,4 +335,13 @@
 
 .panel[hidden] {
   display: none;
+}
+
+/* Nombre de una fila con insignia al lado. */
+.nombreFila {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

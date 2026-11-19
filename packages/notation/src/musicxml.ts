@@ -113,7 +113,13 @@ const ALTERADAS = new Set([1, 3, 6, 8, 10]);
  * tablatura con cuerda y traste. Las posiciones salen del mismo algoritmo de la app
  * (`asignarTrastes`), aplicado a la partitura cuantizada.
  */
-function guitarraXml(score: Score, afinacion: readonly number[], bajo: boolean): string {
+function guitarraXml(
+  score: Score,
+  afinacion: readonly number[],
+  bajo: boolean,
+  /** Solo la tablatura, sin el pentagrama de notas (pedido de Jacobo). */
+  soloTab = false,
+): string {
   const measureLength = Math.round(score.time[0] * (4 / score.time[1]) * score.divisions);
   // Posición de cada altura de cada evento.
   const pseudo: NoteEvent[] = [];
@@ -147,12 +153,15 @@ function guitarraXml(score: Score, afinacion: readonly number[], bajo: boolean):
         ? `<attributes><divisions>${score.divisions}</divisions>` +
           `<key><fifths>${score.fifths}</fifths><mode>${score.mode}</mode></key>` +
           `<time><beats>${score.time[0]}</beats><beat-type>${score.time[1]}</beat-type></time>` +
-          '<staves>2</staves>' +
-          (bajo
-            ? '<clef number="1"><sign>F</sign><line>4</line><clef-octave-change>-1</clef-octave-change></clef>'
-            : '<clef number="1"><sign>G</sign><line>2</line><clef-octave-change>-1</clef-octave-change></clef>') +
-          '<clef number="2"><sign>TAB</sign><line>5</line></clef>' +
-          `<staff-details number="2"><staff-lines>${lineas}</staff-lines>${afinacionXml}</staff-details></attributes>` +
+          (soloTab
+            ? '<clef><sign>TAB</sign><line>5</line></clef>' +
+              `<staff-details><staff-lines>${lineas}</staff-lines>${afinacionXml}</staff-details></attributes>`
+            : '<staves>2</staves>' +
+              (bajo
+                ? '<clef number="1"><sign>F</sign><line>4</line><clef-octave-change>-1</clef-octave-change></clef>'
+                : '<clef number="1"><sign>G</sign><line>2</line><clef-octave-change>-1</clef-octave-change></clef>') +
+              '<clef number="2"><sign>TAB</sign><line>5</line></clef>' +
+              `<staff-details number="2"><staff-lines>${lineas}</staff-lines>${afinacionXml}</staff-details></attributes>`) +
           metronomo(score)
         : '';
     const notas = m.staves[0].map((e) => noteXml(e, 1, score.fifths)).join('');
@@ -165,9 +174,10 @@ function guitarraXml(score: Score, afinacion: readonly number[], bajo: boolean):
             ? `<string>${n.string}</string><fret>${n.fret}</fret>`
             : '';
         };
-        return noteXml(e, 2, score.fifths, { tecnica });
+        return noteXml(e, soloTab ? 1 : 2, score.fifths, { tecnica });
       })
       .join('');
+    if (soloTab) return `<measure number="${m.number}">${attributes}${tab}</measure>`;
     return (
       `<measure number="${m.number}">${attributes}${notas}` +
       `<backup><duration>${measureLength}</duration></backup>${tab}</measure>`
@@ -204,13 +214,22 @@ function bateriaXml(score: Score): string {
  */
 export function toMusicXml(
   score: Score,
-  opciones: { instrument?: Instrument; afinacion?: readonly number[] } = {},
+  opciones: {
+    instrument?: Instrument;
+    afinacion?: readonly number[];
+    soloTablatura?: boolean;
+  } = {},
 ): string {
   const instrumento = opciones.instrument ?? 'piano';
   if (instrumento === 'guitar')
-    return guitarraXml(score, opciones.afinacion ?? AFINACIONES.estandar, false);
+    return guitarraXml(
+      score,
+      opciones.afinacion ?? AFINACIONES.estandar,
+      false,
+      opciones.soloTablatura,
+    );
   if (instrumento === 'bass')
-    return guitarraXml(score, opciones.afinacion ?? AFINACIONES.bajo, true);
+    return guitarraXml(score, opciones.afinacion ?? AFINACIONES.bajo, true, opciones.soloTablatura);
   if (instrumento === 'drums') return bateriaXml(score);
   return pianoXml(score);
 }

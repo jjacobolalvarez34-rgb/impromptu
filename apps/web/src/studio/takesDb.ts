@@ -1,4 +1,5 @@
-import type { Take } from '@impromptu/core';
+import type { Take, Instrument } from '@impromptu/core';
+import { instrumentoDe } from '@impromptu/render';
 import { deleteMedia } from './mediaStore';
 
 /**
@@ -21,6 +22,8 @@ export interface TakeSummary {
   video: boolean;
   /** Trae audio (del micrófono o del archivo convertido). */
   audio: boolean;
+  /** Instrumento de la grabación (fase 9). */
+  instrumento: Instrument;
 }
 
 function sourceOf(t: Take): TakeSummary['source'] {
@@ -79,6 +82,7 @@ export async function listTakes(): Promise<TakeSummary[]> {
       source: sourceOf(t),
       video: t.media.some((m) => m.kind === 'video'),
       audio: t.media.some((m) => m.kind === 'audio'),
+      instrumento: instrumentoDe(t),
     }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }

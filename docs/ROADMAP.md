@@ -189,4 +189,8 @@ Fase 11 de docs/ROADMAP.md. Que el visualizador se vea de primera en web, PC y c
 teclado realista por niveles (teclas que bajan según la fuerza, sombras, brillo), notas con
 mejor luz, chispas y estelas, y lo equivalente para guitarra (diapasón) y batería (pads).
 Mismo dibujo en pantalla y en el video exportado. Medir 60 fps en el celular de Jacobo.
+Pedidos de Jacobo para esta fase: notas de batería más elegantes; vista de batería real (los golpes
+van hacia la pieza que toca); el pulso del tempo en una esquina, con opción de que suene; números
+de traste legibles; y mostrar cómo rasguear en la guitarra (dirección abajo o arriba y ritmo del
+rasgueo).
 ```

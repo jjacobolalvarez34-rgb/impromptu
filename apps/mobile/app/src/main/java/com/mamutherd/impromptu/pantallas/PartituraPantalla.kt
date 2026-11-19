@@ -61,6 +61,7 @@ fun PartituraPantalla(id: String, nav: Navegador) {
     val context = LocalContext.current
     val motor = Impromptu.motor
     var compas by remember { mutableStateOf("4/4") }
+    var soloTab by remember { mutableStateOf(false) }
     var estado by remember { mutableStateOf("Escribiendo la partitura…") }
     var bpm by remember { mutableStateOf<Int?>(null) }
     var tocando by remember { mutableStateOf(false) }
@@ -70,14 +71,14 @@ fun PartituraPantalla(id: String, nav: Navegador) {
         val ficha = motor?.cargar(pieza)
         onDispose { if (ficha != null) motor.soltar(ficha) }
     }
-    LaunchedEffect(web, compas) {
+    LaunchedEffect(web, compas, soloTab) {
         val w = web ?: return@LaunchedEffect
         estado = "Escribiendo la partitura…"
         bpm = null
         val json = JSONObject.quote(pieza.aJsonWeb().toString())
         // La página puede no haber cargado todavía: se reintenta hasta que exista `impromptu`.
         while (bpm == null) {
-            w.evaluateJavascript("window.impromptu ? (impromptu.mostrar($json, '$compas'), 1) : 0") { r ->
+            w.evaluateJavascript("window.impromptu ? (impromptu.mostrar($json, '$compas', $soloTab), 1) : 0") { r ->
                 if (r == "1") bpm = -1
             }
             delay(300)
@@ -99,6 +100,7 @@ fun PartituraPantalla(id: String, nav: Navegador) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             BotonIcono(Iconos.Volver, "Volver", { nav.volver() })
             Text(pieza.titulo, style = Tipos.TituloPanel, maxLines = 1, modifier = Modifier.weight(1f))
+            if (pieza.instr.cuerdas) Chip(if (soloTab) "Solo tab" else "Notas y tab", soloTab, { soloTab = !soloTab })
             for (c in listOf("4/4", "3/4", "2/4", "6/8")) Chip(c, compas == c, { compas = c })
             Tecla(
                 if (tocando) "Pausa" else "Tocar",

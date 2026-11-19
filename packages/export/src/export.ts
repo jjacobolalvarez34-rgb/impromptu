@@ -130,6 +130,7 @@ export async function exportVideo(opts: ExportOptions): Promise<ExportResult> {
     height,
     resolution: 1,
     preserveDrawingBuffer: true,
+    animaciones: false,
   });
   try {
     viz.setTake(take);

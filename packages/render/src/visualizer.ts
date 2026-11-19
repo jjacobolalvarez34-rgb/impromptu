@@ -43,6 +43,11 @@ import type { Theme } from './themes';
 export type Background = 'theme' | 'transparent' | number;
 
 export interface VisualizerOptions {
+  /**
+   * Animación de entrada al cambiar de instrumento o de teclado (teclas que suben, cuerdas que
+   * se tienden, parches que saltan). Apagada al exportar: el video sale igual cuadro por cuadro.
+   */
+  animaciones?: boolean;
   canvas?: HTMLCanvasElement;
   width: number;
   height: number;
@@ -118,6 +123,32 @@ export class Visualizer {
   private readonly active = new Map<number, NoteEvent>();
   /** Guitarra, bajo o batería (fase 9): carriles virtuales en vez de teclas. */
   private carriles: Carriles | null = null;
+  /** Cuándo cambió la base (instrumento o teclado), en ms de reloj; para animar la entrada. */
+  private entrada = Number.NEGATIVE_INFINITY;
+  private animaciones = true;
+  private firmaBase = '';
+
+  /** Marca el cambio de base si el instrumento o el rango de teclas cambiaron. */
+  private revisarBase(): void {
+    const r = this.keyboard.range;
+    const firma = `${this.carriles?.instrument ?? 'piano'}:${r.low}-${r.high}:${this.carriles?.trastes ?? 0}`;
+    if (firma !== this.firmaBase) {
+      this.firmaBase = firma;
+      if (this.animaciones) this.entrada = globalThis.performance.now();
+    }
+  }
+
+  /** Cuánto apareció el elemento i de n (0 a 1), escalonado de izquierda a derecha. */
+  private aparecer(i: number, n: number, rebote = false): number {
+    if (!this.animaciones) return 1;
+    const p = (globalThis.performance.now() - this.entrada) / 900;
+    if (p >= 1.8) return 1;
+    const x = Math.min(1, Math.max(0, p * 1.8 - (i / Math.max(1, n)) * 0.8));
+    if (!rebote) return 1 - Math.pow(1 - x, 3);
+    // Sale un poco de más y vuelve (como algo que salta).
+    const c = 1.70158;
+    return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2);
+  }
   /** Nombres de las piezas sobre los parches de la batería. */
   private readonly nombresParches = new Container();
 
@@ -271,7 +302,9 @@ export class Visualizer {
       preserveDrawingBuffer: opts.preserveDrawingBuffer ?? false,
     });
     app.ticker.stop();
-    return new Visualizer(app, opts.width, opts.height);
+    const v = new Visualizer(app, opts.width, opts.height);
+    v.animaciones = opts.animaciones ?? true;
+    return v;
   }
 
   get canvas(): HTMLCanvasElement {
@@ -296,6 +329,7 @@ export class Visualizer {
     this.keyboard =
       this.carriles?.layout ?? layoutKeyboard(take?.keyboardRange ?? { low: 36, high: 96 });
     this.beats = take ? beatGrid(take.tempoMap, take.timeSignature, take.duration + 2) : [];
+    this.revisarBase();
   }
 
   /**
@@ -318,6 +352,7 @@ export class Visualizer {
       this.index = { notes: this.carriles?.notas ?? [], maxDuration: Infinity };
       this.pedals = [];
       if (this.carriles) this.keyboard = this.carriles.layout;
+      this.revisarBase();
       return;
     }
     if (this.carriles) {
@@ -748,7 +783,10 @@ export class Visualizer {
       for (let i = 0; i < c.trastes; i++) {
         const color = this.color(COLOR_PIEZA[i]!);
         const activa = this.active.has(i);
-        const r = Math.min(w * 0.4, h * 0.38) * (activa ? 1.08 : 1);
+        const r =
+          Math.min(w * 0.4, h * 0.38) *
+          (activa ? 1.08 : 1) *
+          Math.max(0.001, this.aparecer(i, c.trastes, true));
         g.ellipse((i + 0.5) * w, top + h * 0.5, r, r * 0.8)
           .fill(activa ? color : 0x2e2e2b)
           .stroke({ width: Math.max(2, h * 0.03), color });
@@ -786,13 +824,19 @@ export class Visualizer {
       // Cejuela (más gruesa) y trastes.
       for (let f = 1; f < c.trastes; f++) {
         const ancho = f === 1 ? Math.max(4, col * 0.08) : Math.max(2, col * 0.04);
-        g.rect(f * col - ancho / 2, top, ancho, h).fill(f === 1 ? 0xe8e4dc : 0x9a968c);
+        const a = this.aparecer(f, c.trastes);
+        g.rect(f * col - ancho / 2, top + (1 - a) * h * 0.5, ancho, h * a).fill({
+          color: f === 1 ? 0xe8e4dc : 0x9a968c,
+          alpha: a,
+        });
       }
       // Cuerdas: la 1 arriba (como en la tablatura), más gruesas las graves.
       const fila = (cuerda: number) => top + (h * (cuerda - 0.5)) / c.cuerdas;
       for (let s = 1; s <= c.cuerdas; s++) {
         const grosor = Math.max(1, (0.6 + s * 0.35) * (h / 160));
-        g.rect(0, fila(s) - grosor / 2, L.width, grosor).fill(0xd8d4cc);
+        // Cada cuerda se tiende de izquierda a derecha, una tras otra.
+        const a = this.aparecer(s, c.cuerdas + 2);
+        g.rect(0, fila(s) - grosor / 2, L.width * a, grosor).fill(0xd8d4cc);
       }
       // Donde se pisa ahora: un punto del color de la cuerda.
       for (const pitch of this.active.keys()) {
@@ -820,11 +864,23 @@ export class Visualizer {
       const w = key.width * L.width;
       const note = this.active.get(key.pitch);
       const lit = note ? this.colorNota(note, colors) : undefined;
+      // Entrada: cada tecla sube desde abajo, de izquierda a derecha.
+      const a = this.aparecer(key.x, 1);
+      const dy = (1 - a) * L.keyboardHeight * 0.7;
       if (!key.black) {
-        g.rect(x + 0.5, L.keyLineY, w - 1, L.keyboardHeight).fill(lit ?? th.whiteKey);
-        g.rect(x + 0.5, L.keyLineY + L.keyboardHeight - 3, w - 1, 3).fill(th.whiteKeyEdge);
+        g.rect(x + 0.5, L.keyLineY + dy, w - 1, L.keyboardHeight).fill({
+          color: lit ?? th.whiteKey,
+          alpha: a,
+        });
+        g.rect(x + 0.5, L.keyLineY + dy + L.keyboardHeight - 3, w - 1, 3).fill({
+          color: th.whiteKeyEdge,
+          alpha: a,
+        });
       } else {
-        g.rect(x, L.keyLineY, w, L.blackKeyHeight).fill(lit ?? th.blackKey);
+        g.rect(x, L.keyLineY + dy, w, L.blackKeyHeight).fill({
+          color: lit ?? th.blackKey,
+          alpha: a,
+        });
       }
     }
     // Línea de aterrizaje

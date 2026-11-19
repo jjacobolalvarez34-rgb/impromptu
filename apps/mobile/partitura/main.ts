@@ -60,14 +60,14 @@ function aTake(p: PiezaWeb): Take {
   });
 }
 
-async function mostrar(pieza: PiezaWeb, compas: string): Promise<void> {
+async function mostrar(pieza: PiezaWeb, compas: string, soloTablatura = false): Promise<void> {
   try {
     const take = aTake(pieza);
     const beats = beatsOf(take);
     const [n, d] = compas.split('/').map(Number) as [number, number];
     const instrument = pieza.instrument ?? 'piano';
     partitura = buildScore(take, { beats, timeSignature: [n, d], instrument });
-    xml = toMusicXml(partitura, { instrument });
+    xml = toMusicXml(partitura, { instrument, soloTablatura });
     const el = document.getElementById('partitura')!;
     el.innerHTML = '';
     vista = new OpenSheetMusicDisplay(el, {
@@ -117,7 +117,8 @@ function cuadro(): void {
 requestAnimationFrame(cuadro);
 
 (globalThis as unknown as Record<string, unknown>).impromptu = {
-  mostrar: (json: string, compas: string) => void mostrar(JSON.parse(json) as PiezaWeb, compas),
+  mostrar: (json: string, compas: string, soloTab?: boolean) =>
+    void mostrar(JSON.parse(json) as PiezaWeb, compas, soloTab === true),
   reloj,
   musicxml: () => xml,
 };

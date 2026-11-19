@@ -4,6 +4,7 @@ import { Cable, Check, FileAudio, Mic, Pencil, Piano, Trash2, Video, X } from 'l
 import { useEffect, useState } from 'react';
 import { live, refreshTakes, useLive } from './live';
 import { useStudio } from './store';
+import { InsigniaInstrumento } from './Instrumento';
 import { loadMedia } from './mediaStore';
 import { useMetronome } from './metronome';
 import { deleteTake, loadTake, renameTake } from './takesDb';
@@ -238,6 +239,7 @@ function TakeRow({ take, current }: { take: TakeSummary; current: boolean }) {
           <span className="ui-oculto">, desde el {SOURCE_TEXT[take.source]}</span>
         </span>
         {take.video && <Video className={styles.extra} aria-label="con video" />}
+        <InsigniaInstrumento instrumento={take.instrumento ?? 'piano'} />
         <span className="ui-secundario ui-mono">{formatTime(take.duration).slice(0, 5)}</span>
       </button>
       {/* Renombrar y borrar solo en la grabación abierta: así el nombre de cada fila se lee completo. */}

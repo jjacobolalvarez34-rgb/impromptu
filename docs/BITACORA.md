@@ -52,7 +52,17 @@ Una entrada por sesión, la más reciente arriba.
   - Audio a notas: guitarra y bajo con **Basic Pitch nativo** (ONNX de 230 kB, Apache-2.0; mismo corte en ventanas y extracción de notas que la web, con el paso de la melodía optimizado) y cuerda y traste; batería con el detector por bandas portado.
   - Ajustes: sonido y afinación de la guitarra, sensibilidad de la batería. Partitura con tablatura o percusión.
   - Pruebas JUnit: guitarra (mismas posiciones que la web), detector de batería, **Basic Pitch de punta a punta** con una melodía sintetizada (todas las notas en su lugar), Transkun igual a Python.
-- Pendiente: fase 10 (editor de partitura, de tablatura y de batería; video de la partitura; grabar en la partitura); fase 11; los pedidos 13–21 de PENDIENTES; compilar todo al final.
+- Hecho, pedidos pendientes de Jacobo (web; algunos también en el celular). **Sin verificar por Jacobo**:
+  - 13. **Hoja vacía**: sin pieza, la pestaña muestra el pentagrama vacío del instrumento elegido (4 compases), con exportar desactivado.
+  - 14. **Insignia del instrumento** al lado de cada pieza (Tus grabaciones, Tus piezas, Pruebas); en el celular, en la lista de piezas.
+  - 19. **Notas y tablatura, o solo tablatura** (web y celular).
+  - 20. **La pestaña se llama según el instrumento**: Partitura, Tablatura o Partitura de batería (en el celular, el botón de la pieza).
+  - 21. **Selector arriba sin saturar** (decisión de diseño): un solo botón compacto en la barra superior con el instrumento; al tocarlo se abre un tablero con las cuatro tarjetas grandes y se cierra al elegir. Se quitaron los botones del panel izquierdo.
+  - **Animaciones al cargar o cambiar de instrumento** (web y PC): las teclas suben escalonadas, las cuerdas se tienden y los trastes aparecen, los parches saltan; un anuncio grande con el ícono del instrumento. Apagadas al exportar (el video sale igual cuadro por cuadro).
+  - **BUG-005** (exportar en el celular con el audio corrido ~2 s): el video ahora se arma con OpenGL y la hora exacta de cada cuadro. Exportar sigue en segundo plano y se arma un video a la vez (dicho en la pantalla).
+  - Los pedidos 15 a 18 quedan para la fase 11, como pidió Jacobo.
+  - Pruebas: notación 21, render 26, e2e `instrumentos.spec.ts` (selector, tablero, nombre de la pestaña, hoja vacía) y `partitura`, `exportar`; captura `test-results/capturas/selector-escritorio.png`.
+- Pendiente: fase 10 (editor de partitura, de tablatura y de batería; video de la partitura; grabar en la partitura); fase 11 (gráficos, pedidos 15–18 y el rasgueo de guitarra); compilar todo al final.
 
 ---
 

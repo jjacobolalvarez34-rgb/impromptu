@@ -13,11 +13,16 @@ import { Button, Chips } from '@impromptu/ui';
 import { Download, FileMusic, Printer } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
-import { AFINACIONES } from '@impromptu/core';
+import { AFINACIONES, createTake, createTrack } from '@impromptu/core';
 import { instrumentoDe } from '@impromptu/render';
 import { midiFileName } from '../studio/saveMidi';
 import { transport, useStudio } from '../studio/store';
 import styles from './ScoreTab.module.css';
+
+const VISTAS_TAB = [
+  { value: 'ambas', label: 'Notas y tablatura' },
+  { value: 'tab', label: 'Solo tablatura' },
+] as const;
 
 const METERS = [
   { value: '4/4', label: '4/4' },
@@ -51,7 +56,24 @@ function download(name: string, data: BlobPart, type: string) {
  * MIDI cuantizado y PDF (imprimir).
  */
 export function ScoreTab({ compact = false }: { compact?: boolean }) {
-  const take = useStudio((s) => s.take);
+  const abierta = useStudio((s) => s.take);
+  const elegido = useStudio((s) => s.instrumento);
+  // Sin pieza: la hoja vacía del instrumento elegido (pedido de Jacobo), con unos compases.
+  const vacia = useMemo(
+    () =>
+      abierta
+        ? null
+        : createTake({
+            title: '',
+            tracks: [createTrack({ instrument: elegido, name: 'Vacía' })],
+            tempoMap: [{ time: 0, bpm: 100 }],
+          }),
+    [abierta, elegido],
+  );
+  const take = abierta ?? vacia;
+  const instrumento = take ? instrumentoDe(take) : elegido;
+  const cuerdas = instrumento === 'guitar' || instrumento === 'bass';
+  const [soloTab, setSoloTab] = useState(false);
   const [meter, setMeter] = useState<Meter>(
     (take?.timeSignature ? `${take.timeSignature[0]}/${take.timeSignature[1]}` : '4/4') as Meter,
   );
@@ -69,18 +91,24 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
   const score: Score | null = useMemo(() => {
     if (!take || !beats) return null;
     const [n, d] = meter.split('/').map(Number) as [number, number];
-    return buildScore(take, { beats, timeSignature: [n, d], instrument: instrumentoDe(take) });
-  }, [take, beats, meter]);
+    return buildScore(take, {
+      beats,
+      timeSignature: [n, d],
+      instrument: instrumento,
+      compasesMinimos: abierta ? 1 : 4,
+    });
+  }, [take, beats, meter, instrumento, abierta]);
 
   const xml = useMemo(
     () =>
       score && take
         ? toMusicXml(score, {
-            instrument: instrumentoDe(take),
+            instrument: instrumento,
             afinacion: AFINACIONES[useStudio.getState().guitarra.afinacion],
+            soloTablatura: cuerdas && soloTab,
           })
         : null,
-    [score, take],
+    [score, take, instrumento, cuerdas, soloTab],
   );
 
   // Dibujo con OpenSheetMusicDisplay (se carga solo al abrir esta pestaña).
@@ -171,12 +199,25 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
           Si la partitura sale con figuras raras, prueba el doble o la mitad del tempo.
         </p>
 
+        {cuerdas && (
+          <>
+            <h2 className="ui-etiqueta">Ver</h2>
+            <Chips
+              label="Ver"
+              options={VISTAS_TAB}
+              value={soloTab ? 'tab' : 'ambas'}
+              onChange={(v) => setSoloTab(v === 'tab')}
+            />
+          </>
+        )}
+
         <h2 className="ui-etiqueta">Compás</h2>
         <Chips label="Compás" options={METERS} value={meter} onChange={setMeter} />
 
         <h2 className="ui-etiqueta">Exportar</h2>
         <Button
           icon={<Download />}
+          disabled={!abierta}
           onClick={() =>
             xml && download(`${base}.musicxml`, xml, 'application/vnd.recordare.musicxml+xml')
           }
@@ -185,6 +226,7 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
         </Button>
         <Button
           icon={<FileMusic />}
+          disabled={!abierta}
           onClick={() =>
             download(
               midiFileName(`${base} (cuantizado)`),
@@ -195,7 +237,7 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
         >
           MIDI cuantizado
         </Button>
-        <Button icon={<Printer />} onClick={() => window.print()}>
+        <Button icon={<Printer />} disabled={!abierta} onClick={() => window.print()}>
           Imprimir o guardar PDF
         </Button>
         <p className="ui-secundario">
@@ -204,6 +246,12 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
         </p>
       </aside>
       <main className={styles.hoja} aria-label={`Partitura de ${take.title}`}>
+        {!abierta && (
+          <p className="ui-secundario">
+            Hoja vacía. Abre una pieza en el Estudio (un MIDI, una grabación o un audio) para verla
+            escrita aquí.
+          </p>
+        )}
         {status === 'loading' && (
           <p className="ui-secundario" role="status">
             Escribiendo la partitura…

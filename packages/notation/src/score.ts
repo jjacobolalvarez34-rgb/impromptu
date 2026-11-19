@@ -61,6 +61,8 @@ export interface ScoreOptions {
    * y batería en uno solo (todo en `staves[0]`), sin pedal.
    */
   instrument?: Instrument;
+  /** Compases que se escriben como mínimo (una hoja vacía se ve con algunos compases). */
+  compasesMinimos?: number;
 }
 
 /** Posición en negras (con decimales) de un tiempo, según los pulsos. */
@@ -303,7 +305,7 @@ export function buildScore(take: Take, options: ScoreOptions): Score {
     staffSpans(left, times, sustain, legatoGap),
   ];
   const lastEnd = Math.max(0, ...spans.flat().map((s) => s.end));
-  const count = Math.max(1, Math.ceil(lastEnd / measureLength));
+  const count = Math.max(options.compasesMinimos ?? 1, Math.ceil(lastEnd / measureLength));
   // Los compases vacíos del comienzo (la cuenta del metrónomo, un silencio antes de tocar) no
   // se escriben: la partitura empieza en el compás de la primera nota.
   const firstStart = Math.min(...spans.flat().map((s) => s.start));
