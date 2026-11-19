@@ -26,6 +26,23 @@ export const COLOR_PIEZA = [
   '#FF6B3D',
 ];
 
+/**
+ * Vista de batería real (fase 11, pedido 17): dónde va cada pieza, vista desde el baterista
+ * (hi-hat a la izquierda, ride y tom de piso a la derecha, bombo abajo al centro). x e y en
+ * fracción del cuadro; r en fracción del lado menor.
+ */
+export const KIT_REAL: Readonly<Record<string, { x: number; y: number; r: number }>> = {
+  'hihat-pie': { x: 0.08, y: 0.88, r: 0.05 },
+  hihat: { x: 0.18, y: 0.62, r: 0.075 },
+  crash: { x: 0.28, y: 0.4, r: 0.085 },
+  caja: { x: 0.37, y: 0.76, r: 0.075 },
+  'tom-agudo': { x: 0.46, y: 0.56, r: 0.06 },
+  bombo: { x: 0.55, y: 0.86, r: 0.1 },
+  'tom-medio': { x: 0.64, y: 0.56, r: 0.065 },
+  'tom-piso': { x: 0.76, y: 0.76, r: 0.085 },
+  ride: { x: 0.88, y: 0.48, r: 0.095 },
+};
+
 export interface Carriles {
   instrument: Exclude<Instrument, 'piano'>;
   layout: KeyboardLayout;

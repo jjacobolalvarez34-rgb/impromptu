@@ -21,7 +21,7 @@ import type {
 } from '@impromptu/core';
 import { calibratedKeyLine, calibratedKeyboard, coverRect } from './calibration';
 import { layoutKeyboard } from './keyboard-layout';
-import { COLOR_CUERDA, COLOR_PIEZA, carriles, instrumentoDe } from './instrumentos';
+import { COLOR_CUERDA, COLOR_PIEZA, KIT_REAL, carriles, instrumentoDe } from './instrumentos';
 import type { Carriles } from './instrumentos';
 import type { KeyboardLayout } from './keyboard-layout';
 import {
@@ -535,11 +535,14 @@ export class Visualizer {
     const glowStyle = effects.noteStyle === 'glow';
     const noteTexture = this.noteTextures[glowStyle ? 'glow' : 'flat'];
     const halo = glowStyle ? effects.noteGlow / 100 : 0; // 0–2
-    const span = L.keyLineY / L.pps;
+    const kit = this.vistaKit();
+    // En la batería real los golpes caen hasta su pieza, que puede estar más abajo.
+    const span = (kit ? L.height : L.keyLineY) / L.pps;
     const [from, to] = this.direction === 'fall' ? [t, t + span] : [t - span, t];
     forEachNoteIn(this.index, from, to, (note) => {
       let rect: ReturnType<typeof noteRect>;
-      if (esBateria) {
+      if (kit) rect = this.gemaKit(note, t, altoGema);
+      else if (esBateria) {
         this.golpe.pitch = note.pitch;
         this.golpe.start = note.start;
         this.golpe.end = note.start;
@@ -604,10 +607,21 @@ export class Visualizer {
       for (const note of this.active.values()) {
         const key = this.keyboard.key(note.pitch);
         if (!key) continue;
-        const w = key.width * L.width;
-        const cx = key.x * L.width + w / 2;
         const tint = this.colorNota(note, colors);
         const v = note.velocity / 127;
+        if (kit) {
+          // El brillo sale de la pieza, donde está en la batería.
+          const p = this.piezaKit(note.pitch);
+          if (!p) continue;
+          const glow = this.glowPool.next();
+          glow.position.set(p.x, p.y);
+          glow.width = glow.height = p.r * (3.2 + 1.6 * k);
+          glow.tint = tint;
+          glow.alpha = Math.min(1, 0.7 * k * (0.45 + 0.55 * v));
+          continue;
+        }
+        const w = key.width * L.width;
+        const cx = key.x * L.width + w / 2;
         const glow = this.glowPool.next();
         glow.position.set(cx, L.keyLineY);
         glow.width = w * (4 + 2 * k);
@@ -629,7 +643,7 @@ export class Visualizer {
 
     // Chispas
     this.sparks.length = 0;
-    if (effects.sparks > 0) {
+    if (effects.sparks > 0 && !kit) {
       forEachNoteIn(this.index, t - SPARK_LIFE, t, (note) => {
         const key = this.keyboard.key(note.pitch);
         if (!key || this.sparks.length > MAX_SPARKS) return;
@@ -852,7 +866,12 @@ export class Visualizer {
 
     // Líneas de compás y de pulso que caen con la música (solo al reproducir una toma).
     this.barLabelPool.begin();
-    if (this.settings.effects.beatGuides && this.direction === 'fall' && this.beats.length > 0) {
+    if (
+      this.settings.effects.beatGuides &&
+      this.direction === 'fall' &&
+      this.beats.length > 0 &&
+      !this.vistaKit()
+    ) {
       const span = L.keyLineY / L.pps;
       const thin = Math.max(1, Math.round(scale));
       for (const b of this.beats) {
@@ -881,6 +900,67 @@ export class Visualizer {
     return this.color(propio ?? noteColor(note, colors));
   }
 
+  /** Nombre de una pieza sobre su parche (se crea una vez). */
+  private nombreParche(i: number): Text {
+    let nombre = this.nombresParches.children[i] as Text | undefined;
+    if (!nombre) {
+      nombre = new Text({
+        text: PIEZAS_BATERIA[i]!.nombre,
+        style: { fontFamily: 'Archivo, sans-serif', fontSize: 12, fill: 0xe8e4dc, align: 'center' },
+      });
+      nombre.anchor.set(0.5);
+      this.nombresParches.addChild(nombre);
+    }
+    return nombre;
+  }
+
+  /** ¿Batería en la vista real (pedido 17)? */
+  private vistaKit(): boolean {
+    return this.carriles?.instrument === 'drums' && this.settings.show.drumView === 'kit';
+  }
+
+  /** Centro y radio (px) de una pieza en la batería real; `i` es su carril. */
+  private piezaKit(i: number): { x: number; y: number; r: number } | null {
+    const pieza = PIEZAS_BATERIA[i];
+    const p = pieza ? KIT_REAL[pieza.id] : undefined;
+    if (!p) return null;
+    const L = this.layout;
+    // En vertical el ancho manda: cada pieza cabe en su columna sin tocar a la vecina.
+    const r = Math.min(p.r * Math.min(L.width, L.height), 0.042 * L.width);
+    return { x: p.x * L.width, y: p.y * L.height, r };
+  }
+
+  /** Gema que baja derecho hasta el centro de su pieza y se hunde en ella al sonar. */
+  private gemaKit(note: NoteEvent, t: number, alto: number) {
+    const p = this.piezaKit(note.pitch);
+    if (!p || note.start < t) return null;
+    const fondo = p.y - (note.start - t) * this.layout.pps;
+    if (fondo <= 0) return null;
+    const ancho = p.r * (1.1 + 0.5 * (note.velocity / 127));
+    return { x: p.x - ancho / 2, y: fondo - alto, width: ancho, height: alto };
+  }
+
+  /** La batería como una de verdad: cada pieza en su lugar, con su nombre. */
+  private drawKit(g: Graphics): void {
+    for (let i = 0; i < PIEZAS_BATERIA.length; i++) {
+      const p = this.piezaKit(i);
+      if (!p) continue;
+      const color = this.color(COLOR_PIEZA[i]!);
+      const activa = this.active.has(i);
+      const r =
+        p.r * (activa ? 1.06 : 1) * Math.max(0.001, this.aparecer(i, PIEZAS_BATERIA.length, true));
+      const platillo = PIEZAS_BATERIA[i]!.cruz || PIEZAS_BATERIA[i]!.id === 'crash';
+      // Los platillos, más planos (vistos un poco de lado); los tambores, redondos.
+      g.ellipse(p.x, p.y, r, r * (platillo ? 0.55 : 0.85))
+        .fill({ color: activa ? color : 0x2e2e2b, alpha: activa ? 1 : 0.92 })
+        .stroke({ width: Math.max(2, r * 0.07), color });
+      const nombre = this.nombreParche(i);
+      nombre.style.fontSize = Math.max(9, Math.min(16, r * 0.32));
+      nombre.style.fill = activa ? 0x1c1c1a : 0xe8e4dc;
+      nombre.position.set(p.x, p.y);
+    }
+  }
+
   /** Mástil (guitarra y bajo) o parches (batería) en lugar del teclado. */
   private drawCarriles(c: Carriles): void {
     const L = this.layout;
@@ -888,7 +968,9 @@ export class Visualizer {
     const top = L.keyLineY;
     const h = L.keyboardHeight;
     const lineH = Math.max(2, Math.round(L.height * 0.003));
-    if (c.instrument === 'drums') {
+    if (c.instrument === 'drums' && this.vistaKit()) {
+      this.drawKit(g);
+    } else if (c.instrument === 'drums') {
       const w = L.width / c.trastes;
       g.rect(0, top, L.width, h).fill(this.theme.background);
       for (let i = 0; i < c.trastes; i++) {
@@ -901,20 +983,7 @@ export class Visualizer {
         g.ellipse((i + 0.5) * w, top + h * 0.5, r, r * 0.8)
           .fill(activa ? color : 0x2e2e2b)
           .stroke({ width: Math.max(2, h * 0.03), color });
-        let nombre = this.nombresParches.children[i] as Text | undefined;
-        if (!nombre) {
-          nombre = new Text({
-            text: PIEZAS_BATERIA[i]!.nombre,
-            style: {
-              fontFamily: 'Archivo, sans-serif',
-              fontSize: 12,
-              fill: 0xe8e4dc,
-              align: 'center',
-            },
-          });
-          nombre.anchor.set(0.5);
-          this.nombresParches.addChild(nombre);
-        }
+        const nombre = this.nombreParche(i);
         nombre.style.fontSize = Math.max(9, Math.min(16, w * 0.12, h * 0.12));
         nombre.style.fill = activa ? 0x1c1c1a : 0xe8e4dc;
         nombre.position.set((i + 0.5) * w, top + h * 0.5);
@@ -957,7 +1026,8 @@ export class Visualizer {
         g.circle((traste + 0.5) * col, fila(cuerda), r).fill(this.color(COLOR_CUERDA[cuerda - 1]!));
       }
     }
-    g.rect(0, top - lineH, L.width, lineH).fill(this.theme.keyLine);
+    // En la batería real cada pieza es su propia meta: no hay línea de aterrizaje.
+    if (!this.vistaKit()) g.rect(0, top - lineH, L.width, lineH).fill(this.theme.keyLine);
   }
 
   private drawKeyboard(colors: VisualSettings['colors']): void {

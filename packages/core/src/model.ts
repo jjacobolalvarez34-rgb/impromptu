@@ -92,6 +92,7 @@ export interface VisualProject {
     bigPedal?: boolean; // pedal grande, para tutoriales (ADR-017)
     pulse?: boolean; // fase 11 (pedido 18): el pulso del tempo en una esquina
     pulseSound?: boolean; // y que suene (un clic por pulso al reproducir)
+    drumView?: 'carriles' | 'kit'; // fase 11 (pedido 17): carriles o una batería real
   };
   colors: { right: string; left: string; unassigned: string };
   background?: { kind: 'color' | 'image' | 'video' | 'blur'; value: string };

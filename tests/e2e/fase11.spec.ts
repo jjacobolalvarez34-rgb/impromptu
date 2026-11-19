@@ -30,4 +30,13 @@ test('batería: golpes como gemas que no se pegan', async ({ page }, info) => {
   await expect(page.getByRole('switch', { name: 'Que suene el pulso' })).toBeVisible();
   await abrirPrueba(page, /rock/, /Batería/);
   await page.screenshot({ path: 'test-results/capturas/fase11-bateria.png' });
+
+  // Vista de batería real (pedido 17): cada pieza en su lugar.
+  await page.getByRole('radio', { name: 'Batería real' }).click();
+  await expect(page.getByText('Cada pieza está donde va en una batería')).toBeVisible();
+  await page.getByRole('button', { name: 'Reproducir', exact: true }).click();
+  await page.waitForTimeout(1500);
+  await page.getByRole('button', { name: 'Pausar', exact: true }).click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: 'test-results/capturas/fase11-bateria-real.png' });
 });

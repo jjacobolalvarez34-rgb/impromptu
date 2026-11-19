@@ -26,6 +26,12 @@ const SENSIBILIDAD = [
   { value: '1.4', label: 'Alta' },
 ] as const;
 
+/** Fase 11 (pedido 17): carriles o una batería como la de verdad. */
+const VISTAS_BATERIA = [
+  { value: 'carriles', label: 'Carriles' },
+  { value: 'kit', label: 'Batería real' },
+] as const;
+
 const KEYBOARDS = [
   { value: 'auto', label: 'Auto' },
   { value: '61', label: '61' },
@@ -181,8 +187,16 @@ export function SettingsPanel() {
         <>
           <h2 className="ui-etiqueta">Batería</h2>
           <p className="ui-secundario">
-            Cada pieza tiene su carril y su color: los golpes caen sobre su parche.
+            {settings.show.drumView === 'kit'
+              ? 'Cada pieza está donde va en una batería: los golpes bajan hasta ella.'
+              : 'Cada pieza tiene su carril y su color: los golpes caen sobre su parche.'}
           </p>
+          <Chips
+            label="Vista de la batería"
+            options={VISTAS_BATERIA}
+            value={settings.show.drumView ?? 'carriles'}
+            onChange={(drumView) => setSettings({ show: { ...settings.show, drumView } })}
+          />
           <span className="ui-secundario">Sensibilidad del micrófono</span>
           <Chips
             label="Sensibilidad del micrófono"
