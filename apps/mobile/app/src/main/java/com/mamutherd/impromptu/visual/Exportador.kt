@@ -43,10 +43,14 @@ class Exportador(
     private val fps: Int = 30,
     /** Batería grabada (para piezas de batería). */
     private val bateria: Map<String, FloatArray> = emptyMap(),
+    /** Video de la partitura (fase 10): dibuja la hoja en vez del visualizador. */
+    private val hoja: HojaVideo? = null,
 ) {
     private val tasa = 44_100
     /** Antes de la primera nota, para que se vea caer. */
-    private val inicio = minOf(0.0, (pieza.notas.firstOrNull()?.inicio ?: 0.0) - 2.0).coerceAtLeast(-3.0)
+    private val inicio =
+        if (hoja != null) 0.0
+        else minOf(0.0, (pieza.notas.firstOrNull()?.inicio ?: 0.0) - 2.0).coerceAtLeast(-3.0)
     private val fin = pieza.duracion + COLA
     private val total = fin - inicio
 
@@ -124,7 +128,8 @@ class Exportador(
             for (k in 0 until cuadros) {
                 currentCoroutineContext().ensureActive()
                 val t = inicio + k.toDouble() / fps
-                r.dibujar(c, ancho.toFloat(), alto.toFloat(), pieza.notas, pieza.pedales, t, rango, op = op)
+                if (hoja != null) hoja.dibujar(c, ancho.toFloat(), alto.toFloat(), t)
+                else r.dibujar(c, ancho.toFloat(), alto.toFloat(), pieza.notas, pieza.pedales, t, rango, op = op)
                 val restante = fin - t
                 if (restante < FUNDIDO) {
                     negro.alpha = ((1 - restante / FUNDIDO) * 255).toInt().coerceIn(0, 255)

@@ -53,6 +53,7 @@ import com.mamutherd.impromptu.ui.Iconos
 import com.mamutherd.impromptu.ui.Tecla
 import com.mamutherd.impromptu.ui.Tipos
 import com.mamutherd.impromptu.visual.Exportador
+import com.mamutherd.impromptu.visual.HojaVideo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -73,8 +74,10 @@ object Exportacion {
         private set
     private var trabajo: Job? = null
 
-    fun iniciar(context: Context, pieza: Pieza, ancho: Int, alto: Int) {
+    /** Con [hoja], el video es de la partitura (fase 10) en vez del visualizador. */
+    fun iniciar(context: Context, pieza: Pieza, ancho: Int, alto: Int, hoja: HojaVideo? = null) {
         val banco = Impromptu.banco ?: run {
+            hoja?.soltar()
             estado = Estado.Fallo(pieza.id, "Para exportar con sonido, instala primero el piano.")
             return
         }
@@ -83,10 +86,12 @@ object Exportacion {
         ServicioTrabajos.asegurar(context)
         trabajo = Impromptu.alcance.launch(Dispatchers.Default) {
             val carpeta = File(context.cacheDir, "exportados").apply { mkdirs() }
-            val nombre = pieza.titulo.replace(Regex("[\\\\/:*?\"<>|]"), "_") + ".mp4"
+            val sufijo = if (hoja != null) " (partitura)" else ""
+            val nombre = pieza.titulo.replace(Regex("[\\\\/:*?\"<>|]"), "_") + sufijo + ".mp4"
             val archivo = File(carpeta, nombre)
             try {
-                Exportador(pieza, banco, ancho, alto, bateria = Impromptu.bateria).exportar(archivo) { estado = Estado.Trabajando(pieza.id, it) }
+                Exportador(pieza, banco, ancho, alto, bateria = Impromptu.bateria, hoja = hoja)
+                    .exportar(archivo) { estado = Estado.Trabajando(pieza.id, it) }
                 val enGaleria = withContext(Dispatchers.IO) { aGaleria(context, archivo) != null }
                 estado = Estado.Lista(pieza.id, archivo, enGaleria)
             } catch (e: CancellationException) {
@@ -95,6 +100,8 @@ object Exportacion {
             } catch (e: Throwable) {
                 archivo.delete()
                 estado = Estado.Fallo(pieza.id, e.message ?: "No se pudo exportar el video.")
+            } finally {
+                hoja?.soltar()
             }
         }
     }

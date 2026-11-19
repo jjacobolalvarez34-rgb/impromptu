@@ -42,6 +42,9 @@ import com.mamutherd.impromptu.ui.Iconos
 import com.mamutherd.impromptu.ui.Lcd
 import com.mamutherd.impromptu.ui.Tecla
 import com.mamutherd.impromptu.ui.Tipos
+import com.mamutherd.impromptu.visual.HojaVideo
+import android.graphics.BitmapFactory
+import android.util.Base64
 import kotlinx.coroutines.delay
 import org.json.JSONObject
 import java.io.File
@@ -66,6 +69,10 @@ fun PartituraPantalla(id: String, nav: Navegador) {
     var bpm by remember { mutableStateOf<Int?>(null) }
     var tocando by remember { mutableStateOf(false) }
     var web by remember { mutableStateOf<WebView?>(null) }
+    // Video de la partitura (fase 10): la página prepara la hoja y Kotlin arma el video.
+    var preparando by remember { mutableStateOf(false) }
+    var avisoVideo by remember { mutableStateOf("") }
+    val exportacion = Exportacion.estado
 
     DisposableEffect(pieza) {
         val ficha = motor?.cargar(pieza)
@@ -110,6 +117,17 @@ fun PartituraPantalla(id: String, nav: Navegador) {
                 altura = 40.dp,
                 icono = { Icono(if (tocando) Iconos.Pausa else Iconos.Tocar, null, color = C3.Carbon, tamano = 16.dp) },
             )
+            BotonIcono(Iconos.Video, "Video de la partitura", {
+                when {
+                    exportacion is Exportacion.Estado.Trabajando -> avisoVideo = "Espera: se arma un video a la vez."
+                    preparando -> Unit
+                    else -> {
+                        preparando = true
+                        avisoVideo = "Preparando la hoja para el video…"
+                        web?.evaluateJavascript("window.impromptu && impromptu.paraVideo($FPS_VIDEO)", null)
+                    }
+                }
+            })
             BotonIcono(Iconos.Compartir, "Compartir MusicXML", {
                 web?.evaluateJavascript("window.impromptu ? impromptu.musicxml() : ''") { r ->
                     val xml = runCatching { org.json.JSONArray("[$r]").getString(0) }.getOrDefault("")
@@ -136,6 +154,30 @@ fun PartituraPantalla(id: String, nav: Navegador) {
                             @JavascriptInterface fun error(m: String) {
                                 post { bpm = 0; estado = "No se pudo escribir la partitura: $m" }
                             }
+                            /** La hoja como imagen y la línea por cuadro: se arma el video (fase 10). */
+                            @JavascriptInterface fun hoja(png: String, ancho: Int, alto: Int, cursor: String) {
+                                val video = runCatching {
+                                    val bytes = Base64.decode(png, Base64.DEFAULT)
+                                    // Sin transparencia: la mitad de memoria que ARGB.
+                                    val op = BitmapFactory.Options().apply { inPreferredConfig = android.graphics.Bitmap.Config.RGB_565 }
+                                    val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, op) ?: throw IllegalStateException("imagen vacía")
+                                    val arr = org.json.JSONArray(cursor)
+                                    val linea = FloatArray(arr.length()) { arr.getDouble(it).toFloat() }
+                                    HojaVideo(bmp, linea, FPS_VIDEO)
+                                }.getOrNull()
+                                post {
+                                    preparando = false
+                                    if (video == null) {
+                                        avisoVideo = "No se pudo preparar la hoja para el video."
+                                    } else {
+                                        avisoVideo = ""
+                                        Exportacion.iniciar(ctx.applicationContext, pieza, 1920, 1080, video)
+                                    }
+                                }
+                            }
+                            @JavascriptInterface fun errorVideo(m: String) {
+                                post { preparando = false; avisoVideo = "No se pudo preparar el video: $m" }
+                            }
                             /** La pieza editada en la hoja (fase 10): se guarda y el sonido la sigue. */
                             @JavascriptInterface fun guardar(json: String) {
                                 post { guardarEdicion(id, json) }
@@ -158,6 +200,44 @@ fun PartituraPantalla(id: String, nav: Navegador) {
                 }
             }
             bpm?.takeIf { it > 0 }?.let { Lcd("♩ = $it", Modifier.align(Alignment.BottomEnd).padding(12.dp), tamano = 12) }
+        }
+        BarraVideo(id, exportacion, avisoVideo, { avisoVideo = "" }, context)
+    }
+}
+
+private const val FPS_VIDEO = 30
+
+/** Avance del video de la partitura, debajo de la hoja (se arma en segundo plano, uno a la vez). */
+@Composable
+private fun BarraVideo(
+    id: String,
+    e: Exportacion.Estado,
+    aviso: String,
+    cerrarAviso: () -> Unit,
+    context: android.content.Context,
+) {
+    val texto = when {
+        aviso.isNotEmpty() -> aviso
+        e is Exportacion.Estado.Trabajando && e.piezaId == id -> "Armando el video… ${(e.avance * 100).toInt()} % · sigue aunque salgas"
+        e is Exportacion.Estado.Lista && e.piezaId == id ->
+            if (e.enGaleria) "Video listo: quedó en Películas/Impromptu." else "Video listo."
+        e is Exportacion.Estado.Fallo && e.piezaId == id -> e.mensaje
+        else -> return
+    }
+    Row(
+        Modifier.fillMaxWidth().background(C3.Carbon).padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(texto, style = Tipos.Secundario, modifier = Modifier.weight(1f))
+        when {
+            e is Exportacion.Estado.Trabajando && aviso.isEmpty() -> Tecla("Cancelar", Exportacion::cancelar, altura = 36.dp)
+            e is Exportacion.Estado.Lista && aviso.isEmpty() && e.piezaId == id -> {
+                Tecla("Compartir", { compartirArchivo(context, e.archivo, "video/mp4") }, principal = true, altura = 36.dp)
+                Tecla("Cerrar", Exportacion::olvidar, altura = 36.dp)
+            }
+            aviso.isNotEmpty() -> Tecla("Cerrar", cerrarAviso, altura = 36.dp)
+            else -> Tecla("Cerrar", Exportacion::olvidar, altura = 36.dp)
         }
     }
 }

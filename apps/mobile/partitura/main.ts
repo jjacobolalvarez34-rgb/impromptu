@@ -15,6 +15,7 @@ import {
   hacerSeleccionable,
   leerRecorrido,
   marcarSeleccion,
+  posicionEn,
   toMusicXml,
 } from '@impromptu/notation';
 import type { Edicion, Score, Seleccion } from '@impromptu/notation';
@@ -42,6 +43,12 @@ interface Puente {
   error(mensaje: string): void;
   /** La pieza editada en la hoja (fase 10), para que Kotlin la guarde. */
   guardar?(json: string): void;
+  /**
+   * Video de la partitura (fase 10): la hoja como PNG en base64, su tamaño en px de la hoja y,
+   * por cada cuadro, dónde va la línea (x, y, alto; NaN antes de empezar).
+   */
+  hoja?(png: string, ancho: number, alto: number, cursor: string): void;
+  errorVideo?(mensaje: string): void;
 }
 
 const puente = (globalThis as unknown as { Puente?: Puente }).Puente;
@@ -49,6 +56,7 @@ let vista: OpenSheetMusicDisplay | null = null;
 let partitura: Score | null = null;
 let xml = '';
 let linea: LineaDeLectura | null = null;
+let recorrido: ReturnType<typeof leerRecorrido> | null = null;
 
 function aTake(p: PiezaWeb): Take {
   const notes = p.notes.map((n) => {
@@ -102,11 +110,8 @@ async function dibujar(take: Take): Promise<void> {
   await vista.load(xml);
   vista.render();
   linea?.quitar();
-  linea = new LineaDeLectura(
-    el,
-    document.scrollingElement as HTMLElement,
-    leerRecorrido(vista.cursor),
-  );
+  recorrido = leerRecorrido(vista.cursor);
+  linea = new LineaDeLectura(el, document.scrollingElement as HTMLElement, recorrido);
   linea.mover(0);
   // Editor (fase 10): tocar una nota de la hoja la elige.
   quitarClics?.();
@@ -212,7 +217,68 @@ function cuadro(): void {
 }
 requestAnimationFrame(cuadro);
 
+/** Ancho de la imagen de la hoja para el video (px); el alto sale de la proporción. */
+const ANCHO_IMAGEN = 1600;
+/** Cola del video: igual que el exportador (4 s con fundido). */
+const COLA = 4;
+
+/**
+ * Prepara el video de la partitura: la hoja dibujada pasa a PNG y se anota dónde va la línea
+ * en cada cuadro. Kotlin arma el video (mismo exportador del visualizador, con el audio).
+ */
+async function paraVideo(fps: number): Promise<void> {
+  try {
+    const el = document.getElementById('partitura')!;
+    const svg = el.querySelector('svg');
+    const s = partitura;
+    const r = recorrido;
+    if (!svg || !s || !r || !actual) throw new Error('La hoja todavía no está lista');
+    linea?.quitar();
+    const cajaSvg = svg.getBoundingClientRect();
+    const cajaHoja = el.getBoundingClientRect();
+    const dx = cajaSvg.left - cajaHoja.left;
+    const dy = cajaSvg.top - cajaHoja.top;
+    const texto = new XMLSerializer().serializeToString(svg);
+    const url = URL.createObjectURL(new Blob([texto], { type: 'image/svg+xml' }));
+    const imagen = new Image();
+    await new Promise<void>((ok, mal) => {
+      imagen.onload = () => ok();
+      imagen.onerror = () => mal(new Error('No se pudo leer la hoja'));
+      imagen.src = url;
+    });
+    URL.revokeObjectURL(url);
+    const escala = ANCHO_IMAGEN / cajaSvg.width;
+    const lienzo = document.createElement('canvas');
+    lienzo.width = ANCHO_IMAGEN;
+    lienzo.height = Math.ceil(cajaSvg.height * escala);
+    const ctx = lienzo.getContext('2d')!;
+    ctx.fillStyle = '#F7F3EA';
+    ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+    ctx.drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+    const png = lienzo.toDataURL('image/png').split(',')[1] ?? '';
+    // La línea en cada cuadro, en px de la imagen.
+    const cuadros = Math.ceil((actual.duration + COLA) * fps) + 1;
+    const cursor = new Array<number>(cuadros * 3);
+    for (let i = 0; i < cuadros; i++) {
+      const pos = posicionEn(r.puntos, r.fines, aRedondas(i / fps, s.measureTimes, s.bpm, s.time));
+      cursor[i * 3] = pos ? (pos.x - dx) * escala : -1;
+      cursor[i * 3 + 1] = pos ? (pos.y - dy) * escala : -1;
+      cursor[i * 3 + 2] = pos ? pos.alto * escala : -1;
+    }
+    linea = new LineaDeLectura(el, document.scrollingElement as HTMLElement, r);
+    puente?.hoja?.(
+      png,
+      lienzo.width,
+      lienzo.height,
+      JSON.stringify(cursor.map((v) => Math.round(v * 10) / 10)),
+    );
+  } catch (e) {
+    puente?.errorVideo?.(e instanceof Error ? e.message : String(e));
+  }
+}
+
 (globalThis as unknown as Record<string, unknown>).impromptu = {
+  paraVideo: (fps: number) => void paraVideo(fps),
   mostrar: (json: string, compas: string, soloTab?: boolean) =>
     void mostrar(JSON.parse(json) as PiezaWeb, compas, soloTab === true),
   reloj,
