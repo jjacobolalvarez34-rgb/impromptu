@@ -9,6 +9,7 @@ import {
   sampleName,
 } from './salamander';
 import { resolveVoices } from './sustain';
+import { cadenaMaestra } from './maestro';
 import type { Voice } from './sustain';
 
 /** Caché del navegador donde quedan las muestras: después de la primera vez, sin internet. */
@@ -75,15 +76,8 @@ export class Piano {
     this.panelSustain = Math.min(PANEL_SUSTAIN_MAX, Math.max(0, options.panelSustain ?? 0));
     this.output = context.createGain();
     this.output.gain.value = MASTER_GAIN;
-    // Limitador suave: solo actúa en los picos (muchas notas con sustain a la vez) para que
-    // el sonido nunca se sature ni recorte.
-    const limiter = context.createDynamicsCompressor();
-    limiter.threshold.value = -4;
-    limiter.knee.value = 4;
-    limiter.ratio.value = 20;
-    limiter.attack.value = 0.002;
-    limiter.release.value = 0.2;
-    this.output.connect(limiter).connect(context.destination);
+    // Cadena maestra (pedido 32): compresor suave, más volumen y limitador para que nunca recorte.
+    this.output.connect(cadenaMaestra(context));
   }
 
   /**

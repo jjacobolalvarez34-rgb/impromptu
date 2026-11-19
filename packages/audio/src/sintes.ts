@@ -1,6 +1,7 @@
 import type { Instrument } from '@impromptu/core';
 import { HIHAT_ABIERTO, piezaDeNota } from '@impromptu/core';
 import type { Voice } from './sustain';
+import { cadenaMaestra } from './maestro';
 import { archivosDe, bancoDe, golpeBateria, zonaCuerda } from './muestras';
 import type { Banco, Manifiesto } from './muestras';
 
@@ -233,7 +234,8 @@ export class Sintes {
   constructor(readonly context: BaseAudioContext) {
     this.output = context.createGain();
     this.output.gain.value = 0.8;
-    this.output.connect(context.destination);
+    // La misma cadena maestra del piano (pedido 32): más volumen sin recortes.
+    this.output.connect(cadenaMaestra(context));
   }
 
   private buffer(instrument: Instrument, pitch: number, velocity: number): AudioBuffer {

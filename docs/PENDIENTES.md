@@ -73,7 +73,7 @@ Con eso Claude sube las muestras y el modelo, y las apps los descargan la primer
   29. El video de la partitura se cancela al cambiar de instrumento: que siga **en segundo plano**, que se **descargue solo** al terminar y una **burbujita** que muestre lo que trabaja por detrás (videos y conversiones).
   30. Batería: que se vea si el hi-hat va **abierto o cerrado**.
   31. Flechas de rasgueo **a la derecha, en un panel tipo Friday Night Funkin'**: las flechas bajan hasta un cuadro que dice si toca abajo, arriba o silencio.
-  32. **Subir el volumen general**: Jacobo tuvo que poner el equipo al 100 %; que con ~40 % ya se oiga bien.
+  32. **Subir el volumen general**: Jacobo tuvo que poner el equipo al 100 %; que con ~40 % ya se oiga bien. **Hecho en web y PC (sin verificar de oído)**: cadena maestra en `packages/audio/src/maestro.ts` (compresor suave, +6 dB y limitador), para el piano y para guitarra, bajo y batería, al tocar y al exportar. Falta la app de celular.
   33. Revisar la **calidad de reproducción** (lo más alto posible para músicos).
   34. Un modo para **escuchar solo el MIDI con nuestros sonidos** (sin el audio original de la grabación).
   35. **Mejores modelos de audio a notas para guitarra y batería** (los de ahora fallan mucho). Jacobo probó con una canción completa ("Azul" de Zoé): primero habría que **separar los instrumentos** (como Moises). Candidatos libres: Demucs (Meta, MIT; el mejor; 80–300 MB; lento en el equipo), Spleeter (Deezer, MIT) y Open-Unmix (MIT). Falta verificar la licencia de los pesos y medir tiempo y memoria (web y celular). Es una función grande: decidir con Jacobo cuándo entra.
