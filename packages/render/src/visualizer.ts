@@ -84,6 +84,11 @@ export const DEFAULT_SETTINGS: VisualSettings = {
 };
 
 const MAX_SPARKS = 4000;
+/** Batería real (pedido 40): cuánto antes aparece el anillo y cuánto dura la onda (s). */
+const ANILLO = 0.8;
+const ONDA = 0.35;
+/** Colores de la baqueta: derecha ámbar, izquierda crema, pie gris. */
+const COLOR_BAQUETA: Record<'D' | 'I' | 'P', number> = { D: 0xff9f1c, I: 0xe8e4dc, P: 0x9a968c };
 /** Humo (pedido 41): cuánto dura cada bocanada y cuántas a la vez. */
 const HUMO_VIDA = 1.6;
 const MAX_HUMO = 500;
@@ -597,7 +602,11 @@ export class Visualizer {
     }
   }
 
+  /** Instante del cuadro que se está dibujando. */
+  private tiempoActual = 0;
+
   private renderFrame(t: number, camera: boolean): void {
+    this.tiempoActual = t;
     const L = this.layout;
     const { effects, colors } = this.settings;
     const scale = L.height / 1080;
@@ -689,6 +698,10 @@ export class Visualizer {
           n.height = Math.max(1, rect.height - Math.min(4, rect.height * 0.2));
           n.tint = lighten(tint, 0.7);
           n.alpha = Math.min(1, brilloInterno * (0.35 + 0.45 * v));
+        }
+        if (esBateria && this.settings.show.sticking !== false) {
+          const baqueta = this.carriles?.meta.get(note.id)?.baqueta;
+          if (baqueta) this.insignia(baqueta, rect, COLOR_BAQUETA[baqueta], scale);
         }
         if (esCuerda) {
           const traste = this.carriles?.meta.get(note.id)?.etiqueta;
@@ -1244,22 +1257,104 @@ export class Visualizer {
 
   /** La batería como una de verdad: cada pieza en su lugar, con su nombre. */
   private drawKit(g: Graphics): void {
+    const t = this.tiempoActual;
+    // Por pieza: el próximo golpe (anillo que se acerca) y el último (onda al golpear).
+    const proximo = new Map<number, number>();
+    const ultimo = new Map<number, number>();
+    forEachNoteIn(this.index, t - ONDA, t + ANILLO, (n) => {
+      if (n.start >= t) {
+        if (!proximo.has(n.pitch) || n.start < proximo.get(n.pitch)!) proximo.set(n.pitch, n.start);
+      } else if (t - n.start <= ONDA) {
+        if ((ultimo.get(n.pitch) ?? -Infinity) < n.start) ultimo.set(n.pitch, n.start);
+      }
+    });
     for (let i = 0; i < PIEZAS_BATERIA.length; i++) {
       const p = this.piezaKit(i);
       if (!p) continue;
+      const pieza = PIEZAS_BATERIA[i]!;
       const color = this.color(COLOR_PIEZA[i]!);
       const activa = this.active.has(i);
-      const r =
-        p.r * (activa ? 1.06 : 1) * Math.max(0.001, this.aparecer(i, PIEZAS_BATERIA.length, true));
-      const platillo = PIEZAS_BATERIA[i]!.cruz || PIEZAS_BATERIA[i]!.id === 'crash';
-      // Los platillos, más planos (vistos un poco de lado); los tambores, redondos.
-      g.ellipse(p.x, p.y, r, r * (platillo ? 0.55 : 0.85))
-        .fill({ color: activa ? color : 0x2e2e2b, alpha: activa ? 1 : 0.92 })
-        .stroke({ width: Math.max(2, r * 0.07), color });
+      const a = Math.max(0.001, this.aparecer(i, PIEZAS_BATERIA.length, true));
+      const r = p.r * (activa ? 1.05 : 1) * a;
+      const platillo = pieza.cruz || pieza.id === 'crash';
+      if (platillo) {
+        // Platillo dorado visto un poco de lado: anillos y campana.
+        const ry = r * 0.36;
+        g.ellipse(p.x, p.y, r, ry).fill(activa ? color : 0xb08d3c);
+        for (const k of [0.82, 0.62, 0.42]) {
+          g.ellipse(p.x, p.y, r * k, ry * k).stroke({
+            width: Math.max(1, r * 0.02),
+            color: 0xe6c87a,
+            alpha: 0.5,
+          });
+        }
+        g.ellipse(p.x, p.y, r * 0.18, ry * 0.3).fill(0xead39a);
+        g.ellipse(p.x, p.y, r, ry).stroke({
+          width: Math.max(1.5, r * 0.035),
+          color: activa ? 0xffffff : 0xe6c87a,
+          alpha: 0.8,
+        });
+      } else if (pieza.id === 'bombo') {
+        // Bombo de frente: aro, parche negro y el anillo del color de la pieza.
+        g.circle(p.x, p.y, r)
+          .fill(0x2a2a28)
+          .stroke({ width: Math.max(2, r * 0.12), color: 0x5a5a55 });
+        g.circle(p.x, p.y, r * 0.86).fill(activa ? color : 0x171716);
+        g.circle(p.x, p.y, r * 0.45).stroke({
+          width: Math.max(2, r * 0.05),
+          color,
+          alpha: activa ? 1 : 0.7,
+        });
+      } else {
+        // Tambor visto desde arriba y un poco de frente: casco, parche claro y aro metálico.
+        const ry = r * 0.62;
+        const casco = r * 0.5;
+        g.rect(p.x - r, p.y, r * 2, casco)
+          .fill(this.color(COLOR_PIEZA[i]!))
+          .rect(p.x - r, p.y, r * 2, casco)
+          .fill({ color: 0x000000, alpha: 0.45 });
+        g.ellipse(p.x, p.y + casco, r, ry).fill(0x1d1d1b);
+        g.ellipse(p.x, p.y, r, ry).fill(activa ? color : 0xd9d5cc);
+        g.ellipse(p.x, p.y, r, ry).stroke({
+          width: Math.max(2, r * 0.08),
+          color: activa ? 0xffffff : 0x8f8b82,
+        });
+      }
+      // Anillo que se cierra sobre la pieza cuando se acerca el golpe (para anticiparlo).
+      const viene = proximo.get(i);
+      if (viene !== undefined) {
+        const k = (viene - t) / ANILLO;
+        g.ellipse(
+          p.x,
+          p.y,
+          r * (1 + 1.4 * k),
+          r * (platillo ? 0.36 : pieza.id === 'bombo' ? 1 : 0.62) * (1 + 1.4 * k),
+        ).stroke({
+          width: Math.max(2, r * 0.06),
+          color,
+          alpha: 0.85 * (1 - k),
+        });
+      }
+      // Onda al golpear (estilo Guitar Hero).
+      const golpe = ultimo.get(i);
+      if (golpe !== undefined) {
+        const k = (t - golpe) / ONDA;
+        g.ellipse(
+          p.x,
+          p.y,
+          r * (1 + 1.1 * k),
+          r * (platillo ? 0.36 : pieza.id === 'bombo' ? 1 : 0.62) * (1 + 1.1 * k),
+        ).stroke({
+          width: Math.max(2, r * 0.16 * (1 - k)),
+          color: lighten(color, 0.4),
+          alpha: 0.9 * (1 - k),
+        });
+      }
       const nombre = this.nombreParche(i);
-      nombre.style.fontSize = Math.max(9, Math.min(16, r * 0.32));
-      nombre.style.fill = activa ? 0x1c1c1a : 0xe8e4dc;
-      nombre.position.set(p.x, p.y);
+      nombre.style.fontSize = Math.max(9, Math.min(15, r * 0.26));
+      nombre.style.fill = 0xe8e4dc;
+      const debajo = platillo ? r * 0.36 : pieza.id === 'bombo' ? r : r * 0.62 + r * 0.5;
+      nombre.position.set(p.x, p.y + debajo + nombre.style.fontSize);
     }
   }
 

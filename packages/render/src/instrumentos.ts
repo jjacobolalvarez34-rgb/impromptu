@@ -7,6 +7,8 @@ import {
 } from '@impromptu/core';
 import type { Instrument, NoteEvent, Take, Track } from '@impromptu/core';
 import type { KeyRect, KeyboardLayout } from './keyboard-layout';
+import { baquetas } from './baquetas';
+import type { Baqueta } from './baquetas';
 
 /**
  * Carriles para guitarra y batería (fase 9). El visualizador ubica cada nota en una "tecla"; aquí
@@ -54,8 +56,11 @@ export interface Carriles {
   layout: KeyboardLayout;
   /** Notas con la altura cambiada por su carril virtual (mismo id que la original). */
   notas: NoteEvent[];
-  /** Por id: texto sobre la nota y su color; `abierto`: hi-hat abierto (pedido 30). */
-  meta: Map<string, { etiqueta: string; color: string; abierto?: boolean }>;
+  /**
+   * Por id: texto sobre la nota y su color; `abierto`: hi-hat abierto (pedido 30);
+   * `baqueta`: con qué se toca (pedido 40).
+   */
+  meta: Map<string, { etiqueta: string; color: string; abierto?: boolean; baqueta?: Baqueta }>;
   /** Guitarra: trastes visibles (0 = al aire) y cuerdas. Batería: piezas. */
   trastes: number;
   cuerdas: number;
@@ -107,9 +112,14 @@ export function carrilesCuerdas(tracks: readonly Track[], instrument: 'guitar' |
 export function carrilesBateria(tracks: readonly Track[]): Carriles {
   const n = PIEZAS_BATERIA.length;
   const layout = teclas(n, (i) => [i / n, 1 / n]);
-  const meta = new Map<string, { etiqueta: string; color: string; abierto?: boolean }>();
+  const meta = new Map<
+    string,
+    { etiqueta: string; color: string; abierto?: boolean; baqueta?: Baqueta }
+  >();
   const notas: NoteEvent[] = [];
-  for (const nota of tracks.filter((t) => t.instrument === 'drums').flatMap((t) => t.notes)) {
+  const golpes = tracks.filter((t) => t.instrument === 'drums').flatMap((t) => t.notes);
+  const manos = baquetas(golpes);
+  for (const nota of golpes) {
     const pieza = piezaDeNota(nota.pitch);
     if (!pieza) continue;
     const i = PIEZAS_BATERIA.indexOf(pieza);
@@ -118,6 +128,7 @@ export function carrilesBateria(tracks: readonly Track[]): Carriles {
       etiqueta: pieza.nombre.slice(0, 1),
       color: COLOR_PIEZA[i]!,
       ...(nota.pitch === HIHAT_ABIERTO ? { abierto: true } : {}),
+      ...(manos.has(nota.id) ? { baqueta: manos.get(nota.id) } : {}),
     });
   }
   notas.sort((a, b) => a.start - b.start);

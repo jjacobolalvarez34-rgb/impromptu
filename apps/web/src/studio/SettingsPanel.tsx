@@ -225,6 +225,12 @@ export function SettingsPanel() {
             value={settings.show.drumView ?? 'carriles'}
             onChange={(drumView) => setSettings({ show: { ...settings.show, drumView } })}
           />
+          {/* Pedido 40: con qué se toca cada golpe (D derecha, I izquierda, P pie). */}
+          <Switch
+            label="Baquetas (D, I, P)"
+            checked={settings.show.sticking !== false}
+            onChange={(sticking) => setSettings({ show: { ...settings.show, sticking } })}
+          />
           <span className="ui-secundario">Sensibilidad del micrófono</span>
           <Chips
             label="Sensibilidad del micrófono"
