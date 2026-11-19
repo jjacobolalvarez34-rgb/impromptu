@@ -137,3 +137,10 @@ test('piano con acabado de calidad: notas redondeadas, teclado realista, humo (p
   await page.getByRole('button', { name: 'Pausar', exact: true }).click();
   await page.screenshot({ path: 'test-results/capturas/fase11-piano-arriba.png' });
 });
+
+test('bajo: mástil realista y el dedo que pulsa (i, m)', async ({ page }, info) => {
+  test.skip(info.project.name === 'celular', 'Capturas de escritorio');
+  test.setTimeout(120_000);
+  await abrirPrueba(page, /rock/, /Bajo/);
+  await page.screenshot({ path: 'test-results/capturas/fase11-bajo.png' });
+});

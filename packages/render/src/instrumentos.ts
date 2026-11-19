@@ -60,7 +60,10 @@ export interface Carriles {
    * Por id: texto sobre la nota y su color; `abierto`: hi-hat abierto (pedido 30);
    * `baqueta`: con qué se toca (pedido 40).
    */
-  meta: Map<string, { etiqueta: string; color: string; abierto?: boolean; baqueta?: Baqueta }>;
+  meta: Map<
+    string,
+    { etiqueta: string; color: string; abierto?: boolean; baqueta?: Baqueta; dedo?: 'i' | 'm' }
+  >;
   /** Guitarra: trastes visibles (0 = al aire) y cuerdas. Batería: piezas. */
   trastes: number;
   cuerdas: number;
@@ -97,12 +100,28 @@ export function carrilesCuerdas(tracks: readonly Track[], instrument: 'guitar' |
     // Dentro del traste: la grave a la izquierda y la aguda a la derecha.
     return [traste * col + (cuerdas - cuerda) * sub, sub];
   });
-  const meta = new Map<string, { etiqueta: string; color: string }>();
+  const meta: Carriles['meta'] = new Map();
   const notas: NoteEvent[] = [];
+  // Bajo (pedido 40): con qué dedo se pulsa, índice y medio alternados; tras un silencio, índice.
+  const dedos = new Map<string, 'i' | 'm'>();
+  if (instrument === 'bass') {
+    let anterior: { fin: number; dedo: 'i' | 'm' } | null = null;
+    for (const n of [...conTraste].sort((a, b) => a.start - b.start)) {
+      const dedo: 'i' | 'm' =
+        anterior && n.start - anterior.fin < 0.6 ? (anterior.dedo === 'i' ? 'm' : 'i') : 'i';
+      dedos.set(n.id, dedo);
+      anterior = { fin: n.end, dedo };
+    }
+  }
   for (const n of conTraste) {
     if (n.string === undefined || n.fret === undefined) continue;
     notas.push({ ...n, pitch: n.fret * cuerdas + (n.string - 1) });
-    meta.set(n.id, { etiqueta: String(n.fret), color: COLOR_CUERDA[(n.string - 1) % 6]! });
+    const dedo = dedos.get(n.id);
+    meta.set(n.id, {
+      etiqueta: String(n.fret),
+      color: COLOR_CUERDA[(n.string - 1) % 6]!,
+      ...(dedo ? { dedo } : {}),
+    });
   }
   notas.sort((a, b) => a.start - b.start);
   return { instrument, layout, notas, meta, trastes, cuerdas };

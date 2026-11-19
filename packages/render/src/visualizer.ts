@@ -706,6 +706,17 @@ export class Visualizer {
         if (esCuerda) {
           const traste = this.carriles?.meta.get(note.id)?.etiqueta;
           if (traste) this.insignia(traste, rect, tint, scale);
+          // Bajo: el dedo que pulsa (i índice, m medio), encima del número de traste.
+          const dedo = this.carriles?.meta.get(note.id)?.dedo;
+          if (dedo && this.settings.show.sticking !== false) {
+            const d = Math.max(18, 30 * scale);
+            this.insignia(
+              dedo,
+              { ...rect, height: rect.height - d * 1.1 },
+              dedo === 'i' ? 0xff9f1c : 0xe8e4dc,
+              scale,
+            );
+          }
         } else if (!esBateria) {
           const text = labelFor(note, showFingers, showNames);
           if (text) this.placeLabel(text, rect, tint, scale);
@@ -1387,40 +1398,78 @@ export class Visualizer {
       }
     } else {
       const col = (L.width * this.anchoMastil) / c.trastes;
-      g.rect(0, top, L.width * this.anchoMastil, h).fill(0x2b2017);
-      // Marcas del mástil (3, 5, 7, 9, 12 doble, 15…).
+      const anchoMastil = L.width * this.anchoMastil;
+      // Madera (pedido 41): palisandro con los bordes más oscuros y vetas suaves.
+      g.rect(0, top, anchoMastil, h).fill(0x2e2116);
+      g.rect(0, top, anchoMastil, h * 0.18).fill({ color: 0x000000, alpha: 0.35 });
+      g.rect(0, top + h * 0.82, anchoMastil, h * 0.18).fill({ color: 0x000000, alpha: 0.35 });
+      for (let v = 0; v < 7; v++) {
+        g.rect(0, top + h * (0.12 + v * 0.13), anchoMastil, Math.max(1, h * 0.012)).fill({
+          color: 0x4a3524,
+          alpha: 0.35,
+        });
+      }
+      // Marcas de nácar (3, 5, 7, 9, 12 doble, 15…).
       for (const f of [3, 5, 7, 9, 12, 15, 17, 19, 21]) {
         if (f >= c.trastes) continue;
         const x = (f + 0.5) * col;
-        const r = Math.min(col, h) * 0.07;
+        const r = Math.min(col, h) * 0.075;
+        const marca = (y: number) => {
+          g.circle(x, y, r).fill({ color: 0xece4cf, alpha: 0.85 });
+          g.circle(x - r * 0.25, y - r * 0.25, r * 0.4).fill({ color: 0xffffff, alpha: 0.5 });
+        };
         if (f === 12) {
-          g.circle(x, top + h * 0.3, r).fill(0x5a4a3a);
-          g.circle(x, top + h * 0.7, r).fill(0x5a4a3a);
-        } else g.circle(x, top + h * 0.5, r).fill(0x5a4a3a);
+          marca(top + h * 0.3);
+          marca(top + h * 0.7);
+        } else marca(top + h * 0.5);
       }
-      // Cejuela (más gruesa) y trastes.
+      // Cejuela de hueso y trastes de metal con brillo y sombra.
       for (let f = 1; f < c.trastes; f++) {
-        const ancho = f === 1 ? Math.max(4, col * 0.08) : Math.max(2, col * 0.04);
+        const ancho = f === 1 ? Math.max(5, col * 0.09) : Math.max(2, col * 0.045);
         const a = this.aparecer(f, c.trastes);
-        g.rect(f * col - ancho / 2, top + (1 - a) * h * 0.5, ancho, h * a).fill({
-          color: f === 1 ? 0xe8e4dc : 0x9a968c,
-          alpha: a,
-        });
+        const y0 = top + (1 - a) * h * 0.5;
+        if (f === 1) {
+          g.rect(f * col - ancho / 2, y0, ancho, h * a).fill({ color: 0xeee6d4, alpha: a });
+        } else {
+          g.rect(f * col - ancho / 2 + ancho * 0.6, y0, ancho * 0.5, h * a).fill({
+            color: 0x000000,
+            alpha: 0.4 * a,
+          });
+          g.rect(f * col - ancho / 2, y0, ancho * 0.7, h * a).fill({ color: 0xb9b4aa, alpha: a });
+          g.rect(f * col - ancho / 2, y0, Math.max(1, ancho * 0.25), h * a).fill({
+            color: 0xffffff,
+            alpha: 0.55 * a,
+          });
+        }
       }
-      // Cuerdas: la 1 arriba (como en la tablatura), más gruesas las graves.
+      // Cuerdas: la 1 arriba (como en la tablatura), más gruesas y entorchadas las graves.
       const fila = (cuerda: number) => top + (h * (cuerda - 0.5)) / c.cuerdas;
       for (let s = 1; s <= c.cuerdas; s++) {
         const grosor = Math.max(1, (0.6 + s * 0.35) * (h / 160));
         // Cada cuerda se tiende de izquierda a derecha, una tras otra.
         const a = this.aparecer(s, c.cuerdas + 2);
-        g.rect(0, fila(s) - grosor / 2, L.width * this.anchoMastil * a, grosor).fill(0xd8d4cc);
+        const largo = anchoMastil * a;
+        const entorchada = c.cuerdas === 4 || s >= 4;
+        g.rect(0, fila(s) - grosor / 2 + grosor * 0.6, largo, grosor * 0.6).fill({
+          color: 0x000000,
+          alpha: 0.45,
+        });
+        g.rect(0, fila(s) - grosor / 2, largo, grosor).fill(entorchada ? 0xb0a48c : 0xd6d2ca);
+        g.rect(0, fila(s) - grosor / 2, largo, Math.max(0.6, grosor * 0.35)).fill({
+          color: 0xffffff,
+          alpha: 0.55,
+        });
       }
-      // Donde se pisa ahora: un punto del color de la cuerda.
+      // Donde se pisa ahora: un brillo con el color de la cuerda y un centro claro.
       for (const pitch of this.active.keys()) {
         const traste = Math.floor(pitch / c.cuerdas);
         const cuerda = (pitch % c.cuerdas) + 1;
         const r = Math.min(col * 0.38, (h / c.cuerdas) * 0.42);
-        g.circle((traste + 0.5) * col, fila(cuerda), r).fill(this.color(COLOR_CUERDA[cuerda - 1]!));
+        const x = (traste + 0.5) * col;
+        const color = this.color(COLOR_CUERDA[cuerda - 1]!);
+        g.circle(x, fila(cuerda), r * 1.6).fill({ color, alpha: 0.25 });
+        g.circle(x, fila(cuerda), r).fill(color);
+        g.circle(x, fila(cuerda), r * 0.45).fill({ color: 0xffffff, alpha: 0.75 });
       }
     }
     // En la batería real cada pieza es su propia meta: no hay línea de aterrizaje.
