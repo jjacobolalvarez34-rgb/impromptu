@@ -12,7 +12,8 @@ const models = process.env.IMPROMPTU_MODELS ?? 'D:/.cache/models';
 mkdirSync('modelos', { recursive: true });
 if (existsSync(models)) {
   // Modelo de piano y separador de instrumentos (pedido 35): en la PC funcionan sin internet.
-  const incluir = (n) => n.startsWith('transkun-') || (n.startsWith('spleeter-') && n.endsWith('.onnx'));
+  const incluir = (n) =>
+    n.startsWith('transkun-') || (n.startsWith('spleeter-') && n.endsWith('.onnx'));
   for (const f of readdirSync(models).filter(incluir)) {
     copyFileSync(join(models, f), join('modelos', f));
   }
