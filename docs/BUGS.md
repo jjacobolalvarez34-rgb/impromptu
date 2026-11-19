@@ -60,6 +60,13 @@
 - Causa (medida 2026-11-18): ONNX Runtime ocupa ~2,5 GB por segmento de 16 s: la atención arma matrices de ~3 GB si se calcula de una vez, el puntuador hace varias copias de S (691×691×90, 172 MB cada una) y el reservador de memoria de ONNX Runtime guarda los bloques sin soltarlos.
 - Arreglo y prueba que lo cubre (app nativa, ADR-019): modelo para celular con la atención por partes y el puntuador aparte (de a 10 teclas), sin el reservador; el modelo se suelta al terminar cada conversión. `TranskunTest.transcribeComoPython` mide la memoria: de +2,5 GB a +0,67 GB, con las mismas 153 notas que Python. **Sin verificar en un celular.**
 
+### BUG-008 · La app se cierra al terminar de grabar con el micrófono
+- Dónde: por confirmar con Jacobo (lo más probable, el APK 0.1.0 de Android).
+- Cómo reproducir (Jacobo, 2026-11-19): grabar con el micrófono y tocar "Terminar": la app se cierra. Pasa **cada vez**.
+- Esperado / obtenido: que la grabación pase a convertirse en notas (o quede guardada). Obtenido: la app se cierra.
+- Causa: sin investigar. Sospechosos: lo nuevo del paso de grabar a convertir (separar el instrumento con Spleeter, que antes de convertir baja 79 MB, y la cola en segundo plano), la memoria (como BUG-004) o el permiso del servicio en primer plano. Revisar con `adb logcat` con el celular conectado.
+- Arreglo: pendiente.
+
 ### BUG-005 · Celular: el video exportado sale con el audio corrido (~2 s)
 - Dónde: app de Android, Exportar video (`visual/Exportador.kt`).
 - Cómo reproducir (Jacobo, 2026-11-18, APK 0.1, en 720p): exportar una pieza y verla: el sonido va corrido respecto a las notas.
