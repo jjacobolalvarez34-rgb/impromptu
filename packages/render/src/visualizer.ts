@@ -87,8 +87,15 @@ const MAX_SPARKS = 4000;
 /** Batería real (pedido 40): cuánto antes aparece el anillo y cuánto dura la onda (s). */
 const ANILLO = 0.8;
 const ONDA = 0.35;
-/** Colores de la baqueta: derecha ámbar, izquierda crema, pie gris. */
-const COLOR_BAQUETA: Record<'D' | 'I' | 'P', number> = { D: 0xff9f1c, I: 0xe8e4dc, P: 0x9a968c };
+/** Colores de la baqueta: derecha ámbar, izquierda crema, pies gris. */
+const COLOR_BAQUETA: Record<'R' | 'L' | 'RF' | 'LF', number> = {
+  R: 0xff9f1c,
+  L: 0xe8e4dc,
+  RF: 0x9a968c,
+  LF: 0x9a968c,
+};
+/** Estallido al golpear (estilo Phigros): cuánto dura (s). */
+const ESTALLIDO = 0.4;
 /** Humo (pedido 41): cuánto dura cada bocanada y cuántas a la vez. */
 const HUMO_VIDA = 1.6;
 const MAX_HUMO = 1500;
@@ -224,6 +231,10 @@ export class Visualizer {
   private rasgueos: Rasgueo[] = [];
   private readonly rasgueoDe = new Map<string, number>();
   private readonly flechas = new Graphics();
+  /** Batería real dibujada (pedido 40): debajo de las notas, que pasan por encima. */
+  private readonly kitGfx = new Graphics();
+  /** Golpes de batería estilo Phigros (barras limpias) y su estallido al golpear. */
+  private readonly golpesGfx = new Graphics();
   /** Panel de rasgueo a la derecha (pedido 31): el mástil se angosta para dejarle lugar. */
   private anchoMastil = 1;
   private tomaActual: Take | null = null;
@@ -356,7 +367,9 @@ export class Visualizer {
       this.barLabels,
       this.beamLayer,
       this.haloLayer,
+      this.kitGfx,
       this.noteLayer,
+      this.golpesGfx,
       this.nucleoLayer,
       this.insignias,
       this.noteLabels,
@@ -619,6 +632,7 @@ export class Visualizer {
     // Notas que caen
     this.notePool.begin();
     this.nucleoPool.begin();
+    this.golpesGfx.clear();
     this.haloPool.begin();
     const estilo = this.settings.estilo ?? {};
     const radio = Math.round(1 + ((estilo.redondeo ?? 55) / 100) * 15);
@@ -671,7 +685,7 @@ export class Visualizer {
         }
         // Hi-hat abierto (pedido 30): la gema hueca, solo el borde; el cerrado va lleno.
         const abierto = esBateria && this.carriles?.meta.get(note.id)?.abierto === true;
-        if (abierto) {
+        if (abierto && !esBateria) {
           outline
             .roundRect(
               rect.x,
@@ -682,7 +696,9 @@ export class Visualizer {
             )
             .stroke({ width: Math.max(3, 5 * scale), color: tint, alpha: 0.75 + 0.25 * v });
         }
+        if (esBateria) this.barraGolpe(rect, tint, v, abierto, scale);
         const sprite = this.notePool.next();
+        sprite.visible = !esBateria;
         sprite.texture = this.texturaNota(radio, glowStyle) ?? noteTexture;
         sprite.leftWidth = sprite.rightWidth = sprite.topHeight = sprite.bottomHeight = radio + 1;
         sprite.position.set(rect.x, rect.y);
@@ -690,7 +706,7 @@ export class Visualizer {
         sprite.height = rect.height;
         sprite.tint = tint;
         sprite.alpha = abierto ? 0.12 : esBateria ? 0.55 + 0.45 * v : 0.72 + 0.28 * v;
-        if (brilloInterno > 0 && !abierto && rect.height > 4) {
+        if (brilloInterno > 0 && !abierto && !esBateria && rect.height > 4) {
           // Brillo hacia adentro (pedido 41): una franja clara en el centro de la nota.
           const n = this.nucleoPool.next();
           n.position.set(rect.x + rect.width * 0.22, rect.y + Math.min(2, rect.height * 0.1));
@@ -730,6 +746,26 @@ export class Visualizer {
       }
       if (isSounding(note, t)) this.active.set(note.pitch, note);
     });
+    if (esBateria) {
+      forEachNoteIn(this.index, t - ESTALLIDO, t, (note) => {
+        const edad = t - note.start;
+        if (edad < 0 || edad > ESTALLIDO) return;
+        let x: number;
+        let y: number;
+        if (kit) {
+          const p = this.piezaKit(note.pitch);
+          if (!p) return;
+          x = p.x;
+          y = p.y;
+        } else {
+          const key = this.keyboard.key(note.pitch);
+          if (!key) return;
+          x = (key.x + key.width / 2) * L.width;
+          y = L.keyLineY;
+        }
+        this.estallido(x, y, this.colorNota(note, colors), edad, hashId(note.id), scale);
+      });
+    }
     this.notePool.end();
     this.nucleoPool.end();
     this.haloPool.end();
@@ -739,6 +775,7 @@ export class Visualizer {
 
     if (camera) {
       this.keys.clear();
+      this.kitGfx.clear();
       this.teclaPool.begin();
       this.teclaPool.end();
     } else this.drawKeyboard(colors);
@@ -1277,6 +1314,129 @@ export class Visualizer {
     return nombre;
   }
 
+  /**
+   * Golpe de batería estilo Phigros (pedido de Jacobo): barra limpia del color de la pieza con
+   * borde blanco nítido, una línea de luz y un brillo suave detrás. El hi-hat abierto, hueco.
+   */
+  private barraGolpe(
+    rect: { x: number; y: number; width: number; height: number },
+    color: number,
+    v: number,
+    abierto: boolean,
+    scale: number,
+  ): void {
+    const g = this.golpesGfx;
+    const r = rect.height / 2;
+    const borde = Math.max(1.5, 2.5 * scale);
+    g.roundRect(
+      rect.x - 4 * scale,
+      rect.y - 4 * scale,
+      rect.width + 8 * scale,
+      rect.height + 8 * scale,
+      r + 4 * scale,
+    ).fill({
+      color,
+      alpha: 0.18 + 0.12 * v,
+    });
+    if (abierto) {
+      g.roundRect(rect.x, rect.y, rect.width, rect.height, r)
+        .fill({ color, alpha: 0.15 })
+        .stroke({
+          width: borde * 1.4,
+          color,
+          alpha: 0.95,
+        });
+      return;
+    }
+    g.roundRect(rect.x, rect.y, rect.width, rect.height, r)
+      .fill({ color, alpha: 0.75 + 0.25 * v })
+      .stroke({ width: borde, color: 0xffffff, alpha: 0.95 });
+    g.roundRect(
+      rect.x + rect.width * 0.12,
+      rect.y + rect.height * 0.22,
+      rect.width * 0.76,
+      Math.max(1, rect.height * 0.18),
+      r,
+    ).fill({
+      color: 0xffffff,
+      alpha: 0.7,
+    });
+  }
+
+  /** Estallido al golpear (estilo Phigros): un rombo que se abre y cuadritos que saltan. */
+  private estallido(
+    x: number,
+    y: number,
+    color: number,
+    edad: number,
+    semilla: number,
+    scale: number,
+  ): void {
+    const g = this.golpesGfx;
+    const k = edad / ESTALLIDO;
+    const a = 1 - k;
+    const lado = (18 + 46 * k) * scale;
+    g.poly([x, y - lado, x + lado, y, x, y + lado, x - lado, y]).stroke({
+      width: Math.max(1.5, 3 * scale * a),
+      color: lighten(color, 0.5),
+      alpha: 0.9 * a,
+    });
+    for (let i = 0; i < 7; i++) {
+      const ang = azar(semilla, i) * Math.PI * 2;
+      const dist = (14 + 70 * azar(semilla, i + 20)) * scale * Math.sqrt(k);
+      const tam = (4 + 4 * azar(semilla, i + 40)) * scale * a;
+      g.rect(
+        x + Math.cos(ang) * dist - tam / 2,
+        y + Math.sin(ang) * dist * 0.7 - tam / 2,
+        tam,
+        tam,
+      ).fill({
+        color: i % 2 ? 0xffffff : lighten(color, 0.3),
+        alpha: a,
+      });
+    }
+  }
+
+  /** Soportes de la batería dibujada: trípodes de los platillos y patas de caja y tom de piso. */
+  private soporte(g: Graphics, x: number, y: number, r: number, id: string): void {
+    const piso = this.layout.height * 0.985;
+    const linea = { width: Math.max(1.5, r * 0.05), color: 0x77736a, alpha: 0.85 };
+    const tripode = (desdeY: number) => {
+      g.moveTo(x, desdeY).lineTo(x, piso).stroke(linea);
+      g.moveTo(x, piso - r * 0.35)
+        .lineTo(x - r * 0.55, piso)
+        .stroke(linea);
+      g.moveTo(x, piso - r * 0.35)
+        .lineTo(x + r * 0.55, piso)
+        .stroke(linea);
+    };
+    if (id === 'hihat' || id === 'crash' || id === 'ride') tripode(y);
+    else if (id === 'caja' || id === 'tom-piso') {
+      g.moveTo(x - r * 0.8, y + r * 0.5)
+        .lineTo(x - r * 0.95, piso)
+        .stroke(linea);
+      g.moveTo(x + r * 0.8, y + r * 0.5)
+        .lineTo(x + r * 0.95, piso)
+        .stroke(linea);
+    } else if (id === 'tom-agudo' || id === 'tom-medio') {
+      g.moveTo(x, y + r * 0.6)
+        .lineTo(x, y + r * 1.8)
+        .stroke(linea);
+    } else if (id === 'bombo') {
+      g.moveTo(x - r * 0.7, y + r * 0.7)
+        .lineTo(x - r * 1.05, piso)
+        .stroke(linea);
+      g.moveTo(x + r * 0.7, y + r * 0.7)
+        .lineTo(x + r * 1.05, piso)
+        .stroke(linea);
+    } else if (id === 'hihat-pie') {
+      g.roundRect(x - r * 0.35, y - r * 0.1, r * 0.7, r * 1.1, r * 0.1).fill({
+        color: 0x3d3d39,
+        alpha: 0.9,
+      });
+    }
+  }
+
   /** ¿Batería en la vista real (pedido 17)? */
   private vistaKit(): boolean {
     return this.carriles?.instrument === 'drums' && this.settings.show.drumView === 'kit';
@@ -1309,10 +1469,10 @@ export class Visualizer {
     // Por pieza: el próximo golpe (anillo que se acerca) y el último (onda al golpear).
     const proximo = new Map<number, number>();
     const ultimo = new Map<number, number>();
-    forEachNoteIn(this.index, t - ONDA, t + ANILLO, (n) => {
+    forEachNoteIn(this.index, t - 1, t + ANILLO, (n) => {
       if (n.start >= t) {
         if (!proximo.has(n.pitch) || n.start < proximo.get(n.pitch)!) proximo.set(n.pitch, n.start);
-      } else if (t - n.start <= ONDA) {
+      } else if (t - n.start <= 1) {
         if ((ultimo.get(n.pitch) ?? -Infinity) < n.start) ultimo.set(n.pitch, n.start);
       }
     });
@@ -1323,12 +1483,22 @@ export class Visualizer {
       const color = this.color(COLOR_PIEZA[i]!);
       const activa = this.active.has(i);
       const a = Math.max(0.001, this.aparecer(i, PIEZAS_BATERIA.length, true));
-      const r = p.r * (activa ? 1.05 : 1) * a;
+      // Viva (pedido de Jacobo): al golpe, los tambores rebotan y brillan y los platillos se mecen.
+      const golpeUltimo = ultimo.get(i);
+      const edadGolpe = golpeUltimo !== undefined ? t - golpeUltimo : Infinity;
+      const rebote = Math.exp(-edadGolpe * 12);
+      // Sin golpe reciente no se mece (sin(Infinito) no es un número).
+      const meneo = Number.isFinite(edadGolpe)
+        ? Math.sin(edadGolpe * 22) * Math.exp(-edadGolpe * 5)
+        : 0;
+      const r = p.r * (1 + 0.07 * rebote) * a;
+      const encendida = activa || rebote > 0.2;
+      this.soporte(g, p.x, p.y, p.r, pieza.id);
       const platillo = pieza.cruz || pieza.id === 'crash';
       if (platillo) {
         // Platillo dorado visto un poco de lado: anillos y campana.
-        const ry = r * 0.36;
-        g.ellipse(p.x, p.y, r, ry).fill(activa ? color : 0xb08d3c);
+        const ry = r * 0.36 * (1 + 0.45 * meneo);
+        g.ellipse(p.x, p.y, r, ry).fill(encendida ? color : 0xb08d3c);
         for (const k of [0.82, 0.62, 0.42]) {
           g.ellipse(p.x, p.y, r * k, ry * k).stroke({
             width: Math.max(1, r * 0.02),
@@ -1339,7 +1509,7 @@ export class Visualizer {
         g.ellipse(p.x, p.y, r * 0.18, ry * 0.3).fill(0xead39a);
         g.ellipse(p.x, p.y, r, ry).stroke({
           width: Math.max(1.5, r * 0.035),
-          color: activa ? 0xffffff : 0xe6c87a,
+          color: encendida ? 0xffffff : 0xe6c87a,
           alpha: 0.8,
         });
       } else if (pieza.id === 'bombo') {
@@ -1347,11 +1517,11 @@ export class Visualizer {
         g.circle(p.x, p.y, r)
           .fill(0x2a2a28)
           .stroke({ width: Math.max(2, r * 0.12), color: 0x5a5a55 });
-        g.circle(p.x, p.y, r * 0.86).fill(activa ? color : 0x171716);
+        g.circle(p.x, p.y, r * 0.86).fill(encendida ? color : 0x171716);
         g.circle(p.x, p.y, r * 0.45).stroke({
           width: Math.max(2, r * 0.05),
           color,
-          alpha: activa ? 1 : 0.7,
+          alpha: encendida ? 1 : 0.7,
         });
       } else {
         // Tambor visto desde arriba y un poco de frente: casco, parche claro y aro metálico.
@@ -1362,10 +1532,10 @@ export class Visualizer {
           .rect(p.x - r, p.y, r * 2, casco)
           .fill({ color: 0x000000, alpha: 0.45 });
         g.ellipse(p.x, p.y + casco, r, ry).fill(0x1d1d1b);
-        g.ellipse(p.x, p.y, r, ry).fill(activa ? color : 0xd9d5cc);
+        g.ellipse(p.x, p.y, r, ry).fill(encendida ? color : 0xd9d5cc);
         g.ellipse(p.x, p.y, r, ry).stroke({
           width: Math.max(2, r * 0.08),
-          color: activa ? 0xffffff : 0x8f8b82,
+          color: encendida ? 0xffffff : 0x8f8b82,
         });
       }
       // Anillo que se cierra sobre la pieza cuando se acerca el golpe (para anticiparlo).
@@ -1385,7 +1555,7 @@ export class Visualizer {
       }
       // Onda al golpear (estilo Guitar Hero).
       const golpe = ultimo.get(i);
-      if (golpe !== undefined) {
+      if (golpe !== undefined && t - golpe <= ONDA) {
         const k = (t - golpe) / ONDA;
         g.ellipse(
           p.x,
@@ -1414,7 +1584,7 @@ export class Visualizer {
     const h = L.keyboardHeight;
     const lineH = Math.max(2, Math.round(L.height * 0.003));
     if (c.instrument === 'drums' && this.vistaKit()) {
-      this.drawKit(g);
+      this.drawKit(this.kitGfx);
     } else if (c.instrument === 'drums') {
       const w = L.width / c.trastes;
       g.rect(0, top, L.width, h).fill(this.theme.background);
@@ -1514,6 +1684,7 @@ export class Visualizer {
   }
 
   private drawKeyboard(colors: VisualSettings['colors']): void {
+    this.kitGfx.clear();
     this.teclaPool.begin();
     if (this.carriles) {
       this.teclaPool.end();

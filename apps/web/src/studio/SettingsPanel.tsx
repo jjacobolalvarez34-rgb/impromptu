@@ -227,7 +227,7 @@ export function SettingsPanel() {
           />
           {/* Pedido 40: con qué se toca cada golpe (D derecha, I izquierda, P pie). */}
           <Switch
-            label="Baquetas (D, I, P)"
+            label="Baquetas (R, L)"
             checked={settings.show.sticking !== false}
             onChange={(sticking) => setSettings({ show: { ...settings.show, sticking } })}
           />

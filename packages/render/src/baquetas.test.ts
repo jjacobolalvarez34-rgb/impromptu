@@ -11,20 +11,20 @@ describe('baquetas de la batería (pedido 40)', () => {
     const caja = golpe(38, 0.5);
     const bombo = golpe(36, 0);
     const b = baquetas([golpe(42, 0), bombo, hihat, caja]);
-    expect(b.get(hihat.id)).toBe('D');
-    expect(b.get(caja.id)).toBe('I');
-    expect(b.get(bombo.id)).toBe('P');
+    expect(b.get(hihat.id)).toBe('R');
+    expect(b.get(caja.id)).toBe('L');
+    expect(b.get(bombo.id)).toBe('RF');
   });
 
-  it('un redoble rápido en la caja alterna D-I-D-I', () => {
+  it('un redoble rápido en la caja alterna R-L-R-L', () => {
     const redoble = [0, 0.12, 0.24, 0.36].map((t) => golpe(38, t));
     const b = baquetas(redoble);
-    expect(redoble.map((n) => b.get(n.id))).toEqual(['D', 'I', 'D', 'I']);
+    expect(redoble.map((n) => b.get(n.id))).toEqual(['R', 'L', 'R', 'L']);
   });
 
   it('golpes de caja separados empiezan siempre con la derecha', () => {
     const lentos = [0, 1, 2].map((t) => golpe(38, t));
     const b = baquetas(lentos);
-    expect(lentos.map((n) => b.get(n.id))).toEqual(['D', 'D', 'D']);
+    expect(lentos.map((n) => b.get(n.id))).toEqual(['R', 'R', 'R']);
   });
 });
