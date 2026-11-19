@@ -52,3 +52,4 @@ apps/mobile/release/
 # Llaves de firma: nunca en el repositorio
 *.jks
 *.keystore
+.claude/scheduled_tasks.json

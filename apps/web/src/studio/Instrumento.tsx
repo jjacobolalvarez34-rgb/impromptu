@@ -199,3 +199,10 @@ export function instrumentoPorNombre(nombre: string): Instrument {
   if (n.startsWith('batería') || n.startsWith('bateria')) return 'drums';
   return 'piano';
 }
+
+/** "Conectar teclado", "Conectar batería" o "Conectar guitarra MIDI" según el instrumento. */
+export function textoConectar(instrumento: Instrument): string {
+  if (instrumento === 'drums') return 'Conectar batería';
+  if (instrumento === 'guitar' || instrumento === 'bass') return 'Conectar guitarra MIDI';
+  return 'Conectar teclado';
+}

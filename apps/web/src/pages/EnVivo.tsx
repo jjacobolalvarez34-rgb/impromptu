@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { engine } from '../studio/audio';
 import { live, useLive } from '../studio/live';
+import { textoConectar } from '../studio/Instrumento';
 import { useStudio } from '../studio/store';
 import { VisualizerView } from '../studio/VisualizerView';
 import styles from './EnVivo.module.css';
@@ -30,6 +31,7 @@ const HIDE_AFTER = 2500;
  * pantalla completa. `?fondo=verde|transparente|tema` deja el fondo fijo desde la URL.
  */
 export function EnVivo() {
+  const instrumento = useStudio((s) => s.instrumento);
   const [params, setParams] = useSearchParams();
   const fondo = (params.get('fondo') ?? 'verde') as BackgroundChoice;
   const choice: BackgroundChoice = fondo in TO_BACKGROUND ? fondo : 'verde';
@@ -95,7 +97,7 @@ export function EnVivo() {
             disabled={status === 'asking'}
             onClick={() => void live.connect()}
           >
-            Conectar teclado
+            {textoConectar(instrumento)}
           </Button>
         )}
       </div>

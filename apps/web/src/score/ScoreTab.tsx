@@ -9,17 +9,20 @@ import {
   editar,
   hacerSeleccionable,
   marcarSeleccion,
+  posicionEn,
   quantizedTake,
   toMusicXml,
 } from '@impromptu/notation';
 import type { Edicion, Score, Seleccion } from '@impromptu/notation';
 import { Button, Chips } from '@impromptu/ui';
-import { Download, FileMusic, Printer } from 'lucide-react';
+import { Download, FileMusic, Film, Printer } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 import { AFINACIONES, createTake, createTrack } from '@impromptu/core';
 import type { Instrument } from '@impromptu/core';
 import { instrumentoDe } from '@impromptu/render';
+import { exportarVideoPartitura, fileName } from '@impromptu/export';
+import { engine } from '../studio/audio';
 import { midiFileName } from '../studio/saveMidi';
 import { transport, useStudio } from '../studio/store';
 import styles from './ScoreTab.module.css';
@@ -84,6 +87,76 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
   );
   const [manualBpm, setManualBpm] = useState<number | null>(null);
   const holder = useRef<HTMLDivElement>(null);
+  const recorrido = useRef<ReturnType<typeof leerRecorrido> | null>(null);
+  // Video de la partitura (fase 10).
+  const [video, setVideo] = useState<
+    | { paso: 'quieto' }
+    | { paso: 'armando'; avance: number }
+    | { paso: 'listo'; url: string; nombre: string }
+    | { paso: 'error'; mensaje: string }
+  >({ paso: 'quieto' });
+  const cancelarVideo = useRef<AbortController | null>(null);
+
+  const exportarHoja = async () => {
+    const el = holder.current;
+    const svg = el?.querySelector('svg');
+    const sc = estado.current.score;
+    const actual = useStudio.getState().take;
+    if (!el || !svg || !sc || !actual || !recorrido.current) return;
+    const control = new AbortController();
+    cancelarVideo.current = control;
+    setVideo({ paso: 'armando', avance: 0 });
+    try {
+      // La hoja dibujada pasa a imagen (las posiciones del cursor van relativas a ella).
+      const cajaSvg = svg.getBoundingClientRect();
+      const cajaHoja = el.getBoundingClientRect();
+      const dx = cajaSvg.left - cajaHoja.left;
+      const dy = cajaSvg.top - cajaHoja.top;
+      const texto = new XMLSerializer().serializeToString(svg);
+      const url = URL.createObjectURL(new Blob([texto], { type: 'image/svg+xml' }));
+      const imagen = new Image();
+      await new Promise<void>((ok, mal) => {
+        imagen.onload = () => ok();
+        imagen.onerror = () => mal(new Error('No se pudo leer la hoja'));
+        imagen.src = url;
+      });
+      URL.revokeObjectURL(url);
+      const r = recorrido.current;
+      const resultado = await exportarVideoPartitura({
+        take: actual,
+        hoja: imagen,
+        anchoHoja: cajaSvg.width,
+        altoHoja: cajaSvg.height,
+        cursor: (t) => {
+          const pos = posicionEn(r.puntos, r.fines, aRedondas(t, sc.measureTimes, sc.bpm, sc.time));
+          return pos ? { x: pos.x - dx, y: pos.y - dy, alto: pos.alto } : null;
+        },
+        aspect: useStudio.getState().aspect,
+        resolution: '1080p',
+        fps: 30,
+        piano: engine.loadedPiano,
+        sintes: engine.sintes,
+        signal: control.signal,
+        onProgress: ({ phase, value }) =>
+          setVideo({
+            paso: 'armando',
+            avance: phase === 'audio' ? value * 0.1 : 0.1 + value * 0.9,
+          }),
+      });
+      setVideo({
+        paso: 'listo',
+        url: URL.createObjectURL(resultado.blob),
+        nombre: fileName(`${actual.title} (partitura)`, resultado.extension),
+      });
+    } catch (e) {
+      if (control.signal.aborted) setVideo({ paso: 'quieto' });
+      else
+        setVideo({
+          paso: 'error',
+          mensaje: e instanceof Error ? e.message : 'No se pudo armar el video.',
+        });
+    }
+  };
   const hoja = useRef<HTMLElement>(null);
 
   // Editor (fase 10): tocar una nota de la hoja la elige; la barra de abajo la cambia.
@@ -206,7 +279,8 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
         }
         // Cursor suave: se lee una vez dónde cae cada nota y una línea propia se desliza.
         linea.current?.quitar();
-        linea.current = new LineaDeLectura(el, el.parentElement ?? el, leerRecorrido(view.cursor));
+        recorrido.current = leerRecorrido(view.cursor);
+        linea.current = new LineaDeLectura(el, el.parentElement ?? el, recorrido.current);
         osmd.current = view;
         setStatus('ready');
       } catch {
@@ -307,6 +381,23 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
         >
           MIDI cuantizado
         </Button>
+        {video.paso === 'armando' ? (
+          <div className={styles.campo}>
+            <span className="ui-secundario" role="status">
+              Armando el video… {Math.round(video.avance * 100)} %
+            </span>
+            <Button onClick={() => cancelarVideo.current?.abort()}>Cancelar</Button>
+          </div>
+        ) : video.paso === 'listo' ? (
+          <a className={styles.enlace} href={video.url} download={video.nombre}>
+            Descargar el video de la partitura
+          </a>
+        ) : (
+          <Button icon={<Film />} disabled={!abierta} onClick={() => void exportarHoja()}>
+            Video de la partitura
+          </Button>
+        )}
+        {video.paso === 'error' && <p className="ui-secundario">{video.mensaje}</p>}
         <Button icon={<Printer />} disabled={!abierta} onClick={() => window.print()}>
           Imprimir o guardar PDF
         </Button>

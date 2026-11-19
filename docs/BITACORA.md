@@ -62,7 +62,14 @@ Una entrada por sesión, la más reciente arriba.
   - **BUG-005** (exportar en el celular con el audio corrido ~2 s): el video ahora se arma con OpenGL y la hora exacta de cada cuadro. Exportar sigue en segundo plano y se arma un video a la vez (dicho en la pantalla).
   - Los pedidos 15 a 18 quedan para la fase 11, como pidió Jacobo.
   - Pruebas: notación 21, render 26, e2e `instrumentos.spec.ts` (selector, tablero, nombre de la pestaña, hoja vacía) y `partitura`, `exportar`; captura `test-results/capturas/selector-escritorio.png`.
-- Pendiente: fase 10 (editor de partitura, de tablatura y de batería; video de la partitura; grabar en la partitura); fase 11 (gráficos, pedidos 15–18 y el rasgueo de guitarra); compilar todo al final.
+- Hecho, fase 10 (parte). **Sin verificar por Jacobo**:
+  - **Seleccionar varias notas** en el visualizador: arrastrar una zona o Ctrl + clic; transponer de a semitono u octava, cambiar de mano juntas. Prueba `seleccion.spec.ts`.
+  - **BUG-006**: la tablatura del bajo salía con 6 líneas; ahora 4 y cada nota en su cuerda (verificado con captura). En la app, el piano muestra las 88 teclas por defecto.
+  - **Editor de la hoja** (web, PC y celular): tocar una nota o un silencio y una barra pequeña la cambia (altura, octava, figura, puntillo, borrar, poner nota, mano, cuerda; batería: otra pieza del kit), con deshacer y rehacer; al primer cambio la pieza toma el ritmo escrito. `packages/notation/src/editor.ts`; pruebas unitarias (6) y e2e `editor.spec.ts`.
+  - **Video de la partitura** (web y PC): la hoja con la línea ámbar avanzando y desplazándose por renglones, con el audio del instrumento, la cola y el fundido. `packages/export/src/partitura.ts`; e2e descarga el video.
+  - El botón de conectar dice teclado, guitarra MIDI o batería según el instrumento.
+  - Despertadores a las 3:03 y 5:47 para seguir trabajando solo (pedido de Jacobo).
+- Pendiente: grabar directo en la partitura; video de la partitura en el celular; fase 11 (gráficos, pedidos 15–18 y el rasgueo de guitarra); sonidos más reales (pedido 25); compilar todo al final.
 
 ---
 

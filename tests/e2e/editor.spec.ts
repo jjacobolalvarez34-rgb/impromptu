@@ -43,3 +43,26 @@ test('editar la partitura: tocar una nota, subirla y deshacer', async ({ page },
   await barra.getByRole('button', { name: 'Deshacer (Ctrl+Z)' }).click();
   await expect(page.locator('[data-compas="0"][data-pentagrama="0"]').first()).toBeVisible();
 });
+
+test('exporta el video de la partitura', async ({ page }, info) => {
+  test.skip(info.project.name === 'celular', 'La partitura está en el estudio de escritorio');
+  test.setTimeout(240_000);
+  await page.goto('/estudio?instrumento=piano');
+  await page.locator('input[accept=".mid,.midi,audio/midi"]').setInputFiles({
+    name: 'escala.mid',
+    mimeType: 'audio/midi',
+    buffer: midiEscala(),
+  });
+  await page.getByRole('tab', { name: 'Partitura' }).click();
+  await expect(page.locator('[data-compas="0"]').first()).toBeVisible({ timeout: 60_000 });
+  await page.getByRole('button', { name: 'Video de la partitura' }).click();
+  const enlace = page.getByRole('link', { name: 'Descargar el video de la partitura' });
+  await expect(enlace).toBeVisible({ timeout: 200_000 });
+  const descarga = page.waitForEvent('download');
+  await enlace.click();
+  const archivo = await descarga;
+  expect(archivo.suggestedFilename()).toMatch(/^escala-partitura\.(mp4|webm)$/);
+  await archivo.saveAs(
+    'test-results/capturas/video-partitura.' + archivo.suggestedFilename().split('.').pop(),
+  );
+});

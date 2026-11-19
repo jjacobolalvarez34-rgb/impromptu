@@ -4,7 +4,7 @@ import { Cable, Check, FileAudio, Mic, Pencil, Piano, Trash2, Video, X } from 'l
 import { useEffect, useState } from 'react';
 import { live, refreshTakes, useLive } from './live';
 import { useStudio } from './store';
-import { InsigniaInstrumento } from './Instrumento';
+import { InsigniaInstrumento, textoConectar } from './Instrumento';
 import { loadMedia } from './mediaStore';
 import { useMetronome } from './metronome';
 import { deleteTake, loadTake, renameTake } from './takesDb';
@@ -50,7 +50,7 @@ export function KeyboardSection() {
             disabled={status === 'asking'}
             onClick={() => void live.connect()}
           >
-            {status === 'asking' ? 'Esperando permiso' : 'Conectar teclado'}
+            {status === 'asking' ? 'Esperando permiso' : textoConectar(instrumento)}
           </Button>
         </>
       )}
