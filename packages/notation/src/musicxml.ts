@@ -284,7 +284,7 @@ function pianoXml(score: Score): string {
  * Toma cuantizada: las notas como están escritas en la partitura (tempo fijo, ligaduras
  * unidas), para exportar un MIDI "limpio" que cualquier editor de partituras lee igual.
  */
-export function quantizedTake(score: Score): Take {
+export function quantizedTake(score: Score, instrument: Instrument = 'piano'): Take {
   const measureLength = Math.round(score.time[0] * (4 / score.time[1]) * score.divisions);
   const secondsPerDiv = 60 / score.bpm / score.divisions;
   const notes: NoteEvent[] = [];
@@ -305,8 +305,10 @@ export function quantizedTake(score: Score): Take {
             }
           }
           const n = createNoteEvent({ pitch, start, end, velocity: 80, origin: 'edit' });
-          n.hand = staff === 0 ? 'R' : 'L';
-          n.handSource = 'auto';
+          if (instrument === 'piano') {
+            n.hand = staff === 0 ? 'R' : 'L';
+            n.handSource = 'auto';
+          }
           notes.push(n);
         }
       }
@@ -322,7 +324,14 @@ export function quantizedTake(score: Score): Take {
   notes.sort((a, b) => a.start - b.start || a.pitch - b.pitch);
   return createTake({
     title: score.title,
-    tracks: [createTrack({ name: 'Piano', notes, pedals })],
+    tracks: [
+      createTrack({
+        instrument,
+        name: instrument === 'piano' ? 'Piano' : 'Pieza',
+        notes,
+        pedals: instrument === 'piano' ? pedals : [],
+      }),
+    ],
     tempoMap: [{ time: 0, bpm: score.bpm }],
     timeSignature: score.time,
     duration: score.measures.length * measureLength * secondsPerDiv,

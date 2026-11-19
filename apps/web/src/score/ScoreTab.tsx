@@ -5,15 +5,20 @@ import {
   beatsOf,
   buildScore,
   leerRecorrido,
+  BarraEdicion,
+  editar,
+  hacerSeleccionable,
+  marcarSeleccion,
   quantizedTake,
   toMusicXml,
 } from '@impromptu/notation';
-import type { Score } from '@impromptu/notation';
+import type { Edicion, Score, Seleccion } from '@impromptu/notation';
 import { Button, Chips } from '@impromptu/ui';
 import { Download, FileMusic, Printer } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 import { AFINACIONES, createTake, createTrack } from '@impromptu/core';
+import type { Instrument } from '@impromptu/core';
 import { instrumentoDe } from '@impromptu/render';
 import { midiFileName } from '../studio/saveMidi';
 import { transport, useStudio } from '../studio/store';
@@ -79,6 +84,17 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
   );
   const [manualBpm, setManualBpm] = useState<number | null>(null);
   const holder = useRef<HTMLDivElement>(null);
+  const hoja = useRef<HTMLElement>(null);
+
+  // Editor (fase 10): tocar una nota de la hoja la elige; la barra de abajo la cambia.
+  const [seleccion, setSeleccion] = useState<Seleccion | null>(null);
+  const estado = useRef({
+    seleccion,
+    score: null as Score | null,
+    instrumento: 'piano' as Instrument,
+  });
+  const barra = useRef<BarraEdicion | null>(null);
+  const quitarClics = useRef<(() => void) | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
   const beats = useMemo(() => {
@@ -115,6 +131,44 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
     [score, take, instrumento, cuerdas, soloTab],
   );
 
+  useEffect(() => {
+    estado.current = { seleccion, score, instrumento };
+  });
+
+  // La barra de edición vive en la hoja mientras haya una pieza abierta.
+  useEffect(() => {
+    const el = hoja.current;
+    if (!el || !abierta) return;
+    const aplicar = (ed: Edicion) => {
+      const { seleccion: sel, score: sc, instrumento: inst } = estado.current;
+      const actual = useStudio.getState().take;
+      if (!sel || !sc || !actual) return;
+      const afin =
+        inst === 'guitar' ? AFINACIONES[useStudio.getState().guitarra.afinacion] : undefined;
+      const r = editar(actual, sc, sel, ed, inst, afin);
+      useStudio.getState().edit(() => r.take);
+      setSeleccion(r.seleccion);
+    };
+    const b = new BarraEdicion(
+      el,
+      instrumento,
+      aplicar,
+      () => setSeleccion(null),
+      () => useStudio.getState().undo(),
+      () => useStudio.getState().redo(),
+    );
+    barra.current = b;
+    return () => {
+      b.quitar();
+      barra.current = null;
+    };
+  }, [abierta, instrumento]);
+
+  useEffect(() => {
+    barra.current?.mostrar(seleccion);
+    if (holder.current) marcarSeleccion(holder.current, seleccion);
+  }, [seleccion]);
+
   // Dibujo con OpenSheetMusicDisplay (se carga solo al abrir esta pestaña).
   const osmd = useRef<OpenSheetMusicDisplay | null>(null);
   const linea = useRef<LineaDeLectura | null>(null);
@@ -138,6 +192,18 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
         await view.load(xml);
         if (cancelled) return;
         view.render();
+        // Cada nota de la hoja se puede tocar para editarla (solo con una pieza abierta).
+        quitarClics.current?.();
+        const sc = estado.current.score;
+        if (sc && useStudio.getState().take) {
+          quitarClics.current = hacerSeleccionable(
+            view as unknown as Parameters<typeof hacerSeleccionable>[0],
+            sc,
+            estado.current.instrumento,
+            (sel) => setSeleccion(sel),
+          );
+          marcarSeleccion(el, estado.current.seleccion);
+        }
         // Cursor suave: se lee una vez dónde cae cada nota y una línea propia se desliza.
         linea.current?.quitar();
         linea.current = new LineaDeLectura(el, el.parentElement ?? el, leerRecorrido(view.cursor));
@@ -249,7 +315,12 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
           PDF» en la ventana de impresión.
         </p>
       </aside>
-      <main className={styles.hoja} aria-label={`Partitura de ${take.title}`}>
+      <main ref={hoja} className={styles.hoja} aria-label={`Partitura de ${take.title}`}>
+        {abierta && !seleccion && (
+          <p className={`ui-secundario ${styles.ayuda}`}>
+            Toca una nota (o un silencio) para editarla. Al editar, la pieza toma el ritmo escrito.
+          </p>
+        )}
         {!abierta && (
           <p className="ui-secundario">
             Hoja vacía. Abre una pieza en el Estudio (un MIDI, una grabación o un audio) para verla

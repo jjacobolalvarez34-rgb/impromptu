@@ -119,3 +119,9 @@
 .panel[hidden] {
   display: none;
 }
+
+/* Ayuda del editor, arriba de la hoja. */
+.ayuda {
+  max-width: 1100px;
+  margin: 0 auto var(--e-3);
+}

@@ -7,3 +7,12 @@ export type { Measure, NoteType, Score, ScoreEvent, ScoreOptions } from './score
 export { quantizedTake, toMusicXml } from './musicxml';
 export { LineaDeLectura, aRedondas, leerRecorrido, posicionEn } from './cursor';
 export type { FinesDeRenglon, PuntoCursor } from './cursor';
+export {
+  BarraEdicion,
+  FIGURAS,
+  editar,
+  hacerSeleccionable,
+  marcarSeleccion,
+  nombreNota,
+} from './editor';
+export type { Edicion, Seleccion } from './editor';
