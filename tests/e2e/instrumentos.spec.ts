@@ -31,3 +31,59 @@ test('la pantalla principal abre el estudio con guitarra', async ({ page }) => {
   await page.getByRole('button', { name: 'Abrir con guitarra' }).click();
   await expect(page).toHaveURL(/instrumento=guitarra/);
 });
+
+test('se bajan los sonidos grabados del instrumento elegido (pedido 25)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'celular', 'Basta con probarlo en escritorio');
+  const pedidos: string[] = [];
+  page.on('response', (r) => {
+    const ruta = new URL(r.url()).pathname;
+    if (ruta.includes('/instrumentos/') && r.ok()) pedidos.push(ruta);
+  });
+  await page.goto('/estudio?instrumento=guitarra');
+  // La guitarra de acero (timbre por defecto): manifiesto y sus grabaciones.
+  await expect
+    .poll(
+      () => pedidos.filter((p) => p.includes('/instrumentos/acero/') && p.endsWith('.flac')).length,
+      {
+        timeout: 20_000,
+      },
+    )
+    .toBeGreaterThan(15);
+  expect(pedidos.some((p) => p.includes('/instrumentos/bateria/'))).toBe(false);
+
+  await page.getByRole('button', { name: /^Instrumento: Guitarra/ }).click();
+  await page
+    .getByRole('radiogroup', { name: 'Elegir instrumento' })
+    .getByRole('radio', { name: /Batería/ })
+    .click();
+  await expect
+    .poll(
+      () =>
+        pedidos.filter((p) => p.includes('/instrumentos/bateria/') && p.endsWith('.flac')).length,
+      {
+        timeout: 30_000,
+      },
+    )
+    .toBeGreaterThan(60);
+
+  // Cada banco se decodifica en el navegador (FLAC) y no está en silencio.
+  const picos = await page.evaluate(async () => {
+    const ctx = new OfflineAudioContext(2, 44100, 44100);
+    const salida: Record<string, number> = {};
+    for (const banco of ['nylon', 'acero', 'electrica', 'bajo', 'bateria']) {
+      const m = (await (await fetch(`/instrumentos/${banco}/manifiesto.json`)).json()) as {
+        zonas?: { archivo: string }[];
+        piezas?: Record<string, { archivos: string[] }[]>;
+      };
+      const archivo = m.zonas?.[0]?.archivo ?? Object.values(m.piezas ?? {})[0]![0]!.archivos[0]!;
+      const datos = await (await fetch(`/instrumentos/${banco}/${archivo}`)).arrayBuffer();
+      const canal = (await ctx.decodeAudioData(datos)).getChannelData(0);
+      salida[banco] = canal.reduce((mx, v) => Math.max(mx, Math.abs(v)), 0);
+    }
+    return salida;
+  });
+  expect(Object.keys(picos)).toHaveLength(5);
+  for (const pico of Object.values(picos)) expect(pico).toBeGreaterThan(0.05);
+});

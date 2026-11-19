@@ -1,0 +1,134 @@
+{
+ "nombre": "electrica",
+ "autor": "FreePats (FSBS Electric Guitar, clean)",
+ "licencia": "CC0 1.0",
+ "tasa": 32000,
+ "ganancia": 0.7079457843841379,
+ "zonas": [
+  {
+   "nota": 40,
+   "hastaFuerza": 92,
+   "archivo": "E2-suave.flac"
+  },
+  {
+   "nota": 40,
+   "hastaFuerza": 127,
+   "archivo": "E2-fuerte.flac"
+  },
+  {
+   "nota": 41,
+   "hastaFuerza": 92,
+   "archivo": "F2-suave.flac"
+  },
+  {
+   "nota": 41,
+   "hastaFuerza": 127,
+   "archivo": "F2-fuerte.flac"
+  },
+  {
+   "nota": 45,
+   "hastaFuerza": 92,
+   "archivo": "A2-suave.flac"
+  },
+  {
+   "nota": 45,
+   "hastaFuerza": 127,
+   "archivo": "A2-fuerte.flac"
+  },
+  {
+   "nota": 48,
+   "hastaFuerza": 92,
+   "archivo": "C3-suave.flac"
+  },
+  {
+   "nota": 48,
+   "hastaFuerza": 127,
+   "archivo": "C3-fuerte.flac"
+  },
+  {
+   "nota": 52,
+   "hastaFuerza": 92,
+   "archivo": "E3-suave.flac"
+  },
+  {
+   "nota": 52,
+   "hastaFuerza": 127,
+   "archivo": "E3-fuerte.flac"
+  },
+  {
+   "nota": 55,
+   "hastaFuerza": 92,
+   "archivo": "G3-suave.flac"
+  },
+  {
+   "nota": 55,
+   "hastaFuerza": 127,
+   "archivo": "G3-fuerte.flac"
+  },
+  {
+   "nota": 59,
+   "hastaFuerza": 92,
+   "archivo": "B3-suave.flac"
+  },
+  {
+   "nota": 59,
+   "hastaFuerza": 127,
+   "archivo": "B3-fuerte.flac"
+  },
+  {
+   "nota": 61,
+   "hastaFuerza": 92,
+   "archivo": "Cs4-suave.flac"
+  },
+  {
+   "nota": 61,
+   "hastaFuerza": 127,
+   "archivo": "Cs4-fuerte.flac"
+  },
+  {
+   "nota": 64,
+   "hastaFuerza": 92,
+   "archivo": "E4-suave.flac"
+  },
+  {
+   "nota": 64,
+   "hastaFuerza": 127,
+   "archivo": "E4-fuerte.flac"
+  },
+  {
+   "nota": 67,
+   "hastaFuerza": 127,
+   "archivo": "G4.flac"
+  },
+  {
+   "nota": 71,
+   "hastaFuerza": 127,
+   "archivo": "B4.flac"
+  },
+  {
+   "nota": 72,
+   "hastaFuerza": 127,
+   "archivo": "C5.flac"
+  },
+  {
+   "nota": 77,
+   "hastaFuerza": 127,
+   "archivo": "F5.flac"
+  },
+  {
+   "nota": 80,
+   "hastaFuerza": 127,
+   "archivo": "Gs5.flac"
+  },
+  {
+   "nota": 82,
+   "hastaFuerza": 127,
+   "archivo": "As5.flac"
+  },
+  {
+   "nota": 85,
+   "hastaFuerza": 127,
+   "archivo": "Cs6.flac"
+  }
+ ]
+}

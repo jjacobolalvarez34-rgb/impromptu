@@ -1,5 +1,6 @@
 import {
   copyFileSync,
+  cpSync,
   createReadStream,
   existsSync,
   mkdirSync,
@@ -37,6 +38,42 @@ function spaFallback(): Plugin {
     },
     closeBundle() {
       copyFileSync(`${outDir}/index.html`, `${outDir}/404.html`);
+    },
+  };
+}
+
+/**
+ * Sonidos grabados de guitarra, bajo y batería (apps/web/public/instrumentos y /bateria). La
+ * carpeta pública de Vite es la de la marca, así que estos se sirven y se copian aparte
+ * (BUG-007: antes /bateria/ no llegaba al navegador y la batería sonaba sintetizada).
+ */
+const sonidosDir = fileURLToPath(new URL('./public', import.meta.url));
+const CARPETAS_SONIDO = ['instrumentos', 'bateria'];
+const RUTA_SONIDO = /\/(instrumentos|bateria)\/([\w-]+\/)?([\w.-]+\.(flac|json))$/;
+
+function sonidos(): Plugin {
+  let outDir = 'dist';
+  return {
+    name: 'impromptu-sonidos',
+    configResolved(config) {
+      outDir = config.build.outDir;
+    },
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const ruta = decodeURIComponent((req.url ?? '').split('?')[0] ?? '');
+        const m = RUTA_SONIDO.exec(ruta);
+        if (!m) return next();
+        const file = join(sonidosDir, m[1]!, m[2] ?? '', m[3]!);
+        if (!existsSync(file)) return next();
+        res.setHeader('Content-Type', m[4] === 'json' ? 'application/json' : 'audio/flac');
+        res.setHeader('Content-Length', String(statSync(file).size));
+        createReadStream(file).pipe(res);
+      });
+    },
+    closeBundle() {
+      for (const c of CARPETAS_SONIDO) {
+        cpSync(join(sonidosDir, c), join(outDir, c), { recursive: true });
+      }
     },
   };
 }
@@ -121,6 +158,7 @@ export default defineConfig({
     react(),
     spaFallback(),
     localModels(),
+    sonidos(),
     devPairs(),
     VitePWA({
       // PROVISIONAL: el aviso "Hay una versión nueva. Recargar" (BUGS B-016) queda pendiente.
@@ -148,6 +186,16 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,json,bin}'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: `${base}index.html`,
+        // Sonidos grabados de guitarra, bajo y batería (pedido 25): no se precargan (13 MB);
+        // se guardan la primera vez que se usan y después sirven sin conexión.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              /\/(instrumentos|bateria)\/.+\.(flac|json)$/.test(url.pathname),
+            handler: 'CacheFirst',
+            options: { cacheName: 'sonidos', expiration: { maxEntries: 400 } },
+          },
+        ],
       },
     }),
   ],

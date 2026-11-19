@@ -66,6 +66,12 @@
 - Causa probable: los cuadros se dibujaban con el lienzo directo sobre la superficie del codificador, que les pone la hora del reloj; si se dibuja más rápido de lo que el codificador alcanza, puede saltarse cuadros y el video queda más corto que el audio.
 - Arreglo: OpenGL ES con la hora exacta de cada cuadro (`eglPresentationTimeANDROID`), sin perder cuadros; se vacía la salida del codificador antes de cada cuadro. **Sin verificar en el celular.**
 
+### BUG-007 · En la web, la batería grabada nunca se escuchaba (sonaba la sintetizada)
+- Dónde: web y PC, cualquier pieza de batería (`apps/web/vite.config.ts`).
+- Cómo se encontró (Claude, 2026-11-19): al agregar los sonidos grabados, la prueba e2e no veía ninguna descarga de `/instrumentos/`.
+- Causa: la carpeta pública de Vite es `assets/brand` (el ícono), no `apps/web/public`. Los FLAC de `apps/web/public/bateria` nunca se servían ni se copiaban al build; el pedido devolvía la página y la batería caía, sin aviso, a la sintetizada. En el celular sí sonaba (Gradle los copia aparte). Puede explicar por qué Jacobo sentía que la batería "no suena a batería" en la web.
+- Arreglo y prueba: plugin `sonidos()` en `vite.config.ts` que los sirve en desarrollo y los copia al build. Prueba e2e `se bajan los sonidos grabados…` en `instrumentos.spec.ts` (descarga y decodifica cada banco).
+
 ### BUG-006 · La tablatura del bajo salía con 6 líneas y las notas en cuerdas equivocadas
 - Dónde: web, pestaña Tablatura con una pieza de bajo (`score/ScoreTab.tsx`).
 - Cómo reproducir (Jacobo, 2026-11-18): abrir "Bajo: rock" y ver la tablatura: 6 líneas, casi todo 0 en la misma cuerda y notas que cambiaban sin cambiar de cuerda.

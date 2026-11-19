@@ -17,3 +17,5 @@ apps/mobile/app/build
 apps/mobile/.gradle
 apps/mobile/release
 apps/mobile/app/src/main/assets
+# Manifiestos generados por scripts/muestras.mjs
+apps/web/public/instrumentos/

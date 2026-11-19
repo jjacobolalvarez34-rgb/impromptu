@@ -41,7 +41,14 @@ Pendiente (P1). Provisional: **GPL-3.0**. Mientras no se decida, no copies códi
 | Omnizart (batería) | Evaluado (fase 9) | Código MIT; licencia de los pesos sin aclarar | No se usa hasta confirmar la licencia de los pesos |
 | Guitar-Transcription (ErenReyhanlioglu) | Evaluado para guitarra (fase 9) | Código MIT; pesos en otro repositorio, licencia sin aclarar | No se usa; la guitarra usa Basic Pitch (Apache-2.0) |
 | Batería grabada de Sonic Pi (`etc/samples/drum_*`, 17 archivos FLAC, 844 kB) | Sonido de la batería (`apps/web/public/bateria`) | **CC0 1.0** (verificado en LICENSE.md de Sonic Pi: "All the bundled samples are individually licensed under a CC0 1.0 Universal Public Domain Dedication") | Ninguna (se acredita igual en "Acerca de") |
-| Sonidos de guitarra y bajo (y la batería de respaldo) | Síntesis propia (Karplus-Strong y percusión por código) | Código del proyecto (GPL-3.0) | Ninguna |
+| Sonidos de guitarra y bajo (y la batería de respaldo) | Síntesis propia (Karplus-Strong y percusión por código), solo mientras bajan los grabados | Código del proyecto (GPL-3.0) | Ninguna |
+| FreePats Spanish Classical Guitar (2019-06-18) | Guitarra nylon grabada (`apps/web/public/instrumentos/nylon`), pedido 25 | **CC0 1.0** (verificado: LICENSE y README del repositorio freepats/spanish-classical-guitar) | Ninguna (se acredita en "Acerca de") |
+| FreePats FSS Steel String Guitar (2020-05-21), muestras de FlameStudios | Guitarra de acero grabada (`instrumentos/acero`) | **GPL-3.0-or-later con excepción de FreePats** (verificado: gpl.txt y readme.txt del paquete). Compatible con la licencia del proyecto (GPL-3.0) | Mantener el aviso y el crédito; la excepción deja que la música hecha con estos sonidos no quede bajo la GPL |
+| FreePats FSBS Electric Guitar, clean (bridge) | Guitarra eléctrica grabada (`instrumentos/electrica`) | **CC0 1.0** (verificado: LICENSE y README de freepats/electric-guitar-FSBS-clean) | Ninguna (se acredita en "Acerca de") |
+| FreePats Electric Bass YR, dedos (Andrea Biasior, 2019-09-30) | Bajo grabado (`instrumentos/bajo`) | **CC0 1.0** (verificado: LICENSE y README de freepats/electric-bass-YR) | Ninguna (se acredita en "Acerca de") |
+| MuldjordKit (Lars Muldjord), versión FreePats 2020-10-18 | Batería grabada de rock (`instrumentos/bateria`): 3 capas de fuerza y 2 variaciones por pieza | **CC BY 4.0** (verificado: LICENSE.txt y README del paquete) | **Dar crédito** a Lars Muldjord y FreePats ("Acerca de", hecho) e indicar que se recortó y comprimió |
+
+Los bancos se arman con `node scripts/muestras.mjs` desde los originales descargados en `D:/.cache/muestras` (fuera de git): una nota cada 3 semitonos (el bajo, todas), recortadas con fundido y en FLAC de 16 bits. Unos 13 MB en total; cada banco se baja solo cuando se usa su instrumento.
 | Modelo de piano de Kong et al. | Se evaluó y se dejó (ADR-014, ADR-015) | CC BY 4.0 | Ya no se usa |
 | Dexie (IndexedDB) | Almacenamiento | [VERIFICAR] | |
 | Tauri 2 | Escritorio | MIT o Apache-2.0 [VERIFICAR] | |

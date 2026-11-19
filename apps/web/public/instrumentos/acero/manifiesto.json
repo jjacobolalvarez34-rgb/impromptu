@@ -1,0 +1,114 @@
+{
+ "nombre": "acero",
+ "autor": "FreePats (FSS Steel String Guitar, muestras de FlameStudios)",
+ "licencia": "GPL-3.0-or-later con excepción de FreePats",
+ "tasa": 32000,
+ "ganancia": 0.7079457843841379,
+ "zonas": [
+  {
+   "nota": 40,
+   "hastaFuerza": 82,
+   "archivo": "E2-suave.flac"
+  },
+  {
+   "nota": 40,
+   "hastaFuerza": 127,
+   "archivo": "E2-fuerte.flac"
+  },
+  {
+   "nota": 43,
+   "hastaFuerza": 89,
+   "archivo": "G2-suave.flac"
+  },
+  {
+   "nota": 43,
+   "hastaFuerza": 127,
+   "archivo": "G2-fuerte.flac"
+  },
+  {
+   "nota": 46,
+   "hastaFuerza": 127,
+   "archivo": "As2.flac"
+  },
+  {
+   "nota": 49,
+   "hastaFuerza": 127,
+   "archivo": "Cs3.flac"
+  },
+  {
+   "nota": 52,
+   "hastaFuerza": 127,
+   "archivo": "E3.flac"
+  },
+  {
+   "nota": 55,
+   "hastaFuerza": 82,
+   "archivo": "G3-suave.flac"
+  },
+  {
+   "nota": 55,
+   "hastaFuerza": 127,
+   "archivo": "G3-fuerte.flac"
+  },
+  {
+   "nota": 58,
+   "hastaFuerza": 127,
+   "archivo": "As3.flac"
+  },
+  {
+   "nota": 61,
+   "hastaFuerza": 127,
+   "archivo": "Cs4.flac"
+  },
+  {
+   "nota": 64,
+   "hastaFuerza": 127,
+   "archivo": "E4.flac"
+  },
+  {
+   "nota": 67,
+   "hastaFuerza": 127,
+   "archivo": "G4.flac"
+  },
+  {
+   "nota": 70,
+   "hastaFuerza": 127,
+   "archivo": "As4.flac"
+  },
+  {
+   "nota": 73,
+   "hastaFuerza": 82,
+   "archivo": "Cs5-suave.flac"
+  },
+  {
+   "nota": 73,
+   "hastaFuerza": 127,
+   "archivo": "Cs5-fuerte.flac"
+  },
+  {
+   "nota": 76,
+   "hastaFuerza": 127,
+   "archivo": "E5.flac"
+  },
+  {
+   "nota": 79,
+   "hastaFuerza": 127,
+   "archivo": "G5.flac"
+  },
+  {
+   "nota": 82,
+   "hastaFuerza": 82,
+   "archivo": "As5-suave.flac"
+  },
+  {
+   "nota": 82,
+   "hastaFuerza": 127,
+   "archivo": "As5-fuerte.flac"
+  },
+  {
+   "nota": 84,
+   "hastaFuerza": 127,
+   "archivo": "C6.flac"
+  }
+ ]
+}

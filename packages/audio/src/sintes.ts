@@ -1,6 +1,8 @@
 import type { Instrument } from '@impromptu/core';
 import { HIHAT_ABIERTO, piezaDeNota } from '@impromptu/core';
 import type { Voice } from './sustain';
+import { archivosDe, bancoDe, golpeBateria, zonaCuerda } from './muestras';
+import type { Banco, Manifiesto } from './muestras';
 
 /**
  * Guitarra, bajo y batería sintetizados (fase 9): no hay que descargar nada ni hay licencias de
@@ -253,6 +255,76 @@ export class Sintes {
 
   /** Grabaciones de batería acústica (CC0, de Sonic Pi), por nombre de archivo. */
   private readonly bateria = new Map<string, AudioBuffer>();
+  /**
+   * Bancos grabados (pedido 25): guitarras, bajo y batería de FreePats y MuldjordKit. Mientras
+   * un banco no termina de bajar, suena el sintetizado (o la batería de Sonic Pi).
+   */
+  private readonly manifiestos = new Map<Banco, Manifiesto>();
+  private readonly grabadas = new Map<string, AudioBuffer>();
+  private readonly cargando = new Map<Banco, Promise<void>>();
+  /** Turno de cada pieza de batería, para alternar sus variaciones. */
+  private readonly turnos = new Map<number, number>();
+
+  /**
+   * Descarga y decodifica un banco grabado una sola vez. `base`: carpeta de los bancos
+   * (termina en /), con una subcarpeta por banco y su `manifiesto.json`.
+   */
+  cargarBanco(base: string, banco: Banco): Promise<void> {
+    let p = this.cargando.get(banco);
+    if (!p) {
+      p = (async () => {
+        const res = await fetch(`${base}${banco}/manifiesto.json`);
+        if (!res.ok) throw new Error(`No se pudo bajar ${banco}`);
+        const m = (await res.json()) as Manifiesto;
+        await Promise.all(
+          archivosDe(m).map(async (archivo) => {
+            const r = await fetch(`${base}${banco}/${archivo}`);
+            if (!r.ok) return;
+            const audio = await this.context.decodeAudioData(await r.arrayBuffer());
+            this.grabadas.set(`${banco}/${archivo}`, audio);
+          }),
+        );
+        // El manifiesto se guarda al final: así no se usa un banco a medio bajar.
+        this.manifiestos.set(banco, m);
+      })();
+      p.catch(() => this.cargando.delete(banco));
+      this.cargando.set(banco, p);
+    }
+    return p;
+  }
+
+  /** Carga el banco que necesita un instrumento (la guitarra, según su timbre). */
+  cargarPara(base: string, instrument: Instrument): Promise<void> {
+    const banco = bancoDe(instrument, this.timbreGuitarra);
+    return banco ? this.cargarBanco(base, banco) : Promise.resolve();
+  }
+
+  /** Espera los bancos que se están bajando (antes de exportar, para que el video suene igual). */
+  async esperarBancos(): Promise<void> {
+    await Promise.allSettled([...this.cargando.values()]);
+  }
+
+  /** Grabación para una nota de guitarra o bajo, con su velocidad de reproducción. */
+  private cuerdaGrabada(instrument: Instrument, pitch: number, velocity: number) {
+    const banco = bancoDe(instrument, this.timbreGuitarra);
+    const m = banco ? this.manifiestos.get(banco) : undefined;
+    if (!banco || !m?.zonas) return null;
+    const z = zonaCuerda(m.zonas, pitch, velocity);
+    const buffer = z ? this.grabadas.get(`${banco}/${z.zona.archivo}`) : undefined;
+    return z && buffer ? { buffer, rate: z.rate, ganancia: m.ganancia } : null;
+  }
+
+  /** Grabación para un golpe (MuldjordKit), turnando las variaciones de cada pieza. */
+  private golpeGrabado(nota: number, velocity: number) {
+    const m = this.manifiestos.get('bateria');
+    if (!m?.piezas) return null;
+    const turno = this.turnos.get(nota) ?? 0;
+    const archivo = golpeBateria(m.piezas, nota, velocity, turno);
+    const buffer = archivo ? this.grabadas.get(`bateria/${archivo}`) : undefined;
+    if (!buffer) return null;
+    this.turnos.set(nota, turno + 1);
+    return { buffer, rate: 1, ganancia: m.ganancia };
+  }
   /** Hi-hat abierto sonando: el cerrado o el pie lo cortan, como en una batería real. */
   private hihatAbierto: Activa[] = [];
 
@@ -276,9 +348,11 @@ export class Sintes {
     );
   }
 
-  /** Usa la batería ya decodificada de otro (por ejemplo, para exportar sin volver a descargar). */
+  /** Usa los sonidos ya decodificados de otro (por ejemplo, para exportar sin volver a descargar). */
   compartirBateria(otro: Sintes): void {
     for (const [n, b] of otro.bateria) this.bateria.set(n, b);
+    for (const [n, b] of otro.grabadas) this.grabadas.set(n, b);
+    for (const [n, m] of otro.manifiestos) this.manifiestos.set(n, m);
     this.timbreGuitarra = otro.timbreGuitarra;
   }
 
@@ -294,25 +368,39 @@ export class Sintes {
   play(voice: Voice, at: number, releaseAt: number, offset = 0): void {
     const instrument = voice.instrument ?? 'guitar';
     const nota = voice.note.pitch;
-    const grabada = instrument === 'drums' ? this.muestraBateria(nota, voice.note.velocity) : null;
-    const b = grabada ?? this.buffer(instrument, nota, voice.note.velocity);
-    if (offset >= b.duration) return;
+    const fuerza = voice.note.velocity;
+    // Primero lo grabado (pedido 25); si su banco aún no está, lo de antes.
+    const real =
+      instrument === 'drums'
+        ? this.golpeGrabado(nota, fuerza)
+        : this.cuerdaGrabada(instrument, nota, fuerza);
+    const simple = real ? null : instrument === 'drums' ? this.muestraBateria(nota, fuerza) : null;
+    const b = real?.buffer ?? simple ?? this.buffer(instrument, nota, fuerza);
+    const rate = real?.rate ?? 1;
+    if (offset * rate >= b.duration) return;
     const source = this.context.createBufferSource();
     source.buffer = b;
+    source.playbackRate.value = rate;
     const gain = this.context.createGain();
-    // Las grabaciones tienen dos capas (suave y fuerte); dentro de cada una, la fuerza escala.
-    const nivel = grabada
-      ? voice.gain * (0.35 + 0.65 * (voice.note.velocity / 127)) * 1.4
-      : voice.gain;
+    // Las grabaciones tienen capas por fuerza; dentro de cada una, la fuerza escala un poco.
+    const nivel = real
+      ? voice.gain *
+        real.ganancia *
+        (0.45 + 0.55 * (fuerza / 127)) *
+        (instrument === 'drums' ? 1.1 : 1.3)
+      : simple
+        ? voice.gain * (0.35 + 0.65 * (fuerza / 127)) * 1.4
+        : voice.gain;
     gain.gain.setValueAtTime(nivel, at);
     source.connect(gain).connect(this.output);
     // Primero start: el navegador no deja programar stop antes (era lo que dejaba mudas a la
     // guitarra y el bajo).
-    source.start(at, offset);
+    source.start(at, offset * rate);
     if (instrument !== 'drums' && Number.isFinite(releaseAt)) {
+      // Al soltar, la cuerda se apaga rápido pero sin chasquido (como la mano que la apaga).
       gain.gain.setValueAtTime(nivel, releaseAt);
-      gain.gain.setTargetAtTime(0, releaseAt, 0.04);
-      source.stop(releaseAt + 0.3);
+      gain.gain.setTargetAtTime(0, releaseAt, real ? 0.07 : 0.04);
+      source.stop(releaseAt + 0.5);
     }
     const a = { source, gain };
     if (instrument === 'drums' && (nota === 42 || nota === 44)) {

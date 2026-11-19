@@ -1,0 +1,89 @@
+{
+ "nombre": "nylon",
+ "autor": "FreePats (Spanish Classical Guitar)",
+ "licencia": "CC0 1.0",
+ "tasa": 32000,
+ "ganancia": 0.7079457843841379,
+ "zonas": [
+  {
+   "nota": 40,
+   "hastaFuerza": 127,
+   "archivo": "E2.flac"
+  },
+  {
+   "nota": 43,
+   "hastaFuerza": 127,
+   "archivo": "G2.flac"
+  },
+  {
+   "nota": 45,
+   "hastaFuerza": 127,
+   "archivo": "A2.flac"
+  },
+  {
+   "nota": 48,
+   "hastaFuerza": 127,
+   "archivo": "C3.flac"
+  },
+  {
+   "nota": 52,
+   "hastaFuerza": 127,
+   "archivo": "E3.flac"
+  },
+  {
+   "nota": 55,
+   "hastaFuerza": 127,
+   "archivo": "G3.flac"
+  },
+  {
+   "nota": 58,
+   "hastaFuerza": 127,
+   "archivo": "As3.flac"
+  },
+  {
+   "nota": 61,
+   "hastaFuerza": 127,
+   "archivo": "Cs4.flac"
+  },
+  {
+   "nota": 64,
+   "hastaFuerza": 127,
+   "archivo": "E4.flac"
+  },
+  {
+   "nota": 67,
+   "hastaFuerza": 127,
+   "archivo": "G4.flac"
+  },
+  {
+   "nota": 70,
+   "hastaFuerza": 127,
+   "archivo": "As4.flac"
+  },
+  {
+   "nota": 73,
+   "hastaFuerza": 127,
+   "archivo": "Cs5.flac"
+  },
+  {
+   "nota": 76,
+   "hastaFuerza": 127,
+   "archivo": "E5.flac"
+  },
+  {
+   "nota": 79,
+   "hastaFuerza": 127,
+   "archivo": "G5.flac"
+  },
+  {
+   "nota": 82,
+   "hastaFuerza": 127,
+   "archivo": "As5.flac"
+  },
+  {
+   "nota": 84,
+   "hastaFuerza": 127,
+   "archivo": "C6.flac"
+  }
+ ]
+}

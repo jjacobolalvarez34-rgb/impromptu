@@ -104,11 +104,20 @@ class AudioEngine {
     if (!this.sintes) {
       this.sintes = new Sintes(this.context);
       this.sintes.timbreGuitarra = useStudio.getState().guitarra.timbre;
-      // Batería grabada (CC0): se baja una vez, ~800 kB.
+      // Batería grabada sencilla (CC0, ~800 kB) mientras baja la completa.
       void this.sintes.cargarBateria(`${import.meta.env.BASE_URL}bateria/`).catch(() => undefined);
-      useStudio.subscribe((s) => {
-        if (this.sintes) this.sintes.timbreGuitarra = s.guitarra.timbre;
-      });
+      // Sonidos grabados (pedido 25): se baja solo el banco del instrumento en uso.
+      const bancos = `${import.meta.env.BASE_URL}instrumentos/`;
+      const cargar = () => {
+        const s = useStudio.getState();
+        const sintes = this.sintes;
+        if (!sintes) return;
+        sintes.timbreGuitarra = s.guitarra.timbre;
+        const usados = new Set([s.instrumento, ...(s.take?.tracks.map((t) => t.instrument) ?? [])]);
+        for (const i of usados) void sintes.cargarPara(bancos, i).catch(() => undefined);
+      };
+      cargar();
+      useStudio.subscribe(cargar);
     }
     return this.context;
   }

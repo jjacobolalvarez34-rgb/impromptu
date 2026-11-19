@@ -14,6 +14,15 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-19 · Pedido 25: sonidos grabados de guitarra, bajo y batería
+- Lo que pasó en la noche: después de grabar en la hoja (web y celular) y el video de la hoja en el celular (3 commits, CI verde), un comando de Claude quedó esperando permiso (un `curl` a GitHub para ver el CI, que Jacobo había prohibido en modo nocturno) y no se avanzó más hasta la mañana. Anotado en la memoria para que no vuelva a pasar.
+- Hecho (web y PC). **Sin verificar de oído por Jacobo**:
+  - **Sonidos grabados** en vez de sintetizados: guitarra nylon, acero y eléctrica, bajo (FreePats) y una batería de rock con 3 capas de fuerza y 2 variaciones por pieza (MuldjordKit). Licencias verificadas en cada paquete (ver LICENCIAS). `scripts/muestras.mjs` arma los bancos desde los originales en `D:/.cache/muestras` (13 MB en total). Cada banco se baja solo cuando se usa su instrumento; mientras baja suena lo de antes. Al exportar se espera a que terminen de bajar. Sin conexión: se guardan la primera vez (service worker).
+  - **BUG-007**: en la web la batería grabada nunca llegaba (la carpeta pública de Vite es la de la marca); arreglado con un plugin que sirve y copia los sonidos.
+  - Créditos en "Acerca de".
+  - Pruebas: `muestras.test.ts` (banco por instrumento, nota más cercana y su altura, capa por fuerza, variaciones de la batería); e2e `instrumentos.spec.ts` baja la guitarra y la batería y decodifica una grabación de cada banco (ninguna en silencio).
+- Pendiente: los mismos sonidos en la app de Android; la fase 11.
+
 ### 2026-11-18 (tarde) · Pedidos de Jacobo tras probar la app
 - Probado por Jacobo en su celular (verificado): la conversión ya no cierra la app, el teclado suena sin retraso, el micrófono graba bien con su piano vertical y la partitura sale muy bien.
 - Decisiones de Jacobo: **licencia GPL-3.0** (`LICENSE`); muestras y modelo en **Hugging Face con la cuenta de Mamut Herd** (falta que Jacobo cree la cuenta y deje el token; pasos en PENDIENTES).

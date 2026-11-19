@@ -1,0 +1,501 @@
+{
+ "nombre": "bateria",
+ "autor": "Lars Muldjord (MuldjordKit, versión de FreePats)",
+ "licencia": "CC-BY 4.0",
+ "tasa": 32000,
+ "ganancia": 0.8912509381337456,
+ "piezas": {
+  "35": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "KdrumR-13.flac",
+     "KdrumR-16.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "KdrumR-19.flac",
+     "KdrumR-21.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "KdrumR-21.flac",
+     "KdrumR-24.flac"
+    ]
+   }
+  ],
+  "36": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "KdrumL-12.flac",
+     "KdrumL-15.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "KdrumL-17.flac",
+     "KdrumL-20.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "KdrumL-20.flac",
+     "KdrumL-23.flac"
+    ]
+   }
+  ],
+  "37": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "SnareRest1-4-c.flac",
+     "SnareRest1-6-c.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "SnareRest1-7-c.flac",
+     "SnareRest1-9-c.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "SnareRest1-9-c.flac",
+     "SnareRest1-11-c.flac"
+    ]
+   }
+  ],
+  "38": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "Snare1-30.flac",
+     "Snare1-36.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "Snare1-42.flac",
+     "Snare1-48.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "Snare1-48.flac",
+     "Snare1-53.flac"
+    ]
+   }
+  ],
+  "39": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "Snare2-30.flac",
+     "Snare2-36.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "Snare2-42.flac",
+     "Snare2-48.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "Snare2-48.flac",
+     "Snare2-53.flac"
+    ]
+   }
+  ],
+  "40": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "Snare2-30.flac",
+     "Snare2-36.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "Snare2-42.flac",
+     "Snare2-48.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "Snare2-48.flac",
+     "Snare2-53.flac"
+    ]
+   }
+  ],
+  "41": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "Tom4-10.flac",
+     "Tom4-12.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "Tom4-14.flac",
+     "Tom4-16.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "Tom4-16.flac",
+     "Tom4-18.flac"
+    ]
+   }
+  ],
+  "42": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "HihatClosed-12-c.flac",
+     "HihatClosed-16-c.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "HihatClosed-20-c.flac",
+     "HihatClosed-24-c.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "HihatClosed-24-c.flac",
+     "HihatClosed-27-c.flac"
+    ]
+   }
+  ],
+  "43": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "Tom4-10.flac",
+     "Tom4-12.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "Tom4-14.flac",
+     "Tom4-16.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "Tom4-16.flac",
+     "Tom4-18.flac"
+    ]
+   }
+  ],
+  "44": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "HihatClosed-12-c.flac",
+     "HihatClosed-16-c.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "HihatClosed-20-c.flac",
+     "HihatClosed-24-c.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "HihatClosed-24-c.flac",
+     "HihatClosed-27-c.flac"
+    ]
+   }
+  ],
+  "45": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "Tom3-5.flac",
+     "Tom3-7.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "Tom3-9.flac",
+     "Tom3-11.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "Tom3-11.flac",
+     "Tom3-13.flac"
+    ]
+   }
+  ],
+  "46": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "HihatOpen-12.flac",
+     "HihatOpen-16.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "HihatOpen-20.flac",
+     "HihatOpen-24.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "HihatOpen-24.flac",
+     "HihatOpen-28.flac"
+    ]
+   }
+  ],
+  "47": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "Tom2-4.flac",
+     "Tom2-6.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "Tom2-7.flac",
+     "Tom2-9.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "Tom2-9.flac",
+     "Tom2-11.flac"
+    ]
+   }
+  ],
+  "48": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "Tom2-4.flac",
+     "Tom2-6.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "Tom2-7.flac",
+     "Tom2-9.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "Tom2-9.flac",
+     "Tom2-11.flac"
+    ]
+   }
+  ],
+  "49": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "CrashL-3.flac",
+     "CrashL-4.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "CrashL-5.flac",
+     "CrashL-6.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "CrashL-7.flac",
+     "CrashL-8.flac"
+    ]
+   }
+  ],
+  "50": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "Tom1-4.flac",
+     "Tom1-5.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "Tom1-7.flac",
+     "Tom1-8.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "Tom1-8.flac",
+     "Tom1-10.flac"
+    ]
+   }
+  ],
+  "51": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "RideL-3.flac",
+     "RideL-4.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "RideL-6.flac",
+     "RideL-7.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "RideL-7.flac",
+     "RideL-9.flac"
+    ]
+   }
+  ],
+  "52": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "China-4.flac",
+     "China-5.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "China-8.flac",
+     "China-9.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "China-9.flac",
+     "China-11.flac"
+    ]
+   }
+  ],
+  "53": [
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "RideLBell-1.flac",
+     "RideLBell-2.flac"
+    ]
+   }
+  ],
+  "55": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "CrashR-4.flac",
+     "CrashR-5.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "CrashR-8.flac",
+     "CrashR-9.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "CrashR-9.flac",
+     "CrashR-11.flac"
+    ]
+   }
+  ],
+  "57": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "CrashR-4.flac",
+     "CrashR-5.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "CrashR-8.flac",
+     "CrashR-9.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "CrashR-9.flac",
+     "CrashR-11.flac"
+    ]
+   }
+  ],
+  "59": [
+   {
+    "hastaFuerza": 65,
+    "archivos": [
+     "RideR-3.flac",
+     "RideR-4.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 103,
+    "archivos": [
+     "RideR-6.flac",
+     "RideR-7.flac"
+    ]
+   },
+   {
+    "hastaFuerza": 127,
+    "archivos": [
+     "RideR-7.flac",
+     "RideR-9.flac"
+    ]
+   }
+  ]
+ }
+}

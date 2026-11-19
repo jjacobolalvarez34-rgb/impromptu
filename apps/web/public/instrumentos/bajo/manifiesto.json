@@ -1,0 +1,69 @@
+{
+ "nombre": "bajo",
+ "autor": "FreePats (Electric Bass YR, Andrea Biasior)",
+ "licencia": "CC0 1.0",
+ "tasa": 24000,
+ "ganancia": 0.7079457843841379,
+ "zonas": [
+  {
+   "nota": 28,
+   "hastaFuerza": 127,
+   "archivo": "E1.flac"
+  },
+  {
+   "nota": 29,
+   "hastaFuerza": 127,
+   "archivo": "F1.flac"
+  },
+  {
+   "nota": 30,
+   "hastaFuerza": 127,
+   "archivo": "Fs1.flac"
+  },
+  {
+   "nota": 31,
+   "hastaFuerza": 127,
+   "archivo": "G1.flac"
+  },
+  {
+   "nota": 32,
+   "hastaFuerza": 127,
+   "archivo": "Gs1.flac"
+  },
+  {
+   "nota": 33,
+   "hastaFuerza": 127,
+   "archivo": "A1.flac"
+  },
+  {
+   "nota": 34,
+   "hastaFuerza": 127,
+   "archivo": "As1.flac"
+  },
+  {
+   "nota": 35,
+   "hastaFuerza": 127,
+   "archivo": "B1.flac"
+  },
+  {
+   "nota": 36,
+   "hastaFuerza": 127,
+   "archivo": "C2.flac"
+  },
+  {
+   "nota": 37,
+   "hastaFuerza": 127,
+   "archivo": "Cs2.flac"
+  },
+  {
+   "nota": 38,
+   "hastaFuerza": 127,
+   "archivo": "D2.flac"
+  },
+  {
+   "nota": 39,
+   "hastaFuerza": 127,
+   "archivo": "Ds2.flac"
+  }
+ ]
+}

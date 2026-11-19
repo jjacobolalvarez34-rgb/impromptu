@@ -8,6 +8,14 @@ import styles from './Acerca.module.css';
 /** Créditos que exigen las licencias (LICENCIAS.md, "Acerca de"). */
 const CREDITOS: [string, string][] = [
   ['Sonido de piano', 'Salamander Grand Piano, de Alexander Holm (CC BY 3.0).'],
+  [
+    'Sonido de batería',
+    'MuldjordKit, de Lars Muldjord, en la versión de FreePats (CC BY 4.0); muestras de Sonic Pi (CC0).',
+  ],
+  [
+    'Sonido de guitarra y bajo',
+    'FreePats: Spanish Classical Guitar, FSBS Electric Guitar y Electric Bass YR de Andrea Biasior (CC0); FSS Steel String Guitar con muestras de FlameStudios (GPL-3.0 con excepción).',
+  ],
   ['Audio a notas', 'Basic Pitch, de Spotify (Apache-2.0), con TensorFlow.js (Apache-2.0).'],
   ['Piano con pedal', 'Transkun V2, © 2021 Yujia Yan (MIT), con ONNX Runtime (MIT).'],
   ['Partitura', 'OpenSheetMusicDisplay (BSD-3-Clause).'],

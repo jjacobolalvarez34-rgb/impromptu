@@ -203,7 +203,11 @@ export async function renderPianoAudio(
   if (source) piano.shareSamplesFrom(source);
   // Guitarra, bajo y batería (fase 9) se sintetizan aquí mismo.
   const sintes = new Sintes(context);
-  if (sintesFuente) sintes.compartirBateria(sintesFuente);
+  if (sintesFuente) {
+    // Los sonidos grabados que aún bajan se esperan: el video suena igual que el estudio.
+    await sintesFuente.esperarBancos();
+    sintes.compartirBateria(sintesFuente);
+  }
   for (const voice of takeVoices(take)) {
     if (!voice.instrument || voice.instrument === 'piano')
       piano.play(voice, voice.start, voice.release);
