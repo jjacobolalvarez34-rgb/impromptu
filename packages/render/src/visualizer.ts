@@ -7,6 +7,8 @@ import {
   FillGradient,
   Graphics,
   NineSliceSprite,
+  PerspectiveMesh,
+  RenderTexture,
   Sprite,
   Text,
   Texture,
@@ -186,6 +188,14 @@ export class Visualizer {
   private readonly nucleoPool: Pool<Sprite>;
   /** Estilos de nota con volumen (pedido 64): vidrio, bloque, gema, oro, diamante, luz, claro, chispa. */
   private readonly pintor = new PintorNotas();
+  /**
+   * Pedido 63 (Jacobo, al ver Whammy): en guitarra y bajo, la zona de las notas se ve en
+   * perspectiva, alejándose hacia arriba, y llega derecha al mástil. Se dibuja en una textura y
+   * se muestra inclinada con un PerspectiveMesh.
+   */
+  private readonly zonaNotas = new Container();
+  private plano: PerspectiveMesh | null = null;
+  private rtPlano: RenderTexture | null = null;
   /** Estilo cristal (referencia de Jacobo): borde de luz y estela de rayos al caer. */
   private readonly bordeLayer = new Container();
   private readonly bordePool: Pool<NineSliceSprite>;
@@ -358,8 +368,7 @@ export class Visualizer {
       style: { fontFamily: 'Martian Mono, monospace', fontSize: 12, fill: 0xa39f95 },
     });
 
-    app.stage.addChild(
-      this.bgLayer,
+    this.zonaNotas.addChild(
       this.guides,
       this.barLabels,
       this.beamLayer,
@@ -373,6 +382,10 @@ export class Visualizer {
       this.nucleoLayer,
       this.insignias,
       this.noteLabels,
+    );
+    app.stage.addChild(
+      this.bgLayer,
+      this.zonaNotas,
       this.flechas,
       this.textoRasgueo,
       this.selectionOutline,
@@ -988,7 +1001,59 @@ export class Visualizer {
       this.drawPedal(t);
     }
     this.nombresParches.visible = this.carriles?.instrument === 'drums' && !camera;
+    this.aplicarPerspectiva();
     this.app.render();
+  }
+
+  /** ¿La zona de las notas va en perspectiva? (guitarra y bajo, si no se apagó en Ajustes). */
+  private conPerspectiva(): boolean {
+    const c = this.carriles;
+    return !!c && c.instrument !== 'drums' && this.settings.show.perspectiva !== false;
+  }
+
+  /**
+   * Pedido 63: dibuja la zona de las notas en una textura y la muestra como un plano que se
+   * aleja hacia arriba (la parte de abajo, pegada al mástil, queda del mismo ancho).
+   */
+  private aplicarPerspectiva(): void {
+    const stage = this.app.stage;
+    if (!this.conPerspectiva()) {
+      if (this.zonaNotas.parent !== stage) stage.addChildAt(this.zonaNotas, 1);
+      if (this.plano) this.plano.visible = false;
+      return;
+    }
+    const L = this.layout;
+    const ancho = Math.max(1, Math.round(L.width));
+    const alto = Math.max(1, Math.round(L.keyLineY));
+    if (!this.rtPlano || this.rtPlano.width !== ancho || this.rtPlano.height !== alto) {
+      this.rtPlano?.destroy(true);
+      this.rtPlano = RenderTexture.create({
+        width: ancho,
+        height: alto,
+        resolution: this.app.renderer.resolution,
+        antialias: true,
+      });
+      if (this.plano) this.plano.texture = this.rtPlano;
+    }
+    if (!this.plano) {
+      this.plano = new PerspectiveMesh({ texture: this.rtPlano, verticesX: 20, verticesY: 20 });
+      stage.addChildAt(this.plano, 1);
+    }
+    if (this.zonaNotas.parent) this.zonaNotas.parent.removeChild(this.zonaNotas);
+    this.app.renderer.render({
+      container: this.zonaNotas,
+      target: this.rtPlano,
+      clear: true,
+      clearColor: [0, 0, 0, 0],
+    });
+    // Arriba, el plano se angosta hacia el centro; abajo llega entero al mástil.
+    const arriba = 0.5;
+    // La fuga va al centro del mástil (sin el panel de rasgueo de la derecha).
+    const conPanel = this.rasgueos.length > 0 && this.settings.show.strums !== false;
+    const centro = (ancho * (conPanel ? 1 - PANEL_RASGUEO : 1)) / 2;
+    const medio = (ancho * arriba) / 2;
+    this.plano.visible = true;
+    this.plano.setCorners(centro - medio, 0, centro + medio, 0, ancho, alto, 0, alto);
   }
 
   /** Dedo o nombre al pie de la nota, si cabe; oscuro sobre notas claras y claro sobre oscuras. */

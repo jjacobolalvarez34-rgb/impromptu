@@ -109,6 +109,7 @@ export interface VisualProject {
     drumView?: 'carriles' | 'kit'; // fase 11 (pedido 17): carriles o una batería real
     strums?: boolean; // fase 11: flechas de rasgueo en la guitarra (encendidas si falta)
     sticking?: boolean; // pedido 40: con qué se toca cada golpe de batería (D, I, P)
+    perspectiva?: boolean; // pedido 63: guitarra y bajo con la zona de notas en perspectiva (encendida si falta)
   };
   colors: { right: string; left: string; unassigned: string };
   /**

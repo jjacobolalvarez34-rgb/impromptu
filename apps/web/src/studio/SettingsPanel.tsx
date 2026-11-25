@@ -234,6 +234,12 @@ export function SettingsPanel() {
             Cada nota cae sobre el traste y la cuerda donde se pisa, con el color de su cuerda y el
             número de traste.
           </p>
+          {/* Pedido 63: las notas vienen desde lejos, como por un mástil que se aleja. */}
+          <Switch
+            label="Notas en perspectiva"
+            checked={settings.show.perspectiva !== false}
+            onChange={(perspectiva) => setSettings({ show: { ...settings.show, perspectiva } })}
+          />
           {instrumento === 'guitar' && (
             <Switch
               label="Flechas de rasgueo"
