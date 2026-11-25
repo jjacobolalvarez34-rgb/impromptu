@@ -1,4 +1,5 @@
 import {
+  PARAMS_CUERDAS,
   TranscriptionCancelled,
   detectarBateria,
   separarInstrumento,
@@ -14,6 +15,14 @@ import { AvanceSuave } from '@impromptu/transcribe';
 import type { EtapaDeEspera } from '@impromptu/transcribe';
 import type { Take } from '@impromptu/core';
 import { create } from 'zustand';
+
+/** Para los mensajes: "no encontramos notas de …". */
+const NOMBRE_INSTRUMENTO: Record<string, string> = {
+  piano: 'piano',
+  guitar: 'guitarra',
+  bass: 'bajo',
+  drums: 'batería',
+};
 import { engine } from './audio';
 import { refreshTakes, useLive } from './live';
 import { LiveListener } from './liveMic';
@@ -245,8 +254,11 @@ export const useTranscribe = create<Store>((set, get) => {
         });
         take = takeFromTranskun(result, name, buffer.duration);
       } else {
+        const cuerdas = instrumento !== 'piano';
         const raw = await transcribe(fuente, {
           signal: controller.signal,
+          // Pedido 55: guitarra y bajo bajitos (micrófono): subir el volumen y umbrales de Spotify.
+          ...(cuerdas ? { params: PARAMS_CUERDAS, normalizar: true } : {}),
           onStage: (stage) =>
             stage === 'preparing'
               ? show('preparando', null, 'Solo la primera vez; puede tardar hasta medio minuto')
@@ -259,7 +271,7 @@ export const useTranscribe = create<Store>((set, get) => {
       if (take.tracks[0]!.notes.length === 0) {
         fallo(
           name,
-          'Se oyó sonido, pero no encontramos notas de piano. Prueba con el micrófono más cerca del piano o con menos ruido alrededor.',
+          `Se oyó sonido, pero no encontramos notas de ${NOMBRE_INSTRUMENTO[instrumento] ?? 'piano'}. Prueba con el micrófono más cerca del instrumento o con menos ruido alrededor.`,
         );
         return;
       }

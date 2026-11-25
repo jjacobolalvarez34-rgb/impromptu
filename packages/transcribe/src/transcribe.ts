@@ -1,4 +1,5 @@
 import type { RawNote } from './notes';
+import { normalizar } from './volumen';
 import type { TranscribeParams, WorkerMessage, WorkerRequest } from './worker';
 
 /** Umbrales por defecto; se ajustaron con las grabaciones de Jacobo (BITÁCORA, fase 5). */
@@ -8,6 +9,16 @@ export const DEFAULT_PARAMS: TranscribeParams = {
   minNoteFrames: 8,
 };
 export type { TranscribeParams };
+
+/**
+ * Guitarra y bajo (pedido 55): los umbrales de Spotify, menos exigentes que los del piano; con
+ * los del piano, una guitarra acústica grabada con el micrófono no daba ninguna nota.
+ */
+export const PARAMS_CUERDAS: TranscribeParams = {
+  onsetThreshold: 0.5,
+  frameThreshold: 0.3,
+  minNoteFrames: 8,
+};
 
 /** Frecuencia que espera Basic Pitch. */
 export const MODEL_RATE = 22_050;
@@ -93,6 +104,7 @@ export async function transcribe(
 ): Promise<RawNote[]> {
   const samples = await toModelRate(buffer);
   if (options.signal?.aborted) throw new TranscriptionCancelled();
+  if (options.normalizar) normalizar(samples);
   return transcribeSamples(samples, options);
 }
 
@@ -101,6 +113,8 @@ export interface TranscribeOptions {
   onStage?: (stage: TranscribeStage) => void;
   signal?: AbortSignal;
   params?: Partial<TranscribeParams>;
+  /** Subir el volumen antes de la IA (grabaciones bajitas, pedido 55). */
+  normalizar?: boolean;
 }
 
 /** ¿La IA rápida ya está preparada (la siguiente transcripción empieza de inmediato)? */

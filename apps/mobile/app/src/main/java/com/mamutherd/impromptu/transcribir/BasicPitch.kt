@@ -16,6 +16,18 @@ import kotlin.math.roundToInt
  * versión de la web (@spotify/basic-pitch) y la de Python (note_creation.py), con los umbrales
  * de packages/transcribe (DEFAULT_PARAMS).
  */
+/**
+ * Qué tan seguro debe estar el modelo para dar una nota. El piano usa los que se ajustaron con
+ * las grabaciones de Jacobo (fase 5); guitarra y bajo, los de Spotify, porque con el micrófono
+ * del teléfono una guitarra acústica no pasaba los del piano y no salía nada (pedido 55).
+ */
+data class Umbrales(val inicio: Float, val cuadro: Float) {
+    companion object {
+        val PIANO = Umbrales(0.6f, 0.4f)
+        val CUERDAS = Umbrales(0.5f, 0.3f)
+    }
+}
+
 class BasicPitch(private val sesion: OrtSession, private val env: OrtEnvironment = OrtEnvironment.getEnvironment()) : AutoCloseable {
     @Volatile private var cancelada = false
 
@@ -28,7 +40,11 @@ class BasicPitch(private val sesion: OrtSession, private val env: OrtEnvironment
     }
 
     /** Notas de un audio mono a 22 050 Hz. `progreso` recibe 0 a 1 por ventana. */
-    fun transcribir(x: FloatArray, progreso: (Float) -> Unit = {}): List<Nota> {
+    fun transcribir(
+        x: FloatArray,
+        umbrales: Umbrales = Umbrales.PIANO,
+        progreso: (Float) -> Unit = {},
+    ): List<Nota> {
         cancelada = false
         val relleno = FloatArray(SOLAPE / 2 + x.size).also { System.arraycopy(x, 0, it, SOLAPE / 2, x.size) }
         val ventanas = maxOf(1, (relleno.size + SALTO - 1) / SALTO)
@@ -57,7 +73,7 @@ class BasicPitch(private val sesion: OrtSession, private val env: OrtEnvironment
             }
             progreso((w + 1).toFloat() / ventanas)
         }
-        return aNotas(notas, inicios)
+        return aNotas(notas, inicios, umbrales)
     }
 
     companion object {
@@ -73,8 +89,6 @@ class BasicPitch(private val sesion: OrtSession, private val env: OrtEnvironment
         private const val ENTRADA = "serving_default_input_2:0"
         private const val SALIDA_NOTA = "StatefulPartitionedCall:1"
         private const val SALIDA_INICIO = "StatefulPartitionedCall:2"
-        private const val UMBRAL_INICIO = 0.6f
-        private const val UMBRAL_CUADRO = 0.4f
         private const val LARGO_MINIMO = 8
         private const val TOLERANCIA = 11
         private val CORRIMIENTO_VENTANA = (SALTO_FFT.toDouble() / TASA) * (CUADROS_VENTANA - MUESTRAS.toDouble() / SALTO_FFT) + 0.0018
@@ -101,7 +115,13 @@ class BasicPitch(private val sesion: OrtSession, private val env: OrtEnvironment
         }
 
         /** output_to_notes_polyphonic con el truco de melodía; después, a notas con fuerza. */
-        fun aNotas(cuadros: List<FloatArray>, iniciosModelo: List<FloatArray>): List<Nota> {
+        fun aNotas(
+            cuadros: List<FloatArray>,
+            iniciosModelo: List<FloatArray>,
+            umbrales: Umbrales = Umbrales.PIANO,
+        ): List<Nota> {
+            val UMBRAL_INICIO = umbrales.inicio
+            val UMBRAL_CUADRO = umbrales.cuadro
             val n = cuadros.size
             if (n < 3) return emptyList()
             val inicios = iniciosInferidos(iniciosModelo, cuadros)

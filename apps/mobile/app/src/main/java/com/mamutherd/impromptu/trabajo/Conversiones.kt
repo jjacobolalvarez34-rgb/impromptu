@@ -12,6 +12,8 @@ import com.mamutherd.impromptu.datos.Piezas
 import com.mamutherd.impromptu.instrumentos.Guitarra
 import com.mamutherd.impromptu.instrumentos.Instrumento
 import com.mamutherd.impromptu.transcribir.BasicPitch
+import com.mamutherd.impromptu.transcribir.Umbrales
+import com.mamutherd.impromptu.transcribir.Volumen
 import com.mamutherd.impromptu.transcribir.DetectorBateria
 import com.mamutherd.impromptu.transcribir.Separador
 import com.mamutherd.impromptu.transcribir.Modelos
@@ -242,8 +244,11 @@ class Conversiones(
             DetectorBateria.detectar(pcm.muestras, pcm.tasa, sensibilidadBateria)
         } else {
             val audio = Decodificar.remuestrear(pcm.muestras, pcm.tasa, BasicPitch.TASA)
+            // Pedido 55: guitarra y bajo bajitos (micrófono del teléfono): subir el volumen y
+            // usar umbrales menos exigentes que los del piano.
+            Volumen.normalizar(audio)
             val bp = basicPitch ?: BasicPitch(Modelos.sesion(context, "basic-pitch.onnx")).also { basicPitch = it }
-            val crudas = bp.transcribir(audio) { t.avance.actualizar(it.toDouble(), System.currentTimeMillis()) }
+            val crudas = bp.transcribir(audio, Umbrales.CUERDAS) { t.avance.actualizar(it.toDouble(), System.currentTimeMillis()) }
             Guitarra.asignar(crudas, Guitarra.afinacion(t.instrumento, afinacionGuitarra))
         }
         if (!job.isActive) throw CancellationException()

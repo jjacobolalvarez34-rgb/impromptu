@@ -1,17 +1,17 @@
 # Graph Report - impromptu  (2026-11-25)
 
 ## Corpus Check
-- 326 files · ~202,376 words
+- 330 files · ~203,376 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 236 file(s) not represented in the graph (top: .flac 175, .css 36, .xml 8)
 
 ## Summary
-- 3133 nodes · 7478 edges · 198 communities (142 shown, 56 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 146 edges (avg confidence: 0.87)
+- 3156 nodes · 7537 edges · 190 communities (133 shown, 57 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 147 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2226b8e8`
+- Built from commit: `ba4fe3e2`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -48,7 +48,7 @@
 - AGENTS.md — Impromptu
 - Teclado.kt
 - vercel.json
-- .aMono
+- .renderFrame
 - audio/tsconfig.json
 - core/tsconfig.json
 - export/tsconfig.json
@@ -65,15 +65,16 @@
 - render/README.md
 - desktop/README.md
 - estilos-nota.ts
-- practice/src/index.ts
+- audio.ts
 - export/src/export.ts
 - align.ts
 - HojaVideo.kt
 - transcribe/package.json
 - transcribe/README.md
 - LiveSession
+- visualizer.ts
+- Transkun.kt
 - store.ts
-- audio.ts
 - core/package.json
 - desktop/package.json
 - Instrumento
@@ -87,7 +88,7 @@
 - scripts
 - PartituraPantalla.kt
 - Flujos principales
-- midi/src/index.ts
+- NoteEvent
 - notation/src/index.ts
 - main.cts
 - transkun/transcribe.ts
@@ -97,7 +98,7 @@
 - Estado
 - Iconos.kt
 - Secuencia
-- .transcribeComoPython
+- Presentacion.kt
 - Transkun.kt
 - compilerOptions
 - Piano
@@ -108,9 +109,9 @@
 - dev.mjs
 - edit.ts
 - DECISIONES (ADRs)
-- Transport
+- Etapa
 - web/vite.config.ts
-- scene.test.ts
+- MuestrasTest.kt
 - AudioEngine
 - LivePlayer
 - SettingsPanel.tsx
@@ -118,9 +119,9 @@
 - Nota
 - ColaPanel.kt
 - export/package.json
-- Tecla
+- ExportarPantalla.kt
 - web/package.json
-- midi/src/export.ts
+- core/src/index.ts
 - ScoreTab.tsx
 - Landing.tsx
 - colores.ts
@@ -128,7 +129,7 @@
 - InicioPantalla.kt
 - Impromptu.kt
 - Pieza
-- .renderFrame
+- Transport
 - Impromptu
 - LivePanel.tsx
 - transcribeStore.ts
@@ -140,50 +141,42 @@
 - LineaDeLectura
 - CopiarModelos
 - render/src/index.ts
-- Etapa
+- fingering.ts
 - @impromptu/transcribe@workspace:*
-- Plantilla
+- .iniciar
 - @playwright/test
 - web/vite.config.ts
 - opensheetmusicdisplay@2.2.1
 - Smf
-- Lo que queda (resumen al 2026-11-17)
-- audio.ts
+- Plantilla
+- notes.ts
 - GrabarPantalla.kt
 - Error: Impromptu se cierra en la cola de conversiones (índice -1)
 - editor.ts
-- InstrumentosTest
+- .normalizar
 - MicrofonoPantalla.kt
 - @impromptu/export@workspace:*
 - @impromptu/render@workspace:*
-- scripts
 - Sintes
-- .setTake
-- instrumentos.ts
+- Muestras.kt
+- scripts
+- core/src/index.ts
 - Salamander
-- SeparadorTest
-- Presentacion.kt
-- main.ts
-- fingering.ts
-- key.ts
 - WaitMode
-- sources.ts
+- practice/src/index.ts
+- InstrumentosTest
 - muestras.mjs
 - .asignar
-- JavascriptInterface
 - visualizer.ts
-- AvanceTest.kt
 - Puente
 - PiezaPantalla.kt
 - keyboard.ts
-- editor.ts
+- musicxml.ts
 - Separador.kt
-- leerRecorrido
-- practice.test.ts
 - LEEME.md
 - Exportador.kt
 - bateria.ts
-- NoteEvent
+- Take
 - MainActivity.kt
 - avance.ts
 
@@ -208,13 +201,13 @@
   docs/BITACORA.md → apps/mobile/app/src/test/java/com/mamutherd/impromptu/SeparadorTest.kt
 - `ADR-009 · Piano propio con Web Audio en lugar de `@tonejs/piano`` --references--> `Piano`  [INFERRED]
   docs/DECISIONES.md → packages/audio/src/piano.ts
-- `ADR-011 · Líneas de compás y pulso en el visualizador` --references--> `beatGrid()`  [INFERRED]
-  docs/DECISIONES.md → packages/core/src/meter.ts
+- `2026-11-16 · Fase 0 · Cimientos` --references--> `sortPedals()`  [INFERRED]
+  docs/BITACORA.md → packages/core/src/factory.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (198 total, 56 thin omitted)
+## Communities (190 total, 57 thin omitted)
 
 ### Community 0 - "ui/src/index.ts"
 Cohesion: 0.08
@@ -273,8 +266,8 @@ Cohesion: 0.13
 Nodes (17): dependencies, @impromptu/core@workspace:*, description, devDependencies, typescript@catalog:, vitest@catalog:, exports, @impromptu/core (+9 more)
 
 ### Community 14 - "Estudio.tsx"
-Cohesion: 0.13
-Nodes (28): EnVivo(), ASPECTS, ESCUCHAR, Estudio(), NOMBRE_HOJA, ScoreTab, SPEEDS, tabsPara() (+20 more)
+Cohesion: 0.16
+Nodes (22): ASPECTS, ESCUCHAR, Estudio(), NOMBRE_HOJA, ScoreTab, SPEEDS, tabsPara(), EditBar() (+14 more)
 
 ### Community 15 - "media/package.json"
 Cohesion: 0.13
@@ -289,16 +282,16 @@ Cohesion: 0.12
 Nodes (18): dependencies, @impromptu/core@workspace:*, pixi.js@catalog:, description, devDependencies, typescript@catalog:, vitest@catalog:, exports (+10 more)
 
 ### Community 18 - "transcribe/src/index.ts"
-Cohesion: 0.12
-Nodes (30): RawNote, PARTE_DE, SepararEtapa, separarInstrumento(), SepararMessage, SepararRequest, DEFAULT_PARAMS, dropWorker() (+22 more)
+Cohesion: 0.14
+Nodes (24): RawNote, DEFAULT_PARAMS, dropWorker(), getWorker(), isTranscriberReady(), MODEL_RATE, PARAMS_CUERDAS, peakLevel() (+16 more)
 
 ### Community 19 - "Visualizer"
-Cohesion: 0.12
-Nodes (6): CameraState, CameraVideo, KeyboardCalibration, Rasgueo, VisualSettings, Visualizer
+Cohesion: 0.10
+Nodes (8): CameraState, CameraVideo, KeyboardCalibration, Rasgueo, indexNotes(), VisualSettings, getTheme(), Visualizer
 
 ### Community 20 - "Celular.tsx"
-Cohesion: 0.10
-Nodes (34): onMenuAction(), lockOrientation(), Ajustes(), Celular(), Girar(), Grabando(), Inicio(), Miniatura() (+26 more)
+Cohesion: 0.09
+Nodes (34): onMenuAction(), lockOrientation(), Girar(), Grabando(), Miniatura(), Mode, MODES, Pieza() (+26 more)
 
 ### Community 21 - "VERIFICACIONES — antes de decir "listo""
 Cohesion: 0.22
@@ -344,9 +337,9 @@ Nodes (6): Control, EventoMidi, Grabacion, Off, On, Teclado
 Cohesion: 0.25
 Nodes (7): buildCommand, framework, headers, installCommand, outputDirectory, rewrites, $schema
 
-### Community 32 - ".aMono"
+### Community 32 - ".renderFrame"
 Cohesion: 0.15
-Nodes (3): Decodificar, Floats, Pcm
+Nodes (8): noteRect(), hexToNumber(), azar(), hashId(), lighten(), luminance(), makeCristalTexture(), makeRoundedNoteTexture()
 
 ### Community 33 - "audio/tsconfig.json"
 Cohesion: 0.33
@@ -381,16 +374,16 @@ Cohesion: 0.13
 Nodes (17): fallDur(), FALLING_NOTES, iconKeyX(), KEY_STYLES, keyUnderLetter(), LETTER_STYLES, LETTERS, LogoIntroProps (+9 more)
 
 ### Community 48 - "estilos-nota.ts"
-Cohesion: 0.16
-Nodes (13): Ctx, DELGADEZ, dibujar(), esEstiloNuevo(), EstiloNuevo, ESTILOS_NUEVOS, FRANJAS_ORO, HALO (+5 more)
+Cohesion: 0.12
+Nodes (18): aclarar(), Ctx, DELGADEZ, dibujar(), esEstiloNuevo(), EstiloNuevo, ESTILOS_NUEVOS, fract() (+10 more)
 
-### Community 54 - "practice/src/index.ts"
-Cohesion: 0.22
-Nodes (12): PracticeState, Hand, FingeringOptions, HandSize, alcance(), avg(), Estado, HandOptions (+4 more)
+### Community 54 - "audio.ts"
+Cohesion: 0.20
+Nodes (9): BackgroundChoice, BACKGROUNDS, TO_BACKGROUND, AudioState, AudioStatus, engine, NOMBRE_BANCO, live (+1 more)
 
 ### Community 55 - "export/src/export.ts"
-Cohesion: 0.18
-Nodes (28): PROPORCION, chooseFormat(), DecodedFrame, ExportError, ExportFailure, ExportOptions, ExportProgress, ExportResult (+20 more)
+Cohesion: 0.21
+Nodes (27): chooseFormat(), DecodedFrame, ExportError, ExportFailure, ExportOptions, ExportProgress, ExportResult, exportVideo() (+19 more)
 
 ### Community 56 - "align.ts"
 Cohesion: 0.09
@@ -401,16 +394,16 @@ Cohesion: 0.08
 Nodes (32): dependencies, @impromptu/core@workspace:*, onnxruntime-web@1.31.1, @spotify/basic-pitch@1.0.1, @tensorflow/tfjs@3.21.0, description, devDependencies, @impromptu/audio@workspace:* (+24 more)
 
 ### Community 62 - "LiveSession"
-Cohesion: 0.11
-Nodes (6): startCameraRecording(), conInstrumento(), liveNow(), LiveSession, Recorder, toMicro()
+Cohesion: 0.12
+Nodes (4): liveNow(), LiveSession, WebMidiError, WebMidiInput
 
-### Community 63 - "store.ts"
-Cohesion: 0.07
-Nodes (46): BackgroundChoice, BACKGROUNDS, TO_BACKGROUND, engine, CalibrateDialog(), NAMES, noteName(), PitchField() (+38 more)
+### Community 63 - "visualizer.ts"
+Cohesion: 0.13
+Nodes (19): Beat, rasgueos(), nota(), pulsos, COLOR_BAQUETA, installLabelFont(), labelFor(), makeBeamTexture() (+11 more)
 
-### Community 65 - "audio.ts"
-Cohesion: 0.17
-Nodes (20): AudioSection(), fmt(), openOwnAudio(), QUALITY_TEXT, analyzeAudio(), attachTakeAudio(), audioOffset(), OwnAudio (+12 more)
+### Community 65 - "store.ts"
+Cohesion: 0.06
+Nodes (64): AudioSection(), fmt(), openOwnAudio(), QUALITY_TEXT, CalibrateDialog(), NAMES, noteName(), PitchField() (+56 more)
 
 ### Community 66 - "core/package.json"
 Cohesion: 0.15
@@ -421,16 +414,16 @@ Cohesion: 0.05
 Nodes (38): build, appId, copyright, directories, extraResources, files, nsis, productName (+30 more)
 
 ### Community 68 - "Instrumento"
-Cohesion: 0.11
-Nodes (13): Capa, Manifiesto, Muestras, Zona, Sintes, Timbre, Acero, Bajo (+5 more)
+Cohesion: 0.15
+Nodes (12): Sintes, Timbre, Acero, Bajo, Electrica, Nylon, Voz, Instrumento (+4 more)
 
 ### Community 69 - "notation/package.json"
 Cohesion: 0.11
 Nodes (21): dependencies, @impromptu/core@workspace:*, description, devDependencies, @impromptu/midi@workspace:*, @types/node@catalog:, typescript@catalog:, vitest@catalog: (+13 more)
 
 ### Community 70 - "import.ts"
-Cohesion: 0.11
-Nodes (18): IdFactory, importMidi(), ImportOptions, instrumentoDePista(), MAJOR_KEYS, meterAndKey(), MINOR_KEYS, readTrack() (+10 more)
+Cohesion: 0.12
+Nodes (17): sortPedals(), importMidi(), instrumentoDePista(), MAJOR_KEYS, meterAndKey(), MINOR_KEYS, readTrack(), sameNotes() (+9 more)
 
 ### Community 71 - "mobile/package.json"
 Cohesion: 0.10
@@ -464,21 +457,21 @@ Nodes (5): BarraVideo(), compartirArchivo(), compartirTexto(), PartituraPantalla
 Cohesion: 0.40
 Nodes (5): En vivo y OBS, Exportar video, Flujos principales, Grabar en vivo, Transcripción (fase 5)
 
-### Community 80 - "midi/src/index.ts"
-Cohesion: 0.15
-Nodes (19): LiveState, MidiStatus, readRecordMic(), setTakeEditedListener(), TakeSummary, KeyboardRange, applyCurve(), LiveEvent (+11 more)
+### Community 80 - "NoteEvent"
+Cohesion: 0.17
+Nodes (17): IdFactory, KeyboardRange, NoteEvent, ImportOptions, applyCurve(), LiveEvent, normalizeMessage(), DeviceProfile (+9 more)
 
 ### Community 81 - "notation/src/index.ts"
-Cohesion: 0.15
-Nodes (27): 2026-11-18 (tarde) · Pedidos de Jacobo tras probar la app, partitura(), buildScore(), FIGURES, Measure, measureEvents(), mergePedalChanges(), NoteType (+19 more)
+Cohesion: 0.09
+Nodes (39): 2026-11-18 (tarde) · Pedidos de Jacobo tras probar la app, Seleccion, partitura(), correlation(), estimateKey(), FLAT_ALTER, FLAT_NAMES, Key (+31 more)
 
 ### Community 82 - "main.cts"
 Cohesion: 0.29
 Nodes (8): createSplash(), createWindow(), ADR-0018, inside(), ISOLATION, menu(), send(), serve()
 
 ### Community 83 - "transkun/transcribe.ts"
-Cohesion: 0.20
-Nodes (19): continuousBernoulliMean(), finishEvents(), Interval, mergeSegment(), segmentNotes(), TkNote, viterbiBackward(), fft() (+11 more)
+Cohesion: 0.18
+Nodes (21): continuousBernoulliMean(), finishEvents(), Interval, mergeSegment(), segmentNotes(), TkNote, viterbiBackward(), fft() (+13 more)
 
 ### Community 84 - "DetectorBateria"
 Cohesion: 0.42
@@ -489,24 +482,28 @@ Cohesion: 0.22
 Nodes (8): compilerOptions, module, moduleResolution, types, verbatimModuleSyntax, extends, include, ../../tsconfig.base.json
 
 ### Community 87 - "Estado"
-Cohesion: 0.24
+Cohesion: 0.20
 Nodes (7): Bajando, Estado, Fallo, Instalacion, Lista, PreparandoIa, Quieta
 
 ### Community 89 - "Secuencia"
 Cohesion: 0.13
 Nodes (3): E, Motor, Secuencia
 
+### Community 90 - "Presentacion.kt"
+Cohesion: 0.17
+Nodes (3): notasCayendo(), PresentacionPantalla(), Punto()
+
 ### Community 91 - "Transkun.kt"
-Cohesion: 0.11
-Nodes (7): Cancelada, Constantes, Decodificacion, Espectro, Evento, Modelos, Transkun
+Cohesion: 0.13
+Nodes (6): Cancelada, Constantes, Decodificacion, Espectro, Evento, Transkun
 
 ### Community 92 - "compilerOptions"
 Cohesion: 0.29
 Nodes (6): compilerOptions, noEmit, outDir, rootDir, extends, ./tsconfig.json
 
 ### Community 93 - "Piano"
-Cohesion: 0.11
-Nodes (22): ADR-009 · Piano propio con Web Audio en lugar de `@tonejs/piano`, note(), ActiveVoice, LoadProgress, MAX_VOICES, PANEL_SUSTAIN_MAX, Piano, PianoOptions (+14 more)
+Cohesion: 0.09
+Nodes (23): ADR-009 · Piano propio con Web Audio en lugar de `@tonejs/piano`, cadenaMaestra(), VOLUMEN_EXTRA, ActiveVoice, LoadProgress, MAX_VOICES, PANEL_SUSTAIN_MAX, Piano (+15 more)
 
 ### Community 94 - "transcribe/tsconfig.json"
 Cohesion: 0.29
@@ -514,10 +511,10 @@ Nodes (6): compilerOptions, lib, types, extends, include, ../../tsconfig.base.js
 
 ### Community 95 - "createNoteEvent"
 Cohesion: 0.12
-Nodes (27): aTake(), CHORDS, createDemoBateria(), createDemoGuitarra(), createDemoPiece(), MELODY, HeroVisualizer(), piece() (+19 more)
+Nodes (32): aTake(), CHORDS, createDemoBateria(), createDemoGuitarra(), createDemoPiece(), MELODY, HeroVisualizer(), piece() (+24 more)
 
 ### Community 97 - "Nota"
-Cohesion: 0.29
+Cohesion: 0.22
 Nodes (3): esNegra(), Opciones, Renderizador
 
 ### Community 98 - "notation/tsconfig.json"
@@ -536,25 +533,25 @@ Nodes (13): autoAssign(), hasNoHands(), mapNotes(), NoteMap, refinger(), removeN
 Cohesion: 0.11
 Nodes (17): ADR-001 · Web primero, una sola base de código, ADR-002 · Todo se procesa en el equipo del usuario, ADR-004 · Exportación por render offline determinista, ADR-005 · PixiJS para el visualizador, ADR-006 · Identidad C3 · Consola ámbar, ADR-007 · Licencias no comerciales fuera del núcleo, ADR-008 · Tres productos: web, PC y celular instalable, sin conexión, ADR-010 · Estilo y brillo de las notas en `VisualProject.effects` (+9 more)
 
+### Community 102 - "Etapa"
+Cohesion: 0.15
+Nodes (11): Etapa, Armando, Descargando, Escuchando, Esperando, Leyendo, Preparando, Separando (+3 more)
+
 ### Community 103 - "web/vite.config.ts"
 Cohesion: 0.17
 Nodes (6): vite-plugin-pwa@catalog:, brandDir, CARPETAS_SONIDO, isolation, sonidosDir, vite-plugin-pwa
 
-### Community 104 - "scene.test.ts"
-Cohesion: 0.17
-Nodes (15): ADR-0006, kb, layout, note(), burstSeed(), noteSparks(), rng(), Spark (+7 more)
+### Community 104 - "MuestrasTest.kt"
+Cohesion: 0.22
+Nodes (6): Capa, Manifiesto, Muestras, Zona, MuestrasTest, 2026-11-19 · Pedido 25: sonidos grabados de guitarra, bajo y batería
 
 ### Community 105 - "AudioEngine"
-Cohesion: 0.15
-Nodes (6): AudioEngine, lowerBound(), avisarDescarga(), terminarDescarga(), LiveVoiceHandle, takeVoices()
+Cohesion: 0.14
+Nodes (5): AudioEngine, lowerBound(), avisarDescarga(), terminarDescarga(), LiveVoiceHandle
 
 ### Community 107 - "SettingsPanel.tsx"
 Cohesion: 0.09
-Nodes (25): useAudio, ColorField(), Props, AFINACIONES_UI, BACKGROUNDS, BRILLO_DE, CalidadDelPiano(), CALIDADES (+17 more)
-
-### Community 108 - "ServicioTrabajos.kt"
-Cohesion: 0.08
-Nodes (7): Estado, Exportacion, Fallo, Lista, Quieta, Trabajando, ServicioTrabajos
+Nodes (26): useAudio, ColorField(), Props, AFINACIONES_UI, BACKGROUNDS, BRILLO_DE, CalidadDelPiano(), CALIDADES (+18 more)
 
 ### Community 109 - "Nota"
 Cohesion: 0.22
@@ -568,7 +565,7 @@ Nodes (4): ColaConversiones(), FilaEsperando(), FilaTrabajando(), relojDeCuadros
 Cohesion: 0.11
 Nodes (22): dependencies, @impromptu/audio@workspace:*, @impromptu/core@workspace:*, @impromptu/render@workspace:*, mediabunny@catalog:, description, devDependencies, typescript@catalog: (+14 more)
 
-### Community 112 - "Tecla"
+### Community 112 - "ExportarPantalla.kt"
 Cohesion: 0.09
 Nodes (22): AjustesPantalla(), Avance(), Confirmar(), Encabezado(), Panel(), PedirTexto(), AvanceExportacion(), ExportarPantalla() (+14 more)
 
@@ -576,17 +573,17 @@ Nodes (22): AjustesPantalla(), Avance(), Confirmar(), Encabezado(), Panel(), Ped
 Cohesion: 0.20
 Nodes (9): @impromptu/audio@workspace:*, @impromptu/midi@workspace:*, description, @impromptu/audio, @impromptu/midi, name, private, type (+1 more)
 
-### Community 114 - "midi/src/export.ts"
-Cohesion: 0.15
-Nodes (9): saveMidi(), Strikeable, exportMidi(), noteEvents(), PEDAL_CC, pedalEvents(), secondsToTicks(), Timed (+1 more)
+### Community 114 - "core/src/index.ts"
+Cohesion: 0.09
+Nodes (22): ADR-011 · Líneas de compás y pulso en el visualizador, beatAt(), beatGrid(), tempoAt(), Hand, TempoPoint, exportMidi(), noteEvents() (+14 more)
 
 ### Community 115 - "ScoreTab.tsx"
-Cohesion: 0.15
-Nodes (19): download(), Meter, METERS, ScoreTab(), SOURCE_TEXT, VISTAS_TAB, Burbuja(), midiFileName() (+11 more)
+Cohesion: 0.13
+Nodes (21): download(), Meter, METERS, ScoreTab(), SOURCE_TEXT, VISTAS_TAB, Burbuja(), midiFileName() (+13 more)
 
 ### Community 116 - "Landing.tsx"
 Cohesion: 0.07
-Nodes (38): MAMUT_HERD, MamutHerdSello(), PROPORCION, abrirPantalla(), connectDesktopMenu(), DesktopBridge, isDesktop(), MenuAction (+30 more)
+Nodes (40): MAMUT_HERD, MamutHerdSello(), PROPORCION, abrirPantalla(), connectDesktopMenu(), DesktopBridge, isDesktop(), MenuAction (+32 more)
 
 ### Community 117 - "colores.ts"
 Cohesion: 0.18
@@ -597,56 +594,52 @@ Cohesion: 0.11
 Nodes (8): BotonIcono(), Accion(), EstadoTeclado(), FilaPieza(), InicioPantalla(), MiniAccion(), nombreDe(), SelectorInstrumento()
 
 ### Community 120 - "Impromptu.kt"
-Cohesion: 0.08
-Nodes (6): Piezas, Avance, Ia, Modelo, Paquetes, Sonido
+Cohesion: 0.07
+Nodes (8): Decodificar, Floats, Pcm, Avance, Ia, Modelo, Paquetes, Sonido
 
 ### Community 121 - "Pieza"
 Cohesion: 0.11
 Nodes (13): Origen, Audio, Microfono, Midi, Teclado, Pedal, Pieza, TipoPedal (+5 more)
 
-### Community 122 - ".renderFrame"
-Cohesion: 0.13
-Nodes (11): aclarar(), fract(), oscurecer(), PintorNotas, Pool, azar(), hashId(), lighten() (+3 more)
-
 ### Community 124 - "LivePanel.tsx"
-Cohesion: 0.16
-Nodes (24): stopCameraRecording(), InsigniaInstrumento(), refreshTakes(), METER_OPTIONS, MetronomeControls(), saveForTests(), SOURCE_ICON, SOURCE_TEXT (+16 more)
+Cohesion: 0.08
+Nodes (43): Ajustes(), Inicio(), EnVivo(), startCameraRecording(), stopCameraRecording(), conInstrumento(), InsigniaInstrumento(), textoConectar() (+35 more)
 
 ### Community 125 - "transcribeStore.ts"
-Cohesion: 0.10
-Nodes (21): LiveListener, resample(), avances, Conversion, mb(), Model, nextAudioName(), pendientes (+13 more)
+Cohesion: 0.09
+Nodes (23): avances, Conversion, mb(), Model, nextAudioName(), NOMBRE_INSTRUMENTO, pendientes, PIANO_MODEL_URL (+15 more)
 
 ### Community 126 - "Conversiones"
 Cohesion: 0.10
-Nodes (9): Instrumento, Bajo, Bateria, Guitarra, Piano, AvanceSuave, Conversiones, Terminada (+1 more)
+Nodes (5): Piezas, AvanceSuave, Conversiones, Terminada, TrabajoConversion
 
 ### Community 127 - "demos-midi.mjs"
 Cohesion: 0.17
 Nodes (12): acordes, bajo, funk, guitarra, guitarraMelodia, melodia, midi(), piezas (+4 more)
 
 ### Community 130 - "audio/src/index.ts"
-Cohesion: 0.18
-Nodes (18): archivosDe(), Banco, bancoDe(), CapaBateria, golpeBateria(), Manifiesto, zonas, ZonaCuerda (+10 more)
+Cohesion: 0.17
+Nodes (19): archivosDe(), Banco, bancoDe(), CapaBateria, golpeBateria(), Manifiesto, zonas, ZonaCuerda (+11 more)
 
 ### Community 131 - "LineaDeLectura"
-Cohesion: 0.16
-Nodes (8): paraVideo(), aRedondas(), FinesDeRenglon, LineaDeLectura, posicionEn(), PuntoCursor, fines, puntos
+Cohesion: 0.09
+Nodes (24): aplicar(), baseMs, compasActual, cuadro(), dibujar(), elegir(), enVivo(), futuro (+16 more)
 
 ### Community 132 - "CopiarModelos"
 Cohesion: 0.10
 Nodes (7): CopiarModelos, compilerOptions, lib, types, extends, include, ../../tsconfig.base.json
 
 ### Community 133 - "render/src/index.ts"
-Cohesion: 0.16
-Nodes (17): calibratedKeyboard(), calibratedKeyLine(), coverRect(), VideoRect, BLACK, BLACK_LENGTH, BLACK_OFFSET, BLACK_WIDTH (+9 more)
-
-### Community 134 - "Etapa"
-Cohesion: 0.25
-Nodes (8): Etapa, Armando, Descargando, Escuchando, Esperando, Leyendo, Preparando, Separando
-
-### Community 136 - "Plantilla"
 Cohesion: 0.15
-Nodes (12): 2026-11-16 · Fase 1 · Visualizador desde un MIDI, 2026-11-16 · Planeación, 2026-11-17 · Fase 3 · Cámara, plantillas, exportar y publicar (v0.1), 2026-11-17 · Fase 4 · Manos y dedos, 2026-11-17 · Fase 5 · Audio a notas, 2026-11-17 · Fase 5 (continuación) · Piano con pedal, micrófono en vivo y Mamut Herd, 2026-11-17 · Fase 6 · Partitura, 2026-11-17 · Fase 8 · Apps de PC y Android (+4 more)
+Nodes (20): ADR-0006, calibratedKeyboard(), calibratedKeyLine(), coverRect(), VideoRect, BLACK, BLACK_OFFSET, BLACK_WIDTH (+12 more)
+
+### Community 134 - "fingering.ts"
+Cohesion: 0.21
+Nodes (14): ADR-0012, Finger, chordOptions(), FINGERS, isBlack(), linkCost(), ownCost(), placementCost() (+6 more)
+
+### Community 136 - ".iniciar"
+Cohesion: 0.22
+Nodes (6): Estado, Exportacion, Fallo, Lista, Quieta, Trabajando
 
 ### Community 137 - "@playwright/test"
 Cohesion: 0.07
@@ -657,16 +650,16 @@ Cohesion: 0.13
 Nodes (15): devDependencies, @types/node@catalog:, @types/react@catalog:, @types/react-dom@catalog:, typescript@catalog:, vite@catalog:, @vitejs/plugin-react@catalog:, vitest@catalog: (+7 more)
 
 ### Community 141 - "Smf"
-Cohesion: 0.25
+Cohesion: 0.24
 Nodes (3): Formato, Leido, Smf
 
-### Community 150 - "Lo que queda (resumen al 2026-11-17)"
-Cohesion: 0.22
-Nodes (8): App de Android NATIVA (decidido por Jacobo, 2026-11-17; construida el 2026-11-18, ADR-019, sin verificar en un celular), Decisiones de Jacobo abiertas, Lo que queda (resumen al 2026-11-17), Para que pruebe Jacobo, Para subir a Hugging Face (P15 y P21), Pedidos de Jacobo después de probar las apps (2026-11-17), PENDIENTES — decisiones e insumos de Jacobo, Por construir
+### Community 150 - "Plantilla"
+Cohesion: 0.07
+Nodes (22): SeparadorTest, 2026-11-16 · Fase 1 · Visualizador desde un MIDI, 2026-11-16 · Planeación, 2026-11-17 · Fase 4 · Manos y dedos, 2026-11-17 · Fase 5 · Audio a notas, 2026-11-17 · Fase 5 (continuación) · Piano con pedal, micrófono en vivo y Mamut Herd, 2026-11-17 · Fase 6 · Partitura, 2026-11-17 · Fase 8 · Apps de PC y Android (+14 more)
 
-### Community 152 - "audio.ts"
-Cohesion: 0.11
-Nodes (16): AudioState, AudioStatus, NOMBRE_BANCO, click(), Clicker, MetronomeState, practice, PracticeHand (+8 more)
+### Community 152 - "notes.ts"
+Cohesion: 0.24
+Nodes (5): LiveListener, resample(), NotesOptions, rawToNotes(), takeFromTranscription()
 
 ### Community 155 - "GrabarPantalla.kt"
 Cohesion: 0.13
@@ -677,60 +670,32 @@ Cohesion: 0.40
 Nodes (4): Arreglo sugerido, Causa (probable), El error, Error: Impromptu se cierra en la cola de conversiones (índice -1)
 
 ### Community 157 - "editor.ts"
-Cohesion: 0.11
-Nodes (14): BarraEdicion, Edicion, editar(), estilosEditor(), FIGURAS, hacerSeleccionable(), largoCompas(), nombreNota() (+6 more)
+Cohesion: 0.10
+Nodes (22): Afinacion, AFINACIONES, agrupar(), asignarTrastes(), Forma, formas(), manosPara(), Posicion (+14 more)
 
 ### Community 159 - "MicrofonoPantalla.kt"
 Cohesion: 0.18
 Nodes (7): BotonGrabar(), Consejos(), EstadoGrabacion(), GrabadoraMic, MicrofonoPantalla(), Onda(), rememberPedirNotificaciones()
 
-### Community 162 - "scripts"
+### Community 164 - "scripts"
 Cohesion: 0.20
 Nodes (10): scripts, brand:icons, build, dev, e2e, format, intro:mp4, lint (+2 more)
 
-### Community 163 - "Sintes"
-Cohesion: 0.15
-Nodes (3): cadenaMaestra(), VOLUMEN_EXTRA, Sintes
-
-### Community 164 - ".setTake"
-Cohesion: 0.28
-Nodes (5): Beat, rasgueos(), nota(), pulsos, indexNotes()
-
-### Community 165 - "instrumentos.ts"
-Cohesion: 0.18
-Nodes (14): Baqueta, baquetas(), PIES, PLATILLOS, Carriles, carriles(), carrilesBateria(), carrilesCuerdas() (+6 more)
+### Community 165 - "core/src/index.ts"
+Cohesion: 0.14
+Nodes (18): HIHAT_ABIERTO, PiezaBateria, piezaDeNota(), PIEZAS_BATERIA, POR_NOTA, Baqueta, baquetas(), PIES (+10 more)
 
 ### Community 166 - "Salamander"
-Cohesion: 0.27
+Cohesion: 0.24
 Nodes (3): Salamander, Sampler, Voz
 
-### Community 167 - "SeparadorTest"
-Cohesion: 0.29
-Nodes (3): SeparadorTest, 2026-11-19 (tarde) · Todo al celular, video en segundo plano, separar instrumentos y compilados, Lo que dijo Jacobo al probar la app nativa (2026-11-18)
-
-### Community 168 - "Presentacion.kt"
-Cohesion: 0.17
-Nodes (3): notasCayendo(), PresentacionPantalla(), Punto()
-
-### Community 169 - "main.ts"
-Cohesion: 0.24
-Nodes (14): aplicar(), baseMs, compasActual, cuadro(), dibujar(), elegir(), enVivo(), futuro (+6 more)
-
-### Community 170 - "fingering.ts"
-Cohesion: 0.21
-Nodes (14): ADR-0012, Finger, chordOptions(), FINGERS, isBlack(), linkCost(), ownCost(), placementCost() (+6 more)
-
-### Community 171 - "key.ts"
-Cohesion: 0.20
-Nodes (10): correlation(), estimateKey(), FLAT_ALTER, FLAT_NAMES, Key, MAJOR, MAJOR_FIFTHS, MINOR (+2 more)
-
-### Community 172 - "WaitMode"
+### Community 167 - "WaitMode"
 Cohesion: 0.22
 Nodes (3): rebuild(), ADR-017 · Tutorial: modo espera, mano que se practica y pedal grande, WaitMode
 
-### Community 173 - "sources.ts"
-Cohesion: 0.32
-Nodes (7): DEMO_PIECES, demoPieces, describeWarning(), LOCAL_PIECES, localPieces, prettyName(), ImportWarning
+### Community 168 - "practice/src/index.ts"
+Cohesion: 0.33
+Nodes (7): FingeringOptions, HandSize, alcance(), avg(), HandOptions, separateHands(), PracticeChord
 
 ### Community 174 - "muestras.mjs"
 Cohesion: 0.26
@@ -741,12 +706,8 @@ Cohesion: 0.36
 Nodes (5): Bateria, Forma, Guitarra, Pieza, Posicion
 
 ### Community 177 - "visualizer.ts"
-Cohesion: 0.10
-Nodes (26): 2026-11-17 · Fase 7 · Tutoriales y práctica, BASE_LOOKAHEAD, Direction, forEachNoteIn(), FrameLayout, frameLayout(), isSounding(), lowerBound() (+18 more)
-
-### Community 178 - "AvanceTest.kt"
-Cohesion: 0.38
-Nodes (3): AvanceTest, 2026-11-25 · Notas con volumen (SeeMusic), colores, hoja libre y BUG-008, BUG-008 · La app se cierra al terminar de grabar con el micrófono
+Cohesion: 0.12
+Nodes (21): 2026-11-17 · Fase 7 · Tutoriales y práctica, BLACK_LENGTH, BASE_LOOKAHEAD, Direction, forEachNoteIn(), FrameLayout, frameLayout(), isSounding() (+13 more)
 
 ### Community 181 - "PiezaPantalla.kt"
 Cohesion: 0.16
@@ -756,25 +717,21 @@ Nodes (4): formatoTiempo(), BarraTiempo(), Lienzo(), PiezaPantalla()
 Cohesion: 0.53
 Nodes (4): countOutOfRange(), KEYBOARD_PRESETS, KeyboardSize, keyCount()
 
-### Community 183 - "editor.ts"
-Cohesion: 0.11
-Nodes (29): HIHAT_ABIERTO, PiezaBateria, piezaDeNota(), PIEZAS_BATERIA, POR_NOTA, Afinacion, AFINACIONES, agrupar() (+21 more)
-
-### Community 186 - "practice.test.ts"
-Cohesion: 0.50
-Nodes (3): fixtures, melody(), note()
+### Community 183 - "musicxml.ts"
+Cohesion: 0.30
+Nodes (13): spell(), ALTERADAS, bateriaXml(), documento(), esc(), Escritura, guitarraXml(), metronomo() (+5 more)
 
 ### Community 195 - "Exportador.kt"
-Cohesion: 0.08
-Nodes (6): BancoGrabado, Banco, Limitador, Exportador, Paquete, SuperficieGl
+Cohesion: 0.09
+Nodes (5): Banco, Limitador, Exportador, Paquete, SuperficieGl
 
 ### Community 199 - "bateria.ts"
-Cohesion: 0.31
-Nodes (8): Bandas, bandas(), caida(), detectarBateria(), fft(), Golpe, golpesEnBanda(), ritmo()
+Cohesion: 0.39
+Nodes (7): Bandas, bandas(), caida(), detectarBateria(), fft(), Golpe, golpesEnBanda()
 
-### Community 208 - "NoteEvent"
-Cohesion: 0.09
-Nodes (37): PiezaWeb, OpenedTake, StudioState, ADR-003 · Modelo de datos con mano, dedo, pedal e instrumento desde el inicio, KEYBOARD_61, NoteInput, takeEnd(), ADR-0003 (+29 more)
+### Community 208 - "Take"
+Cohesion: 0.07
+Nodes (37): PiezaWeb, StudioState, ADR-003 · Modelo de datos con mano, dedo, pedal e instrumento desde el inicio, note(), Strikeable, pedalDownRanges(), KEYBOARD_61, NoteInput (+29 more)
 
 ### Community 214 - "MainActivity.kt"
 Cohesion: 0.06
@@ -786,23 +743,23 @@ Nodes (4): AvanceSuave, fraseDeEspera(), FRASES, textoRestante()
 
 ## Knowledge Gaps
 - **64 isolated node(s):** `ADR-0018`, `./tsconfig.json`, `../../tsconfig.base.json`, `Presentacion`, `Partitura` (+59 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1068 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **56 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1072 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **57 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `SeparadorTest` connect `SeparadorTest` to `Transkun.kt`?**
-  _High betweenness centrality (0.158) - this node is a cross-community bridge._
+- **Why does `SeparadorTest` connect `Plantilla` to `Transkun.kt`?**
+  _High betweenness centrality (0.139) - this node is a cross-community bridge._
 - **What connects `ADR-0018`, `./tsconfig.json`, `../../tsconfig.base.json` to the rest of the system?**
   _64 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ui/src/index.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.08139534883720931 - nodes in this community are weakly interconnected._
-- **Why does `Lo que dijo Jacobo al probar la app nativa (2026-11-18)` connect `SeparadorTest` to `LineaDeLectura`, `Lo que queda (resumen al 2026-11-17)`?**
-  _High betweenness centrality (0.157) - this node is a cross-community bridge._
+- **Why does `Plantilla` connect `Plantilla` to `Etapa`, `MuestrasTest.kt`, `LivePlayer`, `notation/src/index.ts`, `visualizer.ts`, `Transport`, `createNoteEvent`?**
+  _High betweenness centrality (0.136) - this node is a cross-community bridge._
 - **Should `dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.14285714285714285 - nodes in this community are weakly interconnected._
-- **Why does `LineaDeLectura` connect `LineaDeLectura` to `notation/src/index.ts`, `main.ts`, `ScoreTab.tsx`, `SeparadorTest`?**
-  _High betweenness centrality (0.152) - this node is a cross-community bridge._
+- **Why does `LineaDeLectura` connect `LineaDeLectura` to `notation/src/index.ts`, `ScoreTab.tsx`, `Plantilla`?**
+  _High betweenness centrality (0.133) - this node is a cross-community bridge._
 - **Should `package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.09425287356321839 - nodes in this community are weakly interconnected._

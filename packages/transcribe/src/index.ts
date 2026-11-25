@@ -8,6 +8,7 @@ export {
   TranscriptionCancelled,
   MODEL_RATE,
   DEFAULT_PARAMS,
+  PARAMS_CUERDAS,
   prepareTranscriber,
   peakLevel,
 } from './transcribe';
@@ -21,3 +22,4 @@ export { detectarBateria } from './bateria';
 export type { Golpe } from './bateria';
 export { separarInstrumento, PARTE_DE } from './separar';
 export type { Parte, SepararEtapa } from './separar';
+export { normalizar } from './volumen';
