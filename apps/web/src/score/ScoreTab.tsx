@@ -15,7 +15,7 @@ import {
 } from '@impromptu/notation';
 import type { Edicion, Score, Seleccion } from '@impromptu/notation';
 import { Button, Chips } from '@impromptu/ui';
-import { Circle, Download, FileMusic, Film, Mic, Printer, Square } from 'lucide-react';
+import { Circle, Download, FileMusic, Film, Mic, Printer, Square, LocateFixed } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 import { AFINACIONES, createTake, createTrack } from '@impromptu/core';
@@ -305,6 +305,8 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
   // Dibujo con OpenSheetMusicDisplay (se carga solo al abrir esta pestaña).
   const osmd = useRef<OpenSheetMusicDisplay | null>(null);
   const linea = useRef<LineaDeLectura | null>(null);
+  // Pedido 61: la hoja se mueve libre mientras suena; este botón la regresa al cursor.
+  const [siguiendo, setSiguiendo] = useState(true);
   useEffect(() => {
     if (!xml || !holder.current) return;
     let cancelled = false;
@@ -361,6 +363,8 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
           if (cancelled) return;
           recorrido.current = leerRecorrido(dibujada.cursor);
           linea.current = new LineaDeLectura(el, el.parentElement ?? el, recorrido.current);
+          linea.current.alCambiar = setSiguiendo;
+          setSiguiendo(true);
         }, 0);
       } catch {
         if (!cancelled) setStatus('error');
@@ -548,6 +552,13 @@ export function ScoreTab({ compact = false }: { compact?: boolean }) {
           </p>
         )}
         <div ref={holder} className={styles.papel} />
+        {!siguiendo && (
+          <div className={styles.volver}>
+            <Button icon={<LocateFixed />} onClick={() => linea.current?.volver()}>
+              Volver a donde vamos
+            </Button>
+          </div>
+        )}
       </main>
     </div>
   );

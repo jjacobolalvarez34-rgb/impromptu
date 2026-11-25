@@ -143,6 +143,7 @@ function readTrack(
           start: on.start,
           end: Math.max(end, on.start),
           velocity: on.velocity,
+          channel,
           origin: 'midi-file',
         },
         newId,

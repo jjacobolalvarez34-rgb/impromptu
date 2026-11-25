@@ -125,3 +125,17 @@
   max-width: 1100px;
   margin: 0 auto var(--e-3);
 }
+
+/* Pedido 61: botón para volver al cursor, flotando abajo de la hoja mientras se mira otra parte. */
+.volver {
+  position: sticky;
+  bottom: var(--e-4);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.volver > * {
+  pointer-events: auto;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.5);
+}

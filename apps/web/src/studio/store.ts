@@ -192,7 +192,7 @@ export const useStudio = create<StudioState>()(
       // Los ajustes visuales se recuerdan entre sesiones (y los usa /en-vivo). La toma no:
       // las tomas viven en IndexedDB.
       name: 'impromptu-estudio',
-      version: 2,
+      version: 3,
       // v1 → v2 (2026-11-19): quien tenía los valores de antes sin tocar (estilo Brillante y
       // redondeo 55) pasa a las notas Cristal y a la curva más suave que pidió Jacobo.
       migrate: (persisted, version) => {
@@ -201,6 +201,12 @@ export const useStudio = create<StudioState>()(
           const s = saved.settings;
           if (s.effects?.noteStyle === 'glow') s.effects = { ...s.effects, noteStyle: 'cristal' };
           if (s.estilo?.redondeo === 55) s.estilo = { ...s.estilo, redondeo: 30 };
+        }
+        // v2 → v3 (pedido 64): Cristal ya no es el de por defecto; quien no lo cambió pasa a Vidrio.
+        if (version < 3 && saved.settings) {
+          const s = saved.settings;
+          if (s.effects?.noteStyle === 'cristal' || s.effects?.noteStyle === 'glow')
+            s.effects = { ...s.effects, noteStyle: 'vidrio' };
         }
         return saved as StudioState;
       },

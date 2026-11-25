@@ -115,7 +115,7 @@ test('piano con acabado de calidad: notas redondeadas, teclado realista, humo (p
   page,
 }, info) => {
   test.skip(info.project.name === 'celular', 'Capturas de escritorio');
-  test.setTimeout(240_000);
+  test.setTimeout(600_000);
   // eslint-disable-next-line no-console
   page.on('pageerror', (e) => console.log('ERROR DE LA PÁGINA:', e.message));
   await page.goto('/estudio?instrumento=piano');
@@ -134,13 +134,37 @@ test('piano con acabado de calidad: notas redondeadas, teclado realista, humo (p
   const altura = page.getByRole('slider', { name: 'Altura del teclado' });
   await altura.focus();
   for (let i = 0; i < 25; i++) await page.keyboard.press('ArrowRight');
-  await page.getByRole('button', { name: 'Reproducir', exact: true }).click();
-  await page.waitForTimeout(1200);
-  await page.getByRole('button', { name: 'Pausar', exact: true }).click();
+  // Desde el inicio y pausando solo si sigue sonando (con el equipo lento la pieza de 8 s se acaba).
+  const momento = async (espera: number) => {
+    await page.getByRole('button', { name: 'Ir al inicio' }).click();
+    await page.getByRole('button', { name: 'Reproducir', exact: true }).click();
+    await page.waitForTimeout(espera);
+    const pausar = page.getByRole('button', { name: 'Pausar', exact: true });
+    if (await pausar.isVisible()) await pausar.click();
+  };
+  await momento(1200);
   await page.screenshot({ path: 'test-results/capturas/fase11-piano-arriba.png' });
-  // Estilos de nota de las referencias de Jacobo: Cristal (por defecto) y Satín.
+  // Pedido 64: los ocho estilos con volumen que aprobó Jacobo; Vidrio es el de por defecto.
   const estilos = page.getByRole('radiogroup', { name: 'Estilo de las notas' });
-  await expect(estilos.getByRole('radio', { name: 'Cristal' })).toBeChecked();
+  await expect(estilos.getByRole('radio', { name: 'Vidrio', exact: true })).toBeChecked();
+  const lienzo = page.getByLabel('Visualizador de notas');
+  for (const nombre of [
+    'Vidrio',
+    'Bloques',
+    'Gemas',
+    'Oro',
+    'Diamantes',
+    'Luz',
+    'Claro',
+    'Chispa',
+  ]) {
+    await estilos.getByRole('radio', { name: nombre, exact: true }).click();
+    await momento(1500);
+    await lienzo.screenshot({ path: `test-results/capturas/nota-${nombre.toLowerCase()}.png` });
+  }
+  // "Claro" pone su fondo gris; al volver a otro estilo regresa el tema Ámbar.
+  await estilos.getByRole('radio', { name: 'Claro', exact: true }).click();
+  await expect(page.getByRole('radio', { name: 'Claro', exact: true }).first()).toBeChecked();
   await estilos.getByRole('radio', { name: 'Satín' }).click();
   await page.waitForTimeout(400);
   await page.screenshot({ path: 'test-results/capturas/fase11-piano-satin.png' });

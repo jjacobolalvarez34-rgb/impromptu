@@ -41,11 +41,33 @@ const BRILLO_DE: Record<Instrument, string> = {
   drums: 'Brillo del parche',
 };
 
-/** Pedido 42: un color por mano o el mismo para todas las notas. */
+/** Pedidos 42 y 65: de dónde sale el color de cada nota (como el panel de SeeMusic). */
 const MODOS_COLOR = [
   { value: 'mano', label: 'Por mano' },
   { value: 'uno', label: 'Uno solo' },
+  { value: 'division', label: 'Dividido' },
+  { value: 'pista', label: 'Por pista' },
+  { value: 'canal', label: 'Por canal' },
+  { value: 'nota12', label: '12 notas' },
+  { value: 'degradado', label: 'Degradado' },
+  { value: 'azar', label: 'Al azar' },
 ] as const;
+
+const NOMBRES_NOTA = [
+  'Do',
+  'Do#',
+  'Re',
+  'Re#',
+  'Mi',
+  'Fa',
+  'Fa#',
+  'Sol',
+  'Sol#',
+  'La',
+  'La#',
+  'Si',
+];
+const nombreTecla = (p: number) => `${NOMBRES_NOTA[p % 12]}${Math.floor(p / 12) - 1}`;
 
 /** Pedido 41: qué sale al tocar. */
 const PARTICULAS = [
@@ -82,6 +104,15 @@ const PANEL_SUSTAIN = [
 ] as const;
 
 const NOTE_STYLES = [
+  // Pedido 64: los ocho aprobados por Jacobo (con volumen, como SeeMusic y Rousseau).
+  { value: 'vidrio', label: 'Vidrio' },
+  { value: 'bloque', label: 'Bloques' },
+  { value: 'gema', label: 'Gemas' },
+  { value: 'oro', label: 'Oro' },
+  { value: 'diamante', label: 'Diamantes' },
+  { value: 'luz', label: 'Luz' },
+  { value: 'claro', label: 'Claro' },
+  { value: 'chispa', label: 'Chispa' },
   { value: 'cristal', label: 'Cristal' },
   { value: 'satin', label: 'Satín' },
   { value: 'glow', label: 'Brillante' },
@@ -287,13 +318,15 @@ export function SettingsPanel() {
               );
             })}
           </div>
-          {/* Pedido 42: un color por mano o el mismo para las dos. */}
+          {/* Pedidos 42 y 65: de dónde sale el color de cada nota. */}
           <Chips
             label="Color de las notas"
             options={MODOS_COLOR}
-            value={settings.estilo?.colorUnico ? 'uno' : 'mano'}
+            value={settings.estilo?.colorUnico ? 'uno' : (settings.estilo?.colorModo ?? 'mano')}
             onChange={(modo) =>
-              setEstilo({ colorUnico: modo === 'uno' ? settings.colors.right : null })
+              modo === 'uno'
+                ? setEstilo({ colorUnico: settings.colors.right })
+                : setEstilo({ colorUnico: null, colorModo: modo })
             }
           />
           <div className={styles.colores}>
@@ -303,6 +336,62 @@ export function SettingsPanel() {
                 value={settings.estilo.colorUnico}
                 onChange={(colorUnico) => setEstilo({ colorUnico })}
               />
+            ) : settings.estilo?.colorModo === 'nota12' ? (
+              <p className="ui-secundario">
+                Cada nota tiene su color (Do, Do#, Re…), en cualquier octava.
+              </p>
+            ) : settings.estilo?.colorModo === 'azar' ? (
+              <p className="ui-secundario">
+                Cada nota sale de un color distinto, siempre el mismo para esa nota.
+              </p>
+            ) : settings.estilo?.colorModo === 'degradado' ? (
+              <>
+                <ColorField
+                  label="Graves"
+                  value={settings.colors.left}
+                  onChange={setColor('left')}
+                />
+                <ColorField
+                  label="Agudos"
+                  value={settings.colors.right}
+                  onChange={setColor('right')}
+                />
+              </>
+            ) : settings.estilo?.colorModo === 'division' ? (
+              <>
+                <ColorField
+                  label="Desde la tecla, hacia arriba"
+                  value={settings.colors.right}
+                  onChange={setColor('right')}
+                />
+                <ColorField
+                  label="Más abajo"
+                  value={settings.colors.left}
+                  onChange={setColor('left')}
+                />
+                <Slider
+                  label="Tecla que divide"
+                  min={21}
+                  max={108}
+                  value={settings.estilo?.teclaDivision ?? 60}
+                  onChange={(teclaDivision) => setEstilo({ teclaDivision })}
+                  format={nombreTecla}
+                />
+              </>
+            ) : settings.estilo?.colorModo === 'pista' || settings.estilo?.colorModo === 'canal' ? (
+              <>
+                <ColorField
+                  label={settings.estilo.colorModo === 'pista' ? 'Pista 1' : 'Canal 1'}
+                  value={settings.colors.right}
+                  onChange={setColor('right')}
+                />
+                <ColorField
+                  label={settings.estilo.colorModo === 'pista' ? 'Pista 2' : 'Canal 2'}
+                  value={settings.colors.left}
+                  onChange={setColor('left')}
+                />
+                <p className="ui-secundario">Las demás toman colores propios automáticamente.</p>
+              </>
             ) : (
               <>
                 <ColorField
@@ -370,9 +459,19 @@ export function SettingsPanel() {
         label="Estilo de las notas"
         options={NOTE_STYLES}
         value={settings.effects.noteStyle}
-        onChange={(noteStyle) => setEffect({ noteStyle })}
+        onChange={(noteStyle) => {
+          const actual = useStudio.getState().settings;
+          // "Claro" va con su fondo gris (captura de Westworld); al salir de él vuelve el Ámbar.
+          const tema =
+            noteStyle === 'claro' ? 'claro' : actual.themeId === 'claro' ? 'ambar' : null;
+          const nuevo = tema ? THEMES[tema] : undefined;
+          setSettings({
+            effects: { ...actual.effects, noteStyle },
+            ...(tema && nuevo ? { themeId: tema, colors: { ...nuevo.notes } } : {}),
+          });
+        }}
       />
-      {settings.effects.noteStyle !== 'flat' && (
+      {settings.effects.noteStyle !== 'flat' && settings.effects.noteStyle !== 'claro' && (
         <Slider
           label="Brillo de las notas"
           max={200}

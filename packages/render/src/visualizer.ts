@@ -38,6 +38,9 @@ import {
 } from './scene';
 import type { Direction, FrameLayout, NoteIndex, VisualSettings } from './scene';
 import { SPARK_LIFE, noteSparks } from './sparks';
+import { Pool } from './pool';
+import { colorSegunModo } from './colores';
+import { DELGADEZ, HALO, PintorNotas, esEstiloNuevo } from './estilos-nota';
 import type { Spark } from './sparks';
 import { getTheme, hexToNumber } from './themes';
 import type { Theme } from './themes';
@@ -68,7 +71,7 @@ export const DEFAULT_SETTINGS: VisualSettings = {
     fallSpeed: 1,
     octaveGuides: true,
     noteGlow: 70,
-    noteStyle: 'cristal',
+    noteStyle: 'vidrio',
     beatGuides: true,
   },
   layout: 'visualizer',
@@ -116,33 +119,6 @@ const PANEL_RASGUEO = 0.09;
 /** Borde (px) de la textura del halo que no se estira. */
 const HALO_EDGE = 24;
 const NOTE_RADIUS = 3;
-
-/** Grupo de objetos reutilizables: nada se crea ni se destruye por cuadro (BUGS B-013). */
-class Pool<T extends Container> {
-  private items: T[] = [];
-  private used = 0;
-  constructor(
-    private readonly parent: Container,
-    private readonly make: () => T,
-  ) {}
-  begin() {
-    this.used = 0;
-  }
-  next(): T {
-    let item = this.items[this.used];
-    if (!item) {
-      item = this.make();
-      this.items.push(item);
-      this.parent.addChild(item);
-    }
-    item.visible = true;
-    this.used++;
-    return item;
-  }
-  end() {
-    for (let i = this.used; i < this.items.length; i++) this.items[i]!.visible = false;
-  }
-}
 
 /**
  * Visualizador de notas cayendo. `render(t)` dibuja el cuadro del instante t (segundos)
@@ -208,6 +184,8 @@ export class Visualizer {
   private readonly texturasNota = new Map<string, Texture>();
   private readonly nucleoLayer = new Container();
   private readonly nucleoPool: Pool<Sprite>;
+  /** Estilos de nota con volumen (pedido 64): vidrio, bloque, gema, oro, diamante, luz, claro, chispa. */
+  private readonly pintor = new PintorNotas();
   /** Estilo cristal (referencia de Jacobo): borde de luz y estela de rayos al caer. */
   private readonly bordeLayer = new Container();
   private readonly bordePool: Pool<NineSliceSprite>;
@@ -245,6 +223,8 @@ export class Visualizer {
   /** Panel de rasgueo a la derecha (pedido 31): el mástil se angosta para dejarle lugar. */
   private anchoMastil = 1;
   private tomaActual: Take | null = null;
+  /** Número de pista de cada nota (para colorear por pista, pedido 65). */
+  private readonly pistaDe = new Map<string, number>();
   private readonly textoRasgueo = new Text({
     text: '',
     style: { fontFamily: 'Archivo, sans-serif', fontSize: 14, fill: 0xe8e4dc, align: 'center' },
@@ -387,6 +367,7 @@ export class Visualizer {
       this.kitGfx,
       this.estelaLayer,
       this.noteLayer,
+      this.pintor.capa,
       this.bordeLayer,
       this.golpesGfx,
       this.nucleoLayer,
@@ -397,6 +378,7 @@ export class Visualizer {
       this.selectionOutline,
       this.keys,
       this.teclasLayer,
+      this.pintor.linea,
       this.glowLayer,
       this.humoLayer,
       this.sparkLayer,
@@ -437,6 +419,8 @@ export class Visualizer {
     this.tomaActual = take;
     this.direction = 'fall';
     this.carriles = take ? carriles(take.tracks, instrumentoDe(take)) : null;
+    this.pistaDe.clear();
+    take?.tracks.forEach((pista, i) => pista.notes.forEach((n) => this.pistaDe.set(n.id, i)));
     this.index = this.carriles
       ? indexNotes([
           {
@@ -673,7 +657,14 @@ export class Visualizer {
     const satin = effects.noteStyle === 'satin';
     const glowStyle = effects.noteStyle !== 'flat';
     const noteTexture = this.noteTextures[glowStyle ? 'glow' : 'flat'];
-    const halo = glowStyle ? (effects.noteGlow / 100) * (cristal ? 0.7 : satin ? 0.35 : 1) : 0; // 0–2
+    const estiloNuevo = esEstiloNuevo(effects.noteStyle) ? effects.noteStyle : null;
+    const halo = estiloNuevo
+      ? (effects.noteGlow / 100) * HALO[estiloNuevo]
+      : glowStyle
+        ? (effects.noteGlow / 100) * (cristal ? 0.7 : satin ? 0.35 : 1)
+        : 0; // 0–2
+    this.pintor.begin();
+    this.pintor.mitad = L.width / 2;
     const kit = this.vistaKit();
     // En la batería real los golpes caen hasta su pieza, que puede estar más abajo.
     const span = (kit ? L.height : L.keyLineY) / L.pps;
@@ -697,6 +688,12 @@ export class Visualizer {
       if (rect) {
         const tint = this.colorNota(note, colors);
         const v = note.velocity / 127;
+        const nueva = estiloNuevo && !esBateria ? estiloNuevo : null;
+        if (nueva && DELGADEZ[nueva] < 1) {
+          const ancho = rect.width * DELGADEZ[nueva];
+          rect.x += (rect.width - ancho) / 2;
+          rect.width = ancho;
+        }
         if (halo > 0) {
           // Halo aditivo del color de la nota (ADR-010).
           const pad = (3 + 6 * halo) * scale;
@@ -722,7 +719,16 @@ export class Visualizer {
         }
         if (esBateria) this.barraGolpe(rect, tint, v, abierto, scale);
         const sprite = this.notePool.next();
-        sprite.visible = !esBateria;
+        sprite.visible = !esBateria && !nueva;
+        if (nueva) {
+          this.pintor.nota(nueva, rect, tint, {
+            t,
+            id: hashId(note.id) * 100,
+            tope: L.keyLineY,
+            escala: scale,
+            cae: note.start > t && this.direction === 'fall',
+          });
+        }
         const vidrio = cristal && !esBateria;
         const sedoso = satin && !esBateria;
         sprite.texture = vidrio
@@ -784,7 +790,15 @@ export class Visualizer {
             e.alpha = 0.5 * (0.6 + 0.4 * v);
           }
         }
-        if (brilloInterno > 0 && !abierto && !esBateria && !vidrio && !sedoso && rect.height > 4) {
+        if (
+          brilloInterno > 0 &&
+          !abierto &&
+          !esBateria &&
+          !vidrio &&
+          !sedoso &&
+          !nueva &&
+          rect.height > 4
+        ) {
           // Brillo hacia adentro (pedido 41): una franja clara en el centro de la nota.
           const n = this.nucleoPool.next();
           n.position.set(rect.x + rect.width * 0.22, rect.y + Math.min(2, rect.height * 0.1));
@@ -845,6 +859,16 @@ export class Visualizer {
       });
     }
     this.notePool.end();
+    this.pintor.end();
+    // Línea de luz ondulada sobre el teclado, del color de la mano derecha (o el único).
+    this.pintor.lineaLuz(
+      L.width,
+      L.keyLineY,
+      hexToNumber(this.settings.estilo?.colorUnico ?? colors.right),
+      t,
+      scale,
+      !!estiloNuevo && estiloNuevo !== 'claro' && !this.carriles,
+    );
     this.nucleoPool.end();
     this.bordePool.end();
     this.estelaPool.end();
@@ -1256,7 +1280,21 @@ export class Visualizer {
     const propio = this.carriles?.meta.get(note.id)?.color;
     // Pedido 42: un solo color para todas las notas, si se eligió.
     const unico = this.settings.estilo?.colorUnico;
-    return this.color(propio ?? unico ?? noteColor(note, colors));
+    if (propio ?? unico) return this.color((propio ?? unico)!);
+    const modo = this.settings.estilo?.colorModo ?? 'mano';
+    if (modo === 'mano') return this.color(noteColor(note, colors));
+    return this.color(
+      colorSegunModo(
+        note,
+        {
+          modo,
+          division: this.settings.estilo?.teclaDivision ?? 60,
+          colores: colors,
+          rango: this.keyboard.range,
+        },
+        this.pistaDe.get(note.id) ?? 0,
+      ),
+    );
   }
 
   /** Cristal: el cuerpo de vidrio o el borde de luz, con el radio pedido (una vez por radio). */

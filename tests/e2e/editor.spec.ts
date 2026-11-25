@@ -144,3 +144,28 @@ test('exporta el video de la partitura', async ({ page }, info) => {
     'test-results/capturas/video-partitura.' + archivo.suggestedFilename().split('.').pop(),
   );
 });
+
+test('la hoja se mueve libre y "Volver a donde vamos" la regresa (pedido 61)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'celular', 'Basta con el escritorio');
+  test.setTimeout(120_000);
+  await page.goto('/estudio?instrumento=piano');
+  await page.locator('input[accept=".mid,.midi,audio/midi"]').setInputFiles({
+    name: 'escala.mid',
+    mimeType: 'audio/midi',
+    buffer: midiEscala(),
+  });
+  await page.getByRole('tab', { name: 'Partitura' }).click();
+  await expect(page.locator('[data-compas="0"][data-pentagrama="0"]').first()).toBeVisible({
+    timeout: 60_000,
+  });
+  const volver = page.getByRole('button', { name: 'Volver a donde vamos' });
+  await expect(volver).toHaveCount(0);
+  // Mover la hoja con la rueda: deja de seguir el cursor y aparece el botón.
+  await page.getByRole('main', { name: /^Partitura de/ }).hover();
+  await page.mouse.wheel(0, 400);
+  await expect(volver).toBeVisible();
+  await volver.click();
+  await expect(volver).toHaveCount(0);
+});

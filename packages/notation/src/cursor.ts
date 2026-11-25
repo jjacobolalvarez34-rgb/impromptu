@@ -109,6 +109,28 @@ export class LineaDeLectura {
   private readonly linea: HTMLDivElement;
   private renglonActual = -1;
   private objetivoScroll: number | null = null;
+  /**
+   * Pedido 61 (Jacobo): mientras suena se puede mover la hoja a mano. Al moverla deja de seguir
+   * el cursor hasta que se pide volver (botón "Volver a donde vamos").
+   */
+  private siguiendo = true;
+  /** Avisa cuando la hoja deja de seguir el cursor (false) o vuelve a seguirlo (true). */
+  alCambiar: ((siguiendo: boolean) => void) | null = null;
+  private readonly soltar = () => {
+    if (!this.siguiendo) return;
+    this.siguiendo = false;
+    this.objetivoScroll = null;
+    this.alCambiar?.(false);
+  };
+  private readonly alTeclear = (e: KeyboardEvent) => {
+    if (['PageUp', 'PageDown', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key))
+      this.soltar();
+  };
+  private readonly alApretar = (e: PointerEvent) => {
+    // Solo la barra de desplazamiento (a la derecha del contenido): tocar una nota es editarla.
+    const caja = this.desplazable.getBoundingClientRect();
+    if (e.clientX > caja.left + this.desplazable.clientWidth) this.soltar();
+  };
 
   constructor(
     private readonly contenedor: HTMLElement,
@@ -131,6 +153,22 @@ export class LineaDeLectura {
       zIndex: '5',
     } satisfies Partial<CSSStyleDeclaration>);
     contenedor.append(this.linea);
+    desplazable.addEventListener('wheel', this.soltar, { passive: true });
+    desplazable.addEventListener('touchmove', this.soltar, { passive: true });
+    desplazable.addEventListener('keydown', this.alTeclear);
+    desplazable.addEventListener('pointerdown', this.alApretar);
+  }
+
+  /** ¿La hoja sigue al cursor? */
+  get sigue(): boolean {
+    return this.siguiendo;
+  }
+
+  /** Vuelve a seguir el cursor y lleva la hoja hasta donde va la música. */
+  volver(): void {
+    this.siguiendo = true;
+    this.renglonActual = -1;
+    this.alCambiar?.(true);
   }
 
   /** Mueve la línea al tiempo `t` (redondas). Llamar en cada cuadro (requestAnimationFrame). */
@@ -139,7 +177,7 @@ export class LineaDeLectura {
     if (!p) return;
     this.linea.style.height = `${p.alto}px`;
     this.linea.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
-    if (p.renglon !== this.renglonActual) {
+    if (this.siguiendo && p.renglon !== this.renglonActual) {
       this.renglonActual = p.renglon;
       // El renglón que suena queda a un tercio de la vista.
       const vista = this.desplazable.clientHeight;
@@ -156,6 +194,10 @@ export class LineaDeLectura {
   }
 
   quitar(): void {
+    this.desplazable.removeEventListener('wheel', this.soltar);
+    this.desplazable.removeEventListener('touchmove', this.soltar);
+    this.desplazable.removeEventListener('keydown', this.alTeclear);
+    this.desplazable.removeEventListener('pointerdown', this.alApretar);
     this.linea.remove();
   }
 }

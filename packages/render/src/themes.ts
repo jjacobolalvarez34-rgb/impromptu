@@ -46,6 +46,22 @@ export const THEMES: Readonly<Record<string, Theme>> = {
     label: 0xa89c84,
     notes: { right: '#D4AF6A', left: '#A8392F', unassigned: '#B8A88A' },
   },
+  // Pedido 64 (captura de Westworld de Jacobo): fondo gris claro, notas oscuras y las teclas
+  // encendidas en rojo (derecha) o azul (izquierda). Va con el estilo de nota "Claro".
+  claro: {
+    id: 'claro',
+    name: 'Claro',
+    background: 0xc9c9c9,
+    whiteKey: 0xf2f2f2,
+    whiteKeyEdge: 0xa6a6a6,
+    blackKey: 0x161616,
+    keyLine: 0x2a2a2a,
+    guide: 0xb6b6b6,
+    pedal: 0x2a2a2a,
+    pedalTrack: 0xb0b0b0,
+    label: 0x4a4a4a,
+    notes: { right: '#E0241C', left: '#2434E0', unassigned: '#6A6A6A' },
+  },
 };
 
 export const DEFAULT_THEME = 'ambar';

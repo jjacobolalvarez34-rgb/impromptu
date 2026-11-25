@@ -14,6 +14,16 @@ Una entrada por sesión, la más reciente arriba.
 
 ---
 
+### 2026-11-25 · Notas con volumen (SeeMusic), colores, hoja libre y BUG-008
+- Jacobo aprobó los ocho estilos de nota de la maqueta (artefacto "Notas para elegir") y pidió "arregla lo demás, no compiles el APK aún". Lista: (1) BUG-008, (2) estilos en el estudio, (3) colores (65), (4) hoja libre (61), (5) editar el pedal (58), (6) guitarra por micrófono (55), (7) guitarra en perspectiva (63), (8) celular (59, 62), (9) técnicas (56).
+- Hecho (**sin verificar por Jacobo**):
+  1. **BUG-008** (celular se cerraba al terminar de grabar): índice negativo en `Etapa.frase`; arreglado y con prueba `AvanceTest`. Sin probar en el teléfono (no se compiló el APK).
+  2. **Ocho estilos de nota** (Vidrio, Bloques, Gemas, Oro, Diamantes, Luz, Claro, Chispa) en web y PC, con la línea de luz sobre el teclado y el tema Claro. Vidrio por defecto.
+  3. **Colores**: por mano, uno solo, dividido por una tecla, por pista, por canal, 12 notas, degradado y al azar.
+  4. **Hoja libre** mientras suena, con "Volver a donde vamos".
+- Pruebas: lint, typecheck y unitarias en verde; `fase11.spec.ts` (capturas de los ocho estilos) y `editor.spec.ts` (botón de volver); JUnit `AvanceTest`.
+- Nota de trabajo: desde hoy los archivos temporales de Claude van a `D:\.cache\claude-tmp` (antes se usaba la carpeta temporal de Claude Code en C:).
+
 ### 2026-11-19 (noche) · Notas Cristal y Satín, colores listos, menos curva
 - Hecho (web y PC, **sin verificar por Jacobo**): pedidos 50 a 53 de PENDIENTES. Notas **Cristal** (por defecto: vidrio, borde de luz, reflejo y estela de rayos) y **Satín** (llena y suave), según sus dos imágenes; **colores listos** (Ámbar, Hielo, Neón, Fuego, Menta, Rosa); **menos curva** (redondeo 30, con migración de los ajustes guardados); la **columna izquierda** ya no se sale del margen al convertir o descargar.
 - Pruebas: lint, typecheck y pruebas unitarias en verde; `fase11.spec.ts` (piano con Cristal, Satín y Hielo) y `separar.spec.ts` (mide que la columna no desborde). Capturas `fase11-piano*.png` y `separar-columna.png`. Nota: con el equipo cargado, la compilación de la web para las pruebas tarda casi 3 minutos y a veces pasa el límite; se deja prendida la vista previa (puerto 4173) para reusarla.

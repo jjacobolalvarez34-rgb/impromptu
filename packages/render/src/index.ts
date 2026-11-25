@@ -14,3 +14,6 @@ export type { Rasgueo } from './rasgueo';
 export type { Carriles } from './instrumentos';
 export { PALETAS, paletaDe } from './paletas';
 export type { Paleta } from './paletas';
+export { MODOS_COLOR, ARCOIRIS_12, colorSegunModo } from './colores';
+export type { ModoColor } from './colores';
+export { ESTILOS_NUEVOS } from './estilos-nota';

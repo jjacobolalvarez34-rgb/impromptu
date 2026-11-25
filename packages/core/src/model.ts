@@ -23,6 +23,7 @@ export interface NoteEvent {
   string?: number; // guitarra (fase 9)
   fret?: number; // guitarra (fase 9)
   drumPiece?: string; // batería (fase 9)
+  channel?: number; // canal MIDI 0–15, para colorear por canal (pedido 65)
   origin: 'midi-live' | 'midi-file' | 'audio' | 'edit';
 }
 
@@ -82,7 +83,20 @@ export interface VisualProject {
     fallSpeed: number;
     octaveGuides: boolean;
     noteGlow: number; // 0–200 %, halo de las notas (ADR-010)
-    noteStyle: 'flat' | 'glow' | 'cristal' | 'satin'; // ADR-010; cristal: pedido de Jacobo (2026-11-19)
+    noteStyle:
+      | 'flat'
+      | 'glow'
+      | 'cristal'
+      | 'satin'
+      // Pedido 64 (aprobados por Jacobo el 2026-11-25): notas con volumen.
+      | 'vidrio'
+      | 'bloque'
+      | 'gema'
+      | 'oro'
+      | 'diamante'
+      | 'luz'
+      | 'claro'
+      | 'chispa'; // ADR-010; cristal: pedido de Jacobo (2026-11-19)
     beatGuides: boolean; // líneas de compás y pulso (ADR-011)
   };
   show: {
@@ -114,6 +128,10 @@ export interface VisualProject {
     teclado?: 'realista' | 'plano';
     /** Cuánto se sube el teclado, en fracción del alto (0 a 0,4): deja lugar para las manos. */
     elevacion?: number;
+    /** De dónde sale el color (pedido 65). Sin valor: por mano. */
+    colorModo?: 'mano' | 'division' | 'pista' | 'canal' | 'nota12' | 'degradado' | 'azar';
+    /** Tecla MIDI que separa las manos en el modo "división" (de ella para arriba, derecha). */
+    teclaDivision?: number;
   };
   background?: { kind: 'color' | 'image' | 'video' | 'blur'; value: string };
 }
