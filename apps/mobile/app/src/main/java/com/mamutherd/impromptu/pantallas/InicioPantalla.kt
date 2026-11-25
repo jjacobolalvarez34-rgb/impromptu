@@ -55,7 +55,15 @@ import androidx.compose.ui.unit.dp
 import com.mamutherd.impromptu.Impromptu
 import com.mamutherd.impromptu.Navegador
 import com.mamutherd.impromptu.Pantalla
+import com.mamutherd.impromptu.datos.Grupo
 import com.mamutherd.impromptu.datos.Pieza
+import com.mamutherd.impromptu.datos.VideoGuardado
+import com.mamutherd.impromptu.datos.Videos
+import android.content.Intent
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.mamutherd.impromptu.datos.Smf
 import com.mamutherd.impromptu.datos.formatoTiempo
 import com.mamutherd.impromptu.importarMidi
@@ -86,6 +94,33 @@ fun InicioPantalla(nav: Navegador) {
     var renombrar by remember { mutableStateOf<Pieza?>(null) }
     var borrar by remember { mutableStateOf<Pieza?>(null) }
     var exportarMidi by remember { mutableStateOf<Pieza?>(null) }
+    // Pedido 62: separar grabadas, convertidas, MIDI y los videos exportados.
+    var grupo by remember { mutableStateOf(Grupo.Todo) }
+    var videos by remember { mutableStateOf(emptyList<VideoGuardado>()) }
+    var recargarVideos by remember { mutableStateOf(0) }
+    var renombrarVideo by remember { mutableStateOf<VideoGuardado?>(null) }
+    var borrarVideo by remember { mutableStateOf<VideoGuardado?>(null) }
+    LaunchedEffect(grupo, recargarVideos) {
+        if (grupo == Grupo.Videos) videos = withContext(Dispatchers.IO) { Videos.listar(context) }
+    }
+    val verVideo: (VideoGuardado) -> Unit = { v ->
+        runCatching {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW).setDataAndType(v.uri, "video/mp4").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+            )
+        }.onFailure { Toast.makeText(context, "No hay una app para ver videos.", Toast.LENGTH_LONG).show() }
+    }
+    val compartirVideo: (VideoGuardado) -> Unit = { v ->
+        runCatching {
+            context.startActivity(
+                Intent.createChooser(
+                    Intent(Intent.ACTION_SEND).setType("video/mp4").putExtra(Intent.EXTRA_STREAM, v.uri)
+                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+                    "Compartir video",
+                ),
+            )
+        }
+    }
 
     val abrirAudio = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -138,11 +173,50 @@ fun InicioPantalla(nav: Navegador) {
             }
         }
     }
-    val piezas: LazyListScope.() -> Unit = {
+    val piezas: LazyListScope.() -> Unit = piezas@{
+        val enGrupo = Impromptu.piezas.lista.filter { grupo.incluye(it) }
         item(key = "titulo-piezas") {
             Row(Modifier.padding(top = 18.dp).animateItem(), verticalAlignment = Alignment.CenterVertically) {
                 Etiqueta("Tus piezas", Modifier.weight(1f))
-                Etiqueta("${Impromptu.piezas.lista.size}")
+                Etiqueta(if (grupo == Grupo.Videos) "${videos.size}" else "${enGrupo.size}")
+            }
+        }
+        item(key = "grupos") {
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).animateItem(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                for (g in Grupo.entries) Chip(g.texto, grupo == g, { grupo = g; menu = null })
+            }
+        }
+        if (grupo == Grupo.Videos) {
+            if (videos.isEmpty()) {
+                item(key = "sin-videos") {
+                    Panel(Modifier.fillMaxWidth().animateItem()) {
+                        Text("Todavía no hay videos.", style = Tipos.Texto)
+                        Text("Abre una pieza y toca «Video»: queda en la galería, en Películas/Impromptu.", style = Tipos.Secundario, modifier = Modifier.padding(top = 4.dp))
+                    }
+                }
+            }
+            items(videos, key = { it.uri.toString() }) { v ->
+                FilaVideo(
+                    v,
+                    abierta = menu == v.uri.toString(),
+                    alVer = { verVideo(v) },
+                    alMenu = { menu = if (menu == v.uri.toString()) null else v.uri.toString() },
+                    alRenombrar = { renombrarVideo = v },
+                    alCompartir = { compartirVideo(v) },
+                    alBorrar = { borrarVideo = v },
+                    modifier = Modifier.animateItem(),
+                )
+            }
+            return@piezas
+        }
+        if (enGrupo.isEmpty() && Impromptu.piezas.lista.isNotEmpty()) {
+            item(key = "grupo-vacio") {
+                Panel(Modifier.fillMaxWidth().animateItem()) {
+                    Text("No hay piezas en «${grupo.texto}».", style = Tipos.Texto)
+                }
             }
         }
         if (Impromptu.piezas.lista.isEmpty()) {
@@ -153,7 +227,7 @@ fun InicioPantalla(nav: Navegador) {
                 }
             }
         }
-        items(Impromptu.piezas.lista, key = { it.id }) { p ->
+        items(enGrupo, key = { it.id }) { p ->
             FilaPieza(
                 p,
                 abierta = menu == p.id,
@@ -216,6 +290,27 @@ fun InicioPantalla(nav: Navegador) {
 
     renombrar?.let { p ->
         PedirTexto("Nombre de la pieza", p.titulo, { Impromptu.piezas.renombrar(p.id, it); renombrar = null }, { renombrar = null })
+    }
+    renombrarVideo?.let { v ->
+        PedirTexto("Nombre del video", v.nombre, { nuevo ->
+            if (!Videos.renombrar(context, v.uri, nuevo)) Toast.makeText(context, "No se pudo cambiar el nombre.", Toast.LENGTH_LONG).show()
+            renombrarVideo = null
+            recargarVideos++
+        }, { renombrarVideo = null })
+    }
+    borrarVideo?.let { v ->
+        Confirmar(
+            "¿Borrar el video \"${v.nombre}\"?",
+            "Se borra de la galería del celular.",
+            "Borrar",
+            {
+                if (!Videos.borrar(context, v.uri)) Toast.makeText(context, "No se pudo borrar.", Toast.LENGTH_LONG).show()
+                borrarVideo = null
+                menu = null
+                recargarVideos++
+            },
+            { borrarVideo = null },
+        )
     }
     borrar?.let { p ->
         Confirmar(
@@ -341,6 +436,60 @@ private fun FilaPieza(
                 MiniAccion(Iconos.Editar, "Nombre", alRenombrar)
                 MiniAccion(Iconos.Descargar, "MIDI", alGuardarMidi)
                 MiniAccion(Iconos.Video, "Video", alVideo)
+                MiniAccion(Iconos.Borrar, "Borrar", alBorrar)
+            }
+        }
+    }
+}
+
+/** Un video exportado (pedido 62): verlo, cambiarle el nombre, compartirlo o borrarlo. */
+@Composable
+private fun FilaVideo(
+    v: VideoGuardado,
+    abierta: Boolean,
+    alVer: () -> Unit,
+    alMenu: () -> Unit,
+    alRenombrar: () -> Unit,
+    alCompartir: () -> Unit,
+    alBorrar: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(6.dp))
+            .background(C3.Panel)
+            .border(1.dp, if (abierta) C3.LcdBorde else C3.Linea, RoundedCornerShape(6.dp)),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier
+                    .weight(1f)
+                    .clickable(role = Role.Button, onClickLabel = "Ver ${v.nombre}", onClick = alVer)
+                    .padding(start = 14.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icono(Iconos.Video, null, color = C3.Ambar, tamano = 22.dp)
+                Column(Modifier.padding(start = 12.dp)) {
+                    Text(v.nombre, style = Tipos.Texto.copy(fontSize = Tipos.Texto.fontSize * 1.05f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        "VIDEO · ${formatoTiempo(v.duracionMs / 1000.0)} · ${fecha.format(Date(v.creado)).uppercase()}",
+                        style = Tipos.Etiqueta.copy(letterSpacing = Tipos.Etiqueta.letterSpacing * 0.5f),
+                        maxLines = 1,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+            }
+            BotonIcono(if (abierta) Iconos.Cerrar else Iconos.Mas, if (abierta) "Cerrar opciones" else "Opciones de ${v.nombre}", alMenu)
+        }
+        if (abierta) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, bottom = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                MiniAccion(Iconos.Tocar, "Ver", alVer)
+                MiniAccion(Iconos.Editar, "Nombre", alRenombrar)
+                MiniAccion(Iconos.Compartir, "Compartir", alCompartir)
                 MiniAccion(Iconos.Borrar, "Borrar", alBorrar)
             }
         }

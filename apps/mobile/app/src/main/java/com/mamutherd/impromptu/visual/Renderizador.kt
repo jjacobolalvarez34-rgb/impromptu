@@ -75,7 +75,14 @@ class Renderizador {
         val vistaKit: Boolean = false,
         /** Guitarra: panel de rasgueo a la derecha (pedido 31). */
         val rasgueo: Boolean = true,
+        /** Pedido 59/64: estilo de las notas, colores de cada mano y curva (0 a 1). */
+        val estilo: EstiloNota = EstiloNota.Vidrio,
+        val colorDerecha: Int = 0xFFFF9F1C.toInt(),
+        val colorIzquierda: Int = 0xFFE8E4DC.toInt(),
+        val redondeo: Float = 0.3f,
     )
+
+    private val pintor = PintorNotas()
 
     /**
      * `notas` ordenadas por inicio (una nota con fin < 0 sigue apretada). `abajo`: teclas
@@ -101,6 +108,12 @@ class Renderizador {
         val altoTeclado = (alto * 0.18f).coerceIn(48f, ancho * 0.12f)
         val tope = alto - altoTeclado
         val pps = tope / op.ventana.toFloat() // píxeles por segundo
+        // Pedido 59: los colores y el estilo que eligió el usuario (el tema Claro trae los suyos).
+        val claro = op.estilo == EstiloNota.Claro
+        derecha.color = if (claro) DERECHA_CLARO else op.colorDerecha
+        izquierda.color = if (claro) IZQUIERDA_CLARO else op.colorIzquierda
+        fondo.color = if (claro) FONDO_CLARO else 0xFF111110.toInt()
+        val escala = (alto / 1080f).coerceAtLeast(0.5f)
         c.drawRect(0f, 0f, ancho, alto, fondo)
 
         // Líneas de Do como guía.
@@ -108,7 +121,6 @@ class Renderizador {
 
         // Teclas encendidas por las notas que suenan ahora.
         val encendida = IntArray(128) // 0 no, 1 der, 2 izq
-        val radio = (x1[rango.first] - x0[rango.first]) * 0.18f
 
         val desde = if (op.subiendo) t - op.ventana else t - 0.5
         val hasta = if (op.subiendo) t else t + op.ventana
@@ -132,7 +144,15 @@ class Renderizador {
                 y0 = tope - ((fin - t) * pps).toFloat()
                 rect.set(x0[n.tecla] + 1.5f, y0, x1[n.tecla] - 1.5f, minOf(y1, tope))
             }
-            if (rect.height() > 0.5f) c.drawRoundRect(rect, radio, radio, p)
+            if (op.estilo.delgadez < 1f) {
+                val angosto = rect.width() * op.estilo.delgadez
+                val cx = rect.centerX()
+                rect.left = cx - angosto / 2
+                rect.right = cx + angosto / 2
+            }
+            if (rect.height() > 0.5f) {
+                pintor.nota(c, rect, p.color, op.estilo, t, i, tope, op.redondeo, escala, ancho / 2)
+            }
             if (n.inicio <= t && fin > t) encendida[n.tecla] = if (der) 1 else 2
         }
 

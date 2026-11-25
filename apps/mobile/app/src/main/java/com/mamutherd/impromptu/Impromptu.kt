@@ -75,7 +75,21 @@ object Impromptu {
             instrumento = instrumento,
             vistaKit = ajustes.getString("vistaBateria", "carriles") == "kit",
             rasgueo = ajustes.getBoolean("rasgueo", true),
+            estilo = com.mamutherd.impromptu.visual.EstiloNota.deClave(ajustes.getString("estiloNota", null)),
+            colorDerecha = ajustes.getInt("colorDerecha", 0xFFFF9F1C.toInt()),
+            colorIzquierda = ajustes.getInt("colorIzquierda", 0xFFE8E4DC.toInt()),
+            redondeo = ajustes.getFloat("redondeo", 0.3f),
         )
+    }
+
+    /** Pedido 59: el diseño de las notas, elegido desde la pieza; vale también para el video. */
+    fun guardarDiseno(estilo: com.mamutherd.impromptu.visual.EstiloNota, derecha: Int, izquierda: Int, redondeo: Float) {
+        app.getSharedPreferences("ajustes", Context.MODE_PRIVATE).edit()
+            .putString("estiloNota", estilo.clave)
+            .putInt("colorDerecha", derecha)
+            .putInt("colorIzquierda", izquierda)
+            .putFloat("redondeo", redondeo)
+            .apply()
     }
 
     /** Timbre de la guitarra elegido en Ajustes. */

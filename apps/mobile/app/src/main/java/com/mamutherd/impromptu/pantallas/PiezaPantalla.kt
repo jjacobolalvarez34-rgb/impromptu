@@ -55,6 +55,12 @@ import com.mamutherd.impromptu.ui.Lcd
 import com.mamutherd.impromptu.ui.Tecla
 import com.mamutherd.impromptu.ui.Tipos
 import com.mamutherd.impromptu.visual.Renderizador
+import com.mamutherd.impromptu.visual.EstiloNota
+import com.mamutherd.impromptu.visual.PALETAS
+import com.mamutherd.impromptu.ui.Etiqueta
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.fillMaxHeight
 
 /** Lienzo que se redibuja en cada cuadro de la pantalla (60 fps), sin recomponer nada. */
 @Composable
@@ -79,7 +85,9 @@ fun PiezaPantalla(id: String, nav: Navegador) {
     val motor = Impromptu.motor
     val renderizador = remember { Renderizador() }
     val rango = remember(pieza) { pieza.rango() }
-    val opciones = remember(pieza) { Impromptu.opcionesVista(pieza.instr) }
+    var opciones by remember(pieza) { mutableStateOf(Impromptu.opcionesVista(pieza.instr)) }
+    // Pedido 59: el diseño de las notas se cambia desde la misma pieza.
+    var diseno by remember { mutableStateOf(false) }
     var tocando by remember { mutableStateOf(false) }
     var tiempo by remember { mutableDoubleStateOf(0.0) }
     var velocidad by remember { mutableDoubleStateOf(1.0) }
@@ -132,6 +140,10 @@ fun PiezaPantalla(id: String, nav: Navegador) {
                 Tecla("Video", { motor?.pausar(); nav.ir(Pantalla.Exportar(id)) }, altura = 40.dp, icono = { Icono(Iconos.Video, null, tamano = 18.dp) })
                 Box(Modifier.width(8.dp))
                 Tecla("MIDI", { guardarMidi.launch("${pieza.titulo}.mid") }, altura = 40.dp, icono = { Icono(Iconos.Descargar, null, tamano = 18.dp) })
+                if (pieza.instr == Instrumento.Piano) {
+                    Box(Modifier.width(8.dp))
+                    Tecla("Diseño", { diseno = !diseno }, altura = 40.dp, icono = { Icono(Iconos.Editar, null, tamano = 18.dp) })
+                }
             }
             Column(
                 Modifier
@@ -169,6 +181,17 @@ fun PiezaPantalla(id: String, nav: Navegador) {
                 }
             }
         }
+        if (diseno) {
+            PanelDiseno(
+                opciones,
+                Modifier.align(Alignment.CenterEnd),
+                alCambiar = { estilo, der, izq ->
+                    Impromptu.guardarDiseno(estilo, der, izq, opciones.redondeo)
+                    opciones = Impromptu.opcionesVista(pieza.instr)
+                },
+                alCerrar = { diseno = false },
+            )
+        }
     }
 }
 
@@ -193,5 +216,55 @@ fun BarraTiempo(tiempo: Double, duracion: Double, modifier: Modifier = Modifier,
         drawRect(C3.Linea, topLeft = Offset(0f, y - 2), size = Size(size.width, 4f))
         drawRect(C3.Ambar, topLeft = Offset(0f, y - 2), size = Size(size.width * p, 4f))
         drawRect(C3.Chasis, topLeft = Offset(size.width * p - 4, y - 12), size = Size(8f, 24f))
+    }
+}
+
+/**
+ * Pedido 59 (Jacobo): después de grabar no se veía dónde cambiar el diseño. Aquí, en la misma
+ * pieza: el estilo de las notas (los de la web) y los colores listos. Vale también para el video.
+ */
+@Composable
+private fun PanelDiseno(
+    op: Renderizador.Opciones,
+    modifier: Modifier,
+    alCambiar: (EstiloNota, Int, Int) -> Unit,
+    alCerrar: () -> Unit,
+) {
+    Column(
+        modifier
+            .fillMaxHeight()
+            .width(300.dp)
+            .background(C3.Carbon.copy(alpha = 0.95f))
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .verticalScroll(rememberScrollState())
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Diseño", style = Tipos.TituloPanel, modifier = Modifier.weight(1f))
+            BotonIcono(Iconos.Cerrar, "Cerrar el diseño", alCerrar)
+        }
+        Etiqueta("Estilo de las notas")
+        for (fila in EstiloNota.entries.chunked(3)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                for (e in fila) {
+                    Chip(e.texto, op.estilo == e, { alCambiar(e, op.colorDerecha, op.colorIzquierda) }, Modifier.weight(1f))
+                }
+                repeat(3 - fila.size) { Box(Modifier.weight(1f)) }
+            }
+        }
+        Etiqueta("Colores", Modifier.padding(top = 8.dp))
+        for (fila in PALETAS.chunked(3)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                for (p in fila) {
+                    val elegida = op.colorDerecha == p.derecha && op.colorIzquierda == p.izquierda
+                    Chip(p.nombre, elegida, { alCambiar(op.estilo, p.derecha, p.izquierda) }, Modifier.weight(1f))
+                }
+            }
+        }
+        if (op.estilo == EstiloNota.Claro) {
+            Text("Claro trae su fondo gris y teclas en rojo (derecha) y azul (izquierda).", style = Tipos.Secundario)
+        }
+        Text("También se usa al exportar el video.", style = Tipos.Secundario, modifier = Modifier.padding(top = 6.dp))
     }
 }
