@@ -6,3 +6,4 @@ export * from './keyboard';
 export * from './meter';
 export * from './guitar';
 export * from './drums';
+export * from './pedales';

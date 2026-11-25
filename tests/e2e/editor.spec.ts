@@ -169,3 +169,33 @@ test('la hoja se mueve libre y "Volver a donde vamos" la regresa (pedido 61)', a
   await volver.click();
   await expect(volver).toHaveCount(0);
 });
+
+test('editar el pedal en su carril: crear arrastrando, elegir y borrar (pedido 58)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'celular', 'Basta con el escritorio');
+  test.setTimeout(120_000);
+  await page.goto('/estudio?instrumento=piano');
+  await page.locator('input[accept=".mid,.midi,audio/midi"]').setInputFiles({
+    name: 'escala.mid',
+    mimeType: 'audio/midi',
+    buffer: midiEscala(),
+  });
+  const linea = page.getByRole('slider', { name: /^Línea de tiempo/ });
+  await expect(linea).toBeVisible();
+  const caja = (await linea.boundingBox())!;
+  // El carril del pedal está a la altura de su etiqueta "Ped.".
+  const etiqueta = (await page.locator('li', { hasText: /^Ped\.$/ }).boundingBox())!;
+  const y = etiqueta.y + etiqueta.height / 2;
+  await page.mouse.move(caja.x + caja.width * 0.2, y);
+  await page.mouse.down();
+  await page.mouse.move(caja.x + caja.width * 0.4, y, { steps: 5 });
+  await page.mouse.move(caja.x + caja.width * 0.5, y, { steps: 5 });
+  await page.mouse.up();
+  const elegido = page.getByRole('group', { name: 'Pedal elegido' });
+  await expect(elegido).toBeVisible();
+  await expect(elegido).toContainText('Pedal de');
+  await page.screenshot({ path: 'test-results/capturas/editar-pedal.png' });
+  await elegido.getByRole('button', { name: 'Borrar pedal' }).click();
+  await expect(elegido).toHaveCount(0);
+});

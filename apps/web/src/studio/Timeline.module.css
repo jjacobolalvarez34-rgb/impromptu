@@ -62,3 +62,15 @@
   pointer-events: none;
   will-change: transform;
 }
+
+/* Pedido 58: el pedal elegido en el carril, con su botón para borrarlo. */
+.pedalElegido {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2) var(--e-3);
+  padding-bottom: var(--e-2);
+  font-size: 13px;
+  color: var(--gris-texto);
+}
