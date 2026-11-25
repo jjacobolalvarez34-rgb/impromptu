@@ -64,7 +64,7 @@
 - Dónde: **app de Android** (APK 0.1.0), confirmado por Jacobo el 2026-11-19.
 - Cómo reproducir (Jacobo, 2026-11-19): grabar con el micrófono y tocar "Terminar": la app se cierra. Pasa **cada vez**.
 - Esperado / obtenido: que la grabación pase a convertirse en notas (o quede guardada). Obtenido: la app se cierra.
-- Causa: sin investigar. Sospechosos: lo nuevo del paso de grabar a convertir (separar el instrumento con Spleeter, que antes de convertir baja 79 MB, y la cola en segundo plano), la memoria (como BUG-004) o el permiso del servicio en primer plano. Revisar con `adb logcat` con el celular conectado.
+- Causa (encontrada por la sesión de Velora con `adb logcat -b crash`, Redmi 12C, Android 14): `Etapa.frase` en `trabajo/AvanceSuave.kt:71` calcula el índice con `%` sobre un tiempo que puede salir negativo (el reloj de cuadros de `ColaPanel.kt` trae un valor viejo y el trabajo ya tiene un `inicio` nuevo) y da índice -1: `ArrayIndexOutOfBoundsException`. Detalle y arreglo sugerido en `docs/error-2026-11-19-frase-indice-negativo.md`.
 - Arreglo: pendiente.
 
 ### BUG-005 · Celular: el video exportado sale con el audio corrido (~2 s)
