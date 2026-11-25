@@ -39,6 +39,8 @@ import com.mamutherd.impromptu.ui.Tipos
 fun relojDeCuadros(activo: Boolean = true): Long {
     var ahora by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(activo) {
+        // Al volver a activarse, empieza con la hora de ahora y no con la vieja (BUG-008).
+        ahora = System.currentTimeMillis()
         while (activo) withFrameMillis { ahora = System.currentTimeMillis() }
     }
     return ahora

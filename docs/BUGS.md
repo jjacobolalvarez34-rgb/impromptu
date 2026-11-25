@@ -65,7 +65,7 @@
 - Cómo reproducir (Jacobo, 2026-11-19): grabar con el micrófono y tocar "Terminar": la app se cierra. Pasa **cada vez**.
 - Esperado / obtenido: que la grabación pase a convertirse en notas (o quede guardada). Obtenido: la app se cierra.
 - Causa (encontrada por la sesión de Velora con `adb logcat -b crash`, Redmi 12C, Android 14): `Etapa.frase` en `trabajo/AvanceSuave.kt:71` calcula el índice con `%` sobre un tiempo que puede salir negativo (el reloj de cuadros de `ColaPanel.kt` trae un valor viejo y el trabajo ya tiene un `inicio` nuevo) y da índice -1: `ArrayIndexOutOfBoundsException`. Detalle y arreglo sugerido en `docs/error-2026-11-19-frase-indice-negativo.md`.
-- Arreglo: pendiente.
+- Arreglo (2026-11-25): `Etapa.frase` usa `Math.floorMod` sobre un tiempo nunca negativo, y el reloj de la cola arranca con la hora actual al volver a activarse. Prueba `AvanceTest` (tiempos negativos, cero y grandes en todas las etapas). **Sin verificar en el celular** (falta compilar el APK, cuando Jacobo diga).
 
 ### BUG-005 · Celular: el video exportado sale con el audio corrido (~2 s)
 - Dónde: app de Android, Exportar video (`visual/Exportador.kt`).

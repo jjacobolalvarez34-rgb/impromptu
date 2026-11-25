@@ -68,5 +68,10 @@ enum class Etapa(val frases: List<String>) {
     ),
     Armando(listOf("Armando la pieza…"));
 
-    fun frase(msDesdeInicio: Long) = frases[((msDesdeInicio / 4500) % frases.size).toInt()]
+    /**
+     * BUG-008: el reloj de la pantalla puede ir un cuadro atrás del inicio del trabajo y dar un
+     * tiempo negativo; con `%` eso era el índice -1 y la app se cerraba al terminar de grabar.
+     */
+    fun frase(msDesdeInicio: Long) =
+        frases[Math.floorMod(msDesdeInicio.coerceAtLeast(0L) / 4500, frases.size.toLong()).toInt()]
 }
